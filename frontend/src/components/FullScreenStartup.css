@@ -1,0 +1,108 @@
+.fullscreen-startup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.startup-logo-container {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity, filter;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.startup-effects {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 107, 53, 0.3) 0%,
+    rgba(255, 87, 34, 0.2) 30%,
+    rgba(255, 176, 0, 0.1) 50%,
+    transparent 70%
+  );
+  filter: blur(40px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.startup-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 107, 53, 0.1) 0%,
+    rgba(255, 87, 34, 0.05) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Phase-specific animations */
+.fullscreen-startup[data-phase="ignition"] .startup-logo-container {
+  animation: ignitionShake 0.5s ease-out 0.5s;
+}
+
+.fullscreen-startup[data-phase="pulse"] .startup-effects {
+  animation: pulseGlow 1s ease-in-out infinite;
+}
+
+@keyframes ignitionShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-2px) rotate(-0.5deg); }
+  20% { transform: translateX(2px) rotate(0.5deg); }
+  30% { transform: translateX(-1px) rotate(-0.2deg); }
+  40% { transform: translateX(1px) rotate(0.2deg); }
+  50% { transform: translateX(0) rotate(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    filter: blur(40px) brightness(1);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    filter: blur(50px) brightness(1.2);
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* Performance optimizations */
+@media (prefers-reduced-motion: reduce) {
+  .fullscreen-startup * {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .startup-logo-container {
+    width: 300px !important;
+    height: 300px !important;
+  }
+  
+  .startup-logo-container svg {
+    width: 300px;
+    height: 300px;
+  }
+}

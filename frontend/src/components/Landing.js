@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './AnimatedFlameLogo';
-import BurnwiseCinematicBootup from './BurnwiseCinematicBootup';
+import FullScreenStartup from './FullScreenStartup';
 import '../styles/Landing.css';
 
 const Landing = () => {
@@ -57,9 +57,9 @@ const Landing = () => {
 
   return (
     <>
-      {/* Cinematic Bootup Overlay */}
+      {/* Full Screen Startup Animation */}
       {showCinematicBootup && (
-        <BurnwiseCinematicBootup onComplete={handleBootupComplete} />
+        <FullScreenStartup onComplete={handleBootupComplete} />
       )}
 
       <div className="landing-container">
@@ -94,9 +94,10 @@ const Landing = () => {
           <section className="hero-section">
             <div className="hero-logo" style={{ 
               opacity: showCinematicBootup ? 0 : 1,
-              transition: 'opacity 0.3s ease-in-out'
+              transition: 'opacity 0.5s ease-in-out',
+              transitionDelay: showCinematicBootup ? '0s' : '0.3s'
             }}>
-              <AnimatedFlameLogo size={120} animated={true} startupAnimation={!showCinematicBootup} />
+              <AnimatedFlameLogo size={120} animated={true} />
             </div>
             
             <h1 className="hero-title">BURNWISE</h1>
