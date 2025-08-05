@@ -11,272 +11,446 @@
   transition: transform 0.3s ease;
 }
 
-/* Base Animation States */
-.animated-flame-logo.animated {
-  animation: flameBase 4s ease-in-out infinite;
+/* Individual Flame Part Animations */
+
+/* Main Flame Body - Subtle base movement */
+.flame-main {
+  transform-origin: 50% 100%;
+  animation: flameMainDance 3s ease-in-out infinite;
 }
 
-/* Individual Flame Fragment Animations */
-.flame-fragment {
-  transform-origin: center bottom;
-  animation-fill-mode: both;
+/* Left Flame Tongue - More erratic movement */
+.flame-left {
+  transform-origin: 50% 100%;
+  animation: flameLeftFlicker 2.1s ease-in-out infinite,
+             flameLeftSway 2.8s ease-in-out infinite;
 }
 
-.flame-bottom {
-  animation: flameFlicker 3s ease-in-out infinite,
-             flameGlow 2s ease-in-out infinite alternate;
-  animation-delay: 0s, 0.5s;
+/* Right Flame Tongue - Different rhythm */
+.flame-right {
+  transform-origin: 50% 100%;
+  animation: flameRightFlicker 1.9s ease-in-out infinite,
+             flameRightSway 3.2s ease-in-out infinite;
 }
 
-.flame-middle {
-  animation: flameFlicker 2.5s ease-in-out infinite,
-             flameSway 4s ease-in-out infinite,
-             flameGlow 1.8s ease-in-out infinite alternate;
-  animation-delay: 0.3s, 0s, 0.8s;
+/* Inner Flame - Quick intense flickering */
+.flame-inner {
+  transform-origin: 50% 100%;
+  animation: flameInnerFlicker 1.4s ease-in-out infinite,
+             flameInnerPulse 2.7s ease-in-out infinite;
 }
 
-.flame-top {
-  animation: flameFlicker 2s ease-in-out infinite,
-             flameSway 3s ease-in-out infinite,
-             flameIntensify 2.5s ease-in-out infinite;
-  animation-delay: 0.6s, 0.2s, 1s;
+/* Hot Core - Pulsing and breathing */
+.flame-core {
+  transform-origin: center;
+  animation: flameCoreBreath 1.8s ease-in-out infinite,
+             flameCoreGlow 2.3s ease-in-out infinite alternate;
 }
 
-/* Startup Animation */
-.animated-flame-container.startup {
-  animation: startupIgnition 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+/* Animated Particles */
+.particle-1 {
+  animation: particleFloat1 3.2s ease-in-out infinite,
+             particleFade1 2.1s ease-in-out infinite;
 }
 
-.animated-flame-container.startup .animated-flame-logo {
-  animation: startupFlameGrowth 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+.particle-2 {
+  animation: particleFloat2 2.8s ease-in-out infinite,
+             particleFade2 1.9s ease-in-out infinite;
 }
 
-.animated-flame-container.startup .flame-bottom {
-  animation: startupIgniteBottom 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
-             flameFlicker 3s ease-in-out 2s infinite;
+.particle-3 {
+  animation: particleFloat3 2.4s ease-in-out infinite,
+             particleFade3 1.6s ease-in-out infinite;
 }
 
-.animated-flame-container.startup .flame-middle {
-  animation: startupIgniteMiddle 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
-             flameFlicker 2.5s ease-in-out 2.5s infinite,
-             flameSway 4s ease-in-out 3s infinite;
+.particle-4 {
+  animation: particleFloat4 3.6s ease-in-out infinite,
+             particleFade4 2.5s ease-in-out infinite;
 }
 
-.animated-flame-container.startup .flame-top {
-  animation: startupIgniteTop 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
-             flameFlicker 2s ease-in-out 3s infinite,
-             flameSway 3s ease-in-out 3.2s infinite;
+/* Startup Animation Classes */
+.animated-flame-container.startup .flame-main {
+  animation: startupIgniteMain 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameMainDance 3s ease-in-out 2s infinite;
+}
+
+.animated-flame-container.startup .flame-left {
+  animation: startupIgniteLeft 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameLeftFlicker 2.1s ease-in-out 2.5s infinite,
+             flameLeftSway 2.8s ease-in-out 2.8s infinite;
+}
+
+.animated-flame-container.startup .flame-right {
+  animation: startupIgniteRight 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameRightFlicker 1.9s ease-in-out 3s infinite,
+             flameRightSway 3.2s ease-in-out 3.2s infinite;
+}
+
+.animated-flame-container.startup .flame-inner {
+  animation: startupIgniteInner 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameInnerFlicker 1.4s ease-in-out 2.8s infinite,
+             flameInnerPulse 2.7s ease-in-out 3.5s infinite;
+}
+
+.animated-flame-container.startup .flame-core {
+  animation: startupIgniteCore 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameCoreBreath 1.8s ease-in-out 3s infinite,
+             flameCoreGlow 2.3s ease-in-out 3.2s infinite alternate;
 }
 
 /* Keyframe Animations */
 
-/* Base flame movement */
-@keyframes flameBase {
+/* Main Flame Dance */
+@keyframes flameMainDance {
   0%, 100% {
-    transform: scale(1) translateY(0);
+    transform: scaleX(1) scaleY(1) rotate(0deg);
   }
-  25% {
-    transform: scale(1.02) translateY(-2px);
+  20% {
+    transform: scaleX(0.98) scaleY(1.02) rotate(-0.5deg);
   }
-  50% {
-    transform: scale(0.98) translateY(1px);
-  }
-  75% {
-    transform: scale(1.01) translateY(-1px);
-  }
-}
-
-/* Individual fragment flickering */
-@keyframes flameFlicker {
-  0%, 100% {
-    opacity: 1;
-    transform: scaleY(1) scaleX(1);
-  }
-  15% {
-    opacity: 0.9;
-    transform: scaleY(1.02) scaleX(0.98);
-  }
-  30% {
-    opacity: 0.95;
-    transform: scaleY(0.98) scaleX(1.01);
-  }
-  45% {
-    opacity: 1;
-    transform: scaleY(1.01) scaleX(0.99);
+  40% {
+    transform: scaleX(1.01) scaleY(0.99) rotate(0.3deg);
   }
   60% {
-    opacity: 0.92;
-    transform: scaleY(0.99) scaleX(1.02);
+    transform: scaleX(0.99) scaleY(1.01) rotate(-0.2deg);
   }
   80% {
-    opacity: 0.97;
-    transform: scaleY(1.03) scaleX(0.97);
+    transform: scaleX(1.02) scaleY(0.98) rotate(0.4deg);
   }
 }
 
-/* Swaying motion for upper flames */
-@keyframes flameSway {
+/* Left Flame Flickering */
+@keyframes flameLeftFlicker {
+  0%, 100% {
+    transform: scaleX(1) scaleY(1) skewX(0deg);
+    opacity: 1;
+  }
+  15% {
+    transform: scaleX(0.95) scaleY(1.08) skewX(-2deg);
+    opacity: 0.9;
+  }
+  30% {
+    transform: scaleX(1.03) scaleY(0.94) skewX(1deg);
+    opacity: 0.95;
+  }
+  45% {
+    transform: scaleX(0.97) scaleY(1.05) skewX(-1.5deg);
+    opacity: 0.87;
+  }
+  75% {
+    transform: scaleX(1.04) scaleY(0.96) skewX(2.5deg);
+    opacity: 1;
+  }
+}
+
+@keyframes flameLeftSway {
   0%, 100% {
     transform: translateX(0) rotate(0deg);
   }
   25% {
-    transform: translateX(1px) rotate(0.5deg);
+    transform: translateX(-1px) rotate(-1deg);
   }
   50% {
-    transform: translateX(-0.5px) rotate(-0.3deg);
+    transform: translateX(0.5px) rotate(0.5deg);
   }
   75% {
-    transform: translateX(0.8px) rotate(0.2deg);
+    transform: translateX(-0.8px) rotate(-0.8deg);
   }
 }
 
-/* Glow intensity variation */
-@keyframes flameGlow {
-  0% {
-    filter: brightness(1) saturate(1) drop-shadow(0 0 10px rgba(255, 107, 53, 0.4));
-  }
-  100% {
-    filter: brightness(1.1) saturate(1.2) drop-shadow(0 0 20px rgba(255, 107, 53, 0.8));
-  }
-}
-
-/* Top flame intensification */
-@keyframes flameIntensify {
+/* Right Flame Flickering */
+@keyframes flameRightFlicker {
   0%, 100% {
-    filter: brightness(1) contrast(1) saturate(1);
-  }
-  50% {
-    filter: brightness(1.15) contrast(1.1) saturate(1.3);
-  }
-}
-
-/* Startup Animation Keyframes */
-@keyframes startupIgnition {
-  0% {
-    transform: scale(0.3) translateY(20px);
-    opacity: 0;
-    filter: blur(3px);
-  }
-  20% {
-    transform: scale(0.5) translateY(10px);
-    opacity: 0.3;
-    filter: blur(2px);
-  }
-  40% {
-    transform: scale(0.7) translateY(5px);
-    opacity: 0.6;
-    filter: blur(1px);
-  }
-  60% {
-    transform: scale(0.85) translateY(2px);
-    opacity: 0.8;
-    filter: blur(0.5px);
-  }
-  80% {
-    transform: scale(0.95) translateY(1px);
-    opacity: 0.9;
-    filter: blur(0px);
-  }
-  100% {
-    transform: scale(1) translateY(0);
+    transform: scaleX(1) scaleY(1) skewX(0deg);
     opacity: 1;
-    filter: blur(0px);
+  }
+  12% {
+    transform: scaleX(1.02) scaleY(0.96) skewX(1.5deg);
+    opacity: 0.92;
+  }
+  35% {
+    transform: scaleX(0.96) scaleY(1.06) skewX(-1deg);
+    opacity: 0.88;
+  }
+  58% {
+    transform: scaleX(1.05) scaleY(0.93) skewX(2deg);
+    opacity: 0.96;
+  }
+  82% {
+    transform: scaleX(0.98) scaleY(1.03) skewX(-0.5deg);
+    opacity: 0.91;
   }
 }
 
-@keyframes startupFlameGrowth {
-  0% {
-    filter: drop-shadow(0 0 5px rgba(255, 107, 53, 0.2)) brightness(0.5);
-  }
-  25% {
-    filter: drop-shadow(0 0 10px rgba(255, 107, 53, 0.4)) brightness(0.7);
-  }
-  50% {
-    filter: drop-shadow(0 0 15px rgba(255, 107, 53, 0.5)) brightness(0.85);
-  }
-  75% {
-    filter: drop-shadow(0 0 18px rgba(255, 107, 53, 0.6)) brightness(0.95);
-  }
-  100% {
-    filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.6)) brightness(1);
-  }
-}
-
-/* Individual fragment startup ignition */
-@keyframes startupIgniteBottom {
-  0% {
-    opacity: 0;
-    transform: scaleY(0.2) scaleX(1.2) translateY(10px);
+@keyframes flameRightSway {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
   }
   30% {
-    opacity: 0.4;
-    transform: scaleY(0.5) scaleX(1.1) translateY(5px);
+    transform: translateX(1px) rotate(1.2deg);
   }
   60% {
-    opacity: 0.7;
-    transform: scaleY(0.8) scaleX(1.05) translateY(2px);
+    transform: translateX(-0.6px) rotate(-0.7deg);
   }
-  80% {
-    opacity: 0.9;
-    transform: scaleY(0.95) scaleX(1.02) translateY(1px);
-  }
-  100% {
-    opacity: 1;
-    transform: scaleY(1) scaleX(1) translateY(0);
+  85% {
+    transform: translateX(0.9px) rotate(0.9deg);
   }
 }
 
-@keyframes startupIgniteMiddle {
-  0% {
-    opacity: 0;
-    transform: scaleY(0.1) scaleX(1.3) translateY(15px);
+/* Inner Flame Intense Flickering */
+@keyframes flameInnerFlicker {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
   }
   20% {
-    opacity: 0.2;
-    transform: scaleY(0.3) scaleX(1.2) translateY(10px);
+    transform: scale(1.08);
+    opacity: 0.7;
   }
-  50% {
-    opacity: 0.6;
-    transform: scaleY(0.7) scaleX(1.1) translateY(5px);
+  40% {
+    transform: scale(0.94);
+    opacity: 0.85;
   }
-  70% {
+  60% {
+    transform: scale(1.06);
+    opacity: 0.75;
+  }
+  80% {
+    transform: scale(0.96);
     opacity: 0.8;
-    transform: scaleY(0.9) scaleX(1.05) translateY(2px);
-  }
-  90% {
-    opacity: 0.95;
-    transform: scaleY(0.98) scaleX(1.02) translateY(1px);
-  }
-  100% {
-    opacity: 1;
-    transform: scaleY(1) scaleX(1) translateY(0);
   }
 }
 
-@keyframes startupIgniteTop {
+@keyframes flameInnerPulse {
+  0%, 100% {
+    transform: scaleY(1) scaleX(1);
+  }
+  50% {
+    transform: scaleY(1.15) scaleX(0.92);
+  }
+}
+
+/* Core Breathing */
+@keyframes flameCoreBreath {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(2deg);
+  }
+}
+
+@keyframes flameCoreGlow {
   0% {
-    opacity: 0;
-    transform: scaleY(0.05) scaleX(1.4) translateY(20px);
-  }
-  10% {
-    opacity: 0.1;
-    transform: scaleY(0.2) scaleX(1.3) translateY(15px);
-  }
-  40% {
-    opacity: 0.5;
-    transform: scaleY(0.6) scaleX(1.2) translateY(8px);
-  }
-  60% {
-    opacity: 0.7;
-    transform: scaleY(0.8) scaleX(1.1) translateY(4px);
-  }
-  80% {
     opacity: 0.9;
-    transform: scaleY(0.95) scaleX(1.05) translateY(2px);
+    filter: brightness(1);
   }
   100% {
     opacity: 1;
-    transform: scaleY(1) scaleX(1) translateY(0);
+    filter: brightness(1.3);
+  }
+}
+
+/* Particle Animations */
+@keyframes particleFloat1 {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-3px) translateX(-1px);
+  }
+  50% {
+    transform: translateY(-6px) translateX(0.5px);
+  }
+  75% {
+    transform: translateY(-4px) translateX(-0.8px);
+  }
+}
+
+@keyframes particleFade1 {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes particleFloat2 {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  30% {
+    transform: translateY(-4px) translateX(1px);
+  }
+  60% {
+    transform: translateY(-7px) translateX(-0.5px);
+  }
+  85% {
+    transform: translateY(-3px) translateX(1.2px);
+  }
+}
+
+@keyframes particleFade2 {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  40% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes particleFloat3 {
+  0%, 100% {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+  35% {
+    transform: translateY(-5px) translateX(-0.8px) scale(1.2);
+  }
+  70% {
+    transform: translateY(-8px) translateX(0.3px) scale(0.8);
+  }
+}
+
+@keyframes particleFade3 {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  45% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes particleFloat4 {
+  0%, 100% {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+  40% {
+    transform: translateY(-6px) translateX(0.9px) scale(1.3);
+  }
+  80% {
+    transform: translateY(-9px) translateX(-0.4px) scale(0.7);
+  }
+}
+
+@keyframes particleFade4 {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  55% {
+    opacity: 0.25;
+  }
+}
+
+/* Startup Ignition Animations */
+@keyframes startupIgniteMain {
+  0% {
+    transform: scaleY(0.1) scaleX(1.5);
+    opacity: 0;
+  }
+  30% {
+    transform: scaleY(0.4) scaleX(1.3);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scaleY(0.8) scaleX(1.1);
+    opacity: 0.7;
+  }
+  80% {
+    transform: scaleY(0.95) scaleX(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scaleY(1) scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes startupIgniteLeft {
+  0% {
+    transform: scaleY(0.05) scaleX(2) rotate(-10deg);
+    opacity: 0;
+  }
+  20% {
+    transform: scaleY(0.2) scaleX(1.8) rotate(-8deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scaleY(0.6) scaleX(1.4) rotate(-5deg);
+    opacity: 0.6;
+  }
+  75% {
+    transform: scaleY(0.9) scaleX(1.1) rotate(-2deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scaleY(1) scaleX(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes startupIgniteRight {
+  0% {
+    transform: scaleY(0.05) scaleX(2) rotate(10deg);
+    opacity: 0;
+  }
+  15% {
+    transform: scaleY(0.15) scaleX(1.9) rotate(8deg);
+    opacity: 0.15;
+  }
+  45% {
+    transform: scaleY(0.55) scaleX(1.5) rotate(5deg);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scaleY(0.85) scaleX(1.2) rotate(2deg);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scaleY(1) scaleX(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes startupIgniteInner {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(0.3);
+    opacity: 0.3;
+  }
+  70% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  90% {
+    transform: scale(0.9);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes startupIgniteCore {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(0.5);
+    opacity: 0.4;
+  }
+  80% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
   }
 }
 
@@ -286,8 +460,44 @@
   filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.8));
 }
 
-.animated-flame-container:hover .flame-fragment {
-  animation-duration: 1.5s, 2s, 1.2s; /* Speed up animations on hover */
+.animated-flame-container:hover .flame-main {
+  animation-duration: 2s;
+}
+
+.animated-flame-container:hover .flame-left {
+  animation-duration: 1.5s, 2s;
+}
+
+.animated-flame-container:hover .flame-right {
+  animation-duration: 1.3s, 2.2s;
+}
+
+.animated-flame-container:hover .flame-inner {
+  animation-duration: 1s, 1.8s;
+}
+
+.animated-flame-container:hover .flame-core {
+  animation-duration: 1.2s, 1.5s;
+}
+
+/* Performance optimizations */
+.flame-main, 
+.flame-left, 
+.flame-right, 
+.flame-inner, 
+.flame-core {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.particle {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.animated-flame-logo {
+  will-change: transform, filter;
+  backface-visibility: hidden;
 }
 
 /* Responsive adjustments */
@@ -296,26 +506,12 @@
     filter: drop-shadow(0 0 15px rgba(255, 107, 53, 0.5));
   }
   
-  .animated-flame-container.startup {
-    animation-duration: 3s;
+  /* Reduce animation complexity on mobile */
+  .flame-left, .flame-right {
+    animation-duration: 2.5s, 3.5s;
   }
   
-  .animated-flame-container.startup .animated-flame-logo,
-  .animated-flame-container.startup .flame-bottom,
-  .animated-flame-container.startup .flame-middle,
-  .animated-flame-container.startup .flame-top {
-    animation-duration: 3s;
+  .flame-inner {
+    animation-duration: 1.8s, 3s;
   }
-}
-
-/* Performance optimizations */
-.flame-fragment {
-  will-change: transform, opacity, filter;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
-}
-
-.animated-flame-logo {
-  will-change: transform, filter;
-  backface-visibility: hidden;
 }

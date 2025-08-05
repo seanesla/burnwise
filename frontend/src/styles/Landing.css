@@ -46,7 +46,7 @@
   opacity: 0;
   transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1), transform 3s cubic-bezier(0.4, 0, 0.2, 1);
   object-fit: cover;
-  filter: brightness(0.3) contrast(1.2) saturate(1.1) hue-rotate(5deg);
+  filter: brightness(0.75) contrast(1.1) saturate(1.2);
   will-change: opacity, transform;
 }
 
@@ -62,8 +62,8 @@
   width: 100vw;
   height: 100vh;
   background: 
-    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 70%, rgba(0, 0, 0, 0.9) 100%);
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 70%, rgba(0, 0, 0, 0.5) 100%);
   pointer-events: none;
   z-index: 1;
   transition: background 0.3s ease-out;

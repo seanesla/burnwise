@@ -6,97 +6,184 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
     <div className={`animated-flame-container ${startupAnimation ? 'startup' : ''}`}>
       <svg
         width={size}
-        height={size * 0.98} // Maintain aspect ratio (495/504)
-        viewBox="0 0 36288 35640"
+        height={size}
+        viewBox="0 0 100 120"
         className={`animated-flame-logo ${animated ? 'animated' : ''}`}
         style={{ filter: 'drop-shadow(0 0 20px rgba(255, 107, 53, 0.6))' }}
       >
         {/* Fire Gradient Definitions */}
         <defs>
+          {/* Main Fire Gradient */}
           <linearGradient id="fireGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="#ff5722" stopOpacity="1">
+            <stop offset="0%" stopColor="#ff4500">
               <animate attributeName="stop-color" 
-                values="#ff5722;#ff6b35;#FFB000;#ff6b35;#ff5722" 
-                dur="3s" 
-                repeatCount="indefinite"/>
-            </stop>
-            <stop offset="30%" stopColor="#ff6b35" stopOpacity="1">
-              <animate attributeName="stop-color" 
-                values="#ff6b35;#FFB000;#ff8a50;#FFB000;#ff6b35" 
-                dur="2.5s" 
-                repeatCount="indefinite"/>
-            </stop>
-            <stop offset="60%" stopColor="#FFB000" stopOpacity="1">
-              <animate attributeName="stop-color" 
-                values="#FFB000;#ffd54f;#fff3a0;#ffd54f;#FFB000" 
+                values="#ff4500;#ff5722;#ff6b35;#ff5722;#ff4500" 
                 dur="2s" 
                 repeatCount="indefinite"/>
             </stop>
-            <stop offset="100%" stopColor="#fff3a0" stopOpacity="0.9">
+            <stop offset="30%" stopColor="#ff6b35">
               <animate attributeName="stop-color" 
-                values="#fff3a0;#ffffff;#fff8e1;#ffffff;#fff3a0" 
+                values="#ff6b35;#ff8a50;#FFB000;#ff8a50;#ff6b35" 
+                dur="2.3s" 
+                repeatCount="indefinite"/>
+            </stop>
+            <stop offset="70%" stopColor="#FFB000">
+              <animate attributeName="stop-color" 
+                values="#FFB000;#ffd54f;#fff3a0;#ffd54f;#FFB000" 
+                dur="1.8s" 
+                repeatCount="indefinite"/>
+            </stop>
+            <stop offset="100%" stopColor="#fff8e1">
+              <animate attributeName="stop-color" 
+                values="#fff8e1;#ffffff;#fff3a0;#ffffff;#fff8e1" 
                 dur="1.5s" 
                 repeatCount="indefinite"/>
             </stop>
           </linearGradient>
 
-          <radialGradient id="fireRadialGradient" cx="50%" cy="80%" r="60%">
-            <stop offset="0%" stopColor="#fff3a0" stopOpacity="0.8"/>
-            <stop offset="40%" stopColor="#FFB000" stopOpacity="1"/>
-            <stop offset="70%" stopColor="#ff6b35" stopOpacity="1"/>
-            <stop offset="100%" stopColor="#ff5722" stopOpacity="1"/>
-          </radialGradient>
+          {/* Secondary Fire Gradient */}
+          <linearGradient id="fireGradient2" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stopColor="#ff5722">
+              <animate attributeName="stop-color" 
+                values="#ff5722;#ff6b35;#ff8a50;#ff6b35;#ff5722" 
+                dur="1.7s" 
+                repeatCount="indefinite"/>
+            </stop>
+            <stop offset="50%" stopColor="#ff8a50">
+              <animate attributeName="stop-color" 
+                values="#ff8a50;#FFB000;#ffd54f;#FFB000;#ff8a50" 
+                dur="2.1s" 
+                repeatCount="indefinite"/>
+            </stop>
+            <stop offset="100%" stopColor="#ffd54f">
+              <animate attributeName="stop-color" 
+                values="#ffd54f;#fff3a0;#ffffff;#fff3a0;#ffd54f" 
+                dur="1.3s" 
+                repeatCount="indefinite"/>
+            </stop>
+          </linearGradient>
 
-          {/* Glow Filter */}
+          {/* Tertiary Fire Gradient */}
+          <linearGradient id="fireGradient3" x1="30%" y1="100%" x2="80%" y2="0%">
+            <stop offset="0%" stopColor="#ff6b35">
+              <animate attributeName="stop-color" 
+                values="#ff6b35;#ff8a50;#FFB000;#ff8a50;#ff6b35" 
+                dur="1.9s" 
+                repeatCount="indefinite"/>
+            </stop>
+            <stop offset="60%" stopColor="#FFB000">
+              <animate attributeName="stop-color" 
+                values="#FFB000;#ffd54f;#fff8e1;#ffd54f;#FFB000" 
+                dur="2.4s" 
+                repeatCount="indefinite"/>
+            </stop>
+            <stop offset="100%" stopColor="#fff3a0">
+              <animate attributeName="stop-color" 
+                values="#fff3a0;#ffffff;#fff8e1;#ffffff;#fff3a0" 
+                dur="1.6s" 
+                repeatCount="indefinite"/>
+            </stop>
+          </linearGradient>
+
+          {/* Glow Filters */}
           <filter id="fireGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
             <feMerge> 
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
 
-          {/* Fragment Masks for Individual Animation */}
-          <mask id="topFlame">
-            <rect width="100%" height="40%" fill="white"/>
-          </mask>
-          <mask id="midFlame">
-            <rect y="25%" width="100%" height="50%" fill="white"/>
-          </mask>
-          <mask id="bottomFlame">
-            <rect y="60%" width="100%" height="40%" fill="white"/>
-          </mask>
+          <filter id="innerGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+            <feMerge> 
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
 
-        {/* Transform group with proper scaling */}
-        <g transform="translate(0.000000,35640.000000) scale(7.200000,-7.200000)">
-          
-          {/* Bottom Flame Fragment */}
-          <path 
-            d="M0 2475 l0 -2475 2520 0 2520 0 0 2475 0 2475 -2520 0 -2520 0 0 -2475z m2773 2126 c-1 -2 1 -9 6 -15 22 -28 111 -208 111 -225 0 -11 4 -21 9 -23 5 -1 32 -52 61 -113 29 -60 84 -174 121 -253 38 -78 69 -149 69 -157 0 -8 -29 -67 -65 -131 -36 -64 -65 -119 -65 -122 0 -9 -82 -145 -95 -158 -6 -7 -25 -38 -41 -70 -16 -33 -32 -60 -36 -62 -5 -2 -8 -10 -8 -17 0 -7 -4 -15 -8 -17 -5 -1 -52 -70 -105 -153 -54 -82 -124 -188 -157 -235 -156 -222 -519 -779 -580 -889 -9 -15 -27 -42 -41 -60 l-26 -33 -15 24 c-16 25 -48 103 -53 129 -2 9 -24 69 -49 133 -48 120 -142 422 -152 488 -6 33 -2 43 32 85 57 70 140 160 293 318 379 390 550 606 615 776 16 41 32 83 37 94 43 98 81 336 95 585 3 69 8 128 11 132 2 4 12 0 22 -10 10 -9 16 -19 14 -21z m416 -1466 c13 -71 29 -164 36 -205 8 -41 23 -136 35 -210 12 -74 25 -151 30 -170 10 -35 9 -36 -73 -114 -130 -125 -805 -682 -814 -672 -2 1 8 23 21 47 14 24 32 64 42 89 10 25 36 74 59 110 57 87 220 383 217 393 -1 4 3 7 8 7 6 0 10 4 10 8 0 5 43 89 96 188 53 98 109 208 126 244 16 36 43 93 59 126 16 34 29 68 29 76 0 15 65 201 76 220 12 19 21 -8 43 -137z m391 -651 c0 -17 -279 -390 -385 -514 -35 -41 -64 -78 -64 -81 -1 -4 -21 -28 -45 -55 -25 -27 -43 -50 -41 -53 3 -2 -4 -10 -15 -18 -11 -8 -20 -21 -20 -29 0 -8 -4 -14 -8 -14 -5 0 -33 -30 -63 -67 -163 -203 -386 -463 -544 -633 -138 -149 -145 -158 -145 -169 0 -6 -4 -11 -9 -11 -13 0 -151 -166 -151 -181 0 -10 -3 -10 -12 -1 -12 12 -11 23 36 236 15 66 25 125 22 132 -3 7 -1 14 4 16 5 2 12 30 15 63 6 67 5 60 35 237 11 70 24 138 29 151 9 23 84 93 186 172 28 21 56 45 63 54 7 9 15 14 17 11 3 -4 39 23 150 112 35 28 240 177 355 258 58 40 111 81 118 89 7 9 15 14 17 11 3 -3 33 16 68 41 34 25 98 68 142 94 44 27 82 52 83 57 2 4 8 8 14 8 5 0 24 13 41 30 18 16 37 30 42 31 6 1 19 8 30 15 20 15 35 18 35 8z"
-            fill="url(#fireGradient)" 
-            filter="url(#fireGlow)"
-            mask="url(#bottomFlame)"
-            className="flame-fragment flame-bottom"
-          />
+        {/* Main Flame Body */}
+        <path 
+          d="M50 115 
+             Q35 110 25 95 
+             Q20 80 25 65 
+             Q30 50 40 40 
+             Q45 25 50 15 
+             Q55 25 60 40 
+             Q70 50 75 65 
+             Q80 80 75 95 
+             Q65 110 50 115 Z"
+          fill="url(#fireGradient)" 
+          filter="url(#fireGlow)"
+          className="flame-main"
+        />
 
-          {/* Middle Flame Fragment */}
-          <path 
-            d="M0 2475 l0 -2475 2520 0 2520 0 0 2475 0 2475 -2520 0 -2520 0 0 -2475z m2773 2126 c-1 -2 1 -9 6 -15 22 -28 111 -208 111 -225 0 -11 4 -21 9 -23 5 -1 32 -52 61 -113 29 -60 84 -174 121 -253 38 -78 69 -149 69 -157 0 -8 -29 -67 -65 -131 -36 -64 -65 -119 -65 -122 0 -9 -82 -145 -95 -158 -6 -7 -25 -38 -41 -70 -16 -33 -32 -60 -36 -62 -5 -2 -8 -10 -8 -17 0 -7 -4 -15 -8 -17 -5 -1 -52 -70 -105 -153 -54 -82 -124 -188 -157 -235 -156 -222 -519 -779 -580 -889 -9 -15 -27 -42 -41 -60 l-26 -33 -15 24 c-16 25 -48 103 -53 129 -2 9 -24 69 -49 133 -48 120 -142 422 -152 488 -6 33 -2 43 32 85 57 70 140 160 293 318 379 390 550 606 615 776 16 41 32 83 37 94 43 98 81 336 95 585 3 69 8 128 11 132 2 4 12 0 22 -10 10 -9 16 -19 14 -21z m416 -1466 c13 -71 29 -164 36 -205 8 -41 23 -136 35 -210 12 -74 25 -151 30 -170 10 -35 9 -36 -73 -114 -130 -125 -805 -682 -814 -672 -2 1 8 23 21 47 14 24 32 64 42 89 10 25 36 74 59 110 57 87 220 383 217 393 -1 4 3 7 8 7 6 0 10 4 10 8 0 5 43 89 96 188 53 98 109 208 126 244 16 36 43 93 59 126 16 34 29 68 29 76 0 15 65 201 76 220 12 19 21 -8 43 -137z m391 -651 c0 -17 -279 -390 -385 -514 -35 -41 -64 -78 -64 -81 -1 -4 -21 -28 -45 -55 -25 -27 -43 -50 -41 -53 3 -2 -4 -10 -15 -18 -11 -8 -20 -21 -20 -29 0 -8 -4 -14 -8 -14 -5 0 -33 -30 -63 -67 -163 -203 -386 -463 -544 -633 -138 -149 -145 -158 -145 -169 0 -6 -4 -11 -9 -11 -13 0 -151 -166 -151 -181 0 -10 -3 -10 -12 -1 -12 12 -11 23 36 236 15 66 25 125 22 132 -3 7 -1 14 4 16 5 2 12 30 15 63 6 67 5 60 35 237 11 70 24 138 29 151 9 23 84 93 186 172 28 21 56 45 63 54 7 9 15 14 17 11 3 -4 39 23 150 112 35 28 240 177 355 258 58 40 111 81 118 89 7 9 15 14 17 11 3 -3 33 16 68 41 34 25 98 68 142 94 44 27 82 52 83 57 2 4 8 8 14 8 5 0 24 13 41 30 18 16 37 30 42 31 6 1 19 8 30 15 20 15 35 18 35 8z"
-            fill="url(#fireRadialGradient)" 
-            filter="url(#fireGlow)"
-            mask="url(#midFlame)"
-            className="flame-fragment flame-middle"
-          />
+        {/* Left Flame Tongue */}
+        <path 
+          d="M35 85 
+             Q25 80 20 70 
+             Q15 55 20 45 
+             Q25 35 30 25 
+             Q35 15 40 8 
+             Q42 12 45 20 
+             Q48 30 45 40 
+             Q42 55 38 70 
+             Q36 78 35 85 Z"
+          fill="url(#fireGradient2)" 
+          filter="url(#innerGlow)"
+          className="flame-left"
+        />
 
-          {/* Top Flame Fragment */}
-          <path 
-            d="M0 2475 l0 -2475 2520 0 2520 0 0 2475 0 2475 -2520 0 -2520 0 0 -2475z m2773 2126 c-1 -2 1 -9 6 -15 22 -28 111 -208 111 -225 0 -11 4 -21 9 -23 5 -1 32 -52 61 -113 29 -60 84 -174 121 -253 38 -78 69 -149 69 -157 0 -8 -29 -67 -65 -131 -36 -64 -65 -119 -65 -122 0 -9 -82 -145 -95 -158 -6 -7 -25 -38 -41 -70 -16 -33 -32 -60 -36 -62 -5 -2 -8 -10 -8 -17 0 -7 -4 -15 -8 -17 -5 -1 -52 -70 -105 -153 -54 -82 -124 -188 -157 -235 -156 -222 -519 -779 -580 -889 -9 -15 -27 -42 -41 -60 l-26 -33 -15 24 c-16 25 -48 103 -53 129 -2 9 -24 69 -49 133 -48 120 -142 422 -152 488 -6 33 -2 43 32 85 57 70 140 160 293 318 379 390 550 606 615 776 16 41 32 83 37 94 43 98 81 336 95 585 3 69 8 128 11 132 2 4 12 0 22 -10 10 -9 16 -19 14 -21z m416 -1466 c13 -71 29 -164 36 -205 8 -41 23 -136 35 -210 12 -74 25 -151 30 -170 10 -35 9 -36 -73 -114 -130 -125 -805 -682 -814 -672 -2 1 8 23 21 47 14 24 32 64 42 89 10 25 36 74 59 110 57 87 220 383 217 393 -1 4 3 7 8 7 6 0 10 4 10 8 0 5 43 89 96 188 53 98 109 208 126 244 16 36 43 93 59 126 16 34 29 68 29 76 0 15 65 201 76 220 12 19 21 -8 43 -137z m391 -651 c0 -17 -279 -390 -385 -514 -35 -41 -64 -78 -64 -81 -1 -4 -21 -28 -45 -55 -25 -27 -43 -50 -41 -53 3 -2 -4 -10 -15 -18 -11 -8 -20 -21 -20 -29 0 -8 -4 -14 -8 -14 -5 0 -33 -30 -63 -67 -163 -203 -386 -463 -544 -633 -138 -149 -145 -158 -145 -169 0 -6 -4 -11 -9 -11 -13 0 -151 -166 -151 -181 0 -10 -3 -10 -12 -1 -12 12 -11 23 36 236 15 66 25 125 22 132 -3 7 -1 14 4 16 5 2 12 30 15 63 6 67 5 60 35 237 11 70 24 138 29 151 9 23 84 93 186 172 28 21 56 45 63 54 7 9 15 14 17 11 3 -4 39 23 150 112 35 28 240 177 355 258 58 40 111 81 118 89 7 9 15 14 17 11 3 -3 33 16 68 41 34 25 98 68 142 94 44 27 82 52 83 57 2 4 8 8 14 8 5 0 24 13 41 30 18 16 37 30 42 31 6 1 19 8 30 15 20 15 35 18 35 8z"
-            fill="url(#fireGradient)" 
-            filter="url(#fireGlow)"
-            mask="url(#topFlame)"
-            className="flame-fragment flame-top"
-          />
+        {/* Right Flame Tongue */}
+        <path 
+          d="M65 85 
+             Q75 80 80 70 
+             Q85 55 80 45 
+             Q75 35 70 25 
+             Q65 15 60 8 
+             Q58 12 55 20 
+             Q52 30 55 40 
+             Q58 55 62 70 
+             Q64 78 65 85 Z"
+          fill="url(#fireGradient3)" 
+          filter="url(#innerGlow)"
+          className="flame-right"
+        />
+
+        {/* Center Inner Flame */}
+        <path 
+          d="M50 95 
+             Q42 90 38 80 
+             Q35 65 40 55 
+             Q45 45 50 35 
+             Q55 45 60 55 
+             Q65 65 62 80 
+             Q58 90 50 95 Z"
+          fill="url(#fireGradient2)" 
+          filter="url(#innerGlow)"
+          className="flame-inner"
+          opacity="0.8"
+        />
+
+        {/* Hot Core */}
+        <ellipse 
+          cx="50" 
+          cy="75" 
+          rx="8" 
+          ry="12"
+          fill="url(#fireGradient3)"
+          filter="url(#innerGlow)"
+          className="flame-core"
+          opacity="0.9"
+        />
+
+        {/* Animated Particles */}
+        <g className="flame-particles">
+          <circle cx="45" cy="30" r="1" fill="#fff3a0" opacity="0.7" className="particle particle-1"/>
+          <circle cx="55" cy="25" r="0.8" fill="#ffd54f" opacity="0.6" className="particle particle-2"/>
+          <circle cx="48" cy="18" r="0.6" fill="#ffffff" opacity="0.8" className="particle particle-3"/>
+          <circle cx="52" cy="12" r="0.5" fill="#fff8e1" opacity="0.7" className="particle particle-4"/>
         </g>
       </svg>
     </div>
