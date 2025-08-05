@@ -1,0 +1,41 @@
+{
+  "name": "burnwise",
+  "version": "1.0.0",
+  "description": "Multi-Farm Agricultural Burn Coordinator - TiDB AgentX Hackathon 2025",
+  "scripts": {
+    "setup:check": "node check-setup.js",
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend:dev": "cd frontend && npm start",
+    "backend:install": "cd backend && npm install",
+    "frontend:install": "cd frontend && npm install",
+    "install:all": "npm install && npm run backend:install && npm run frontend:install",
+    "seed": "cd backend && node seed.js",
+    "test:workflow": "node test-workflow.js",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test"
+  },
+  "keywords": [
+    "agriculture",
+    "burn-coordination",
+    "tidb",
+    "hackathon",
+    "fire-theme",
+    "glass-morphism",
+    "multi-agent"
+  ],
+  "author": "BURNWISE Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "concurrently": "^8.2.2",
+    "mysql2": "^3.14.3",
+    "playwright": "^1.54.2",
+    "socket.io-client": "^4.8.1"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1"
+  }
+}
