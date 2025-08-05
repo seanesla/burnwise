@@ -18,6 +18,7 @@ const FullScreenStartup = ({ onComplete }) => {
       const centerX = window.innerWidth / 2 - 250;
       const centerY = window.innerHeight / 2 - 250;
       
+      console.log('Starting animation at center:', centerX, centerY);
       x.set(centerX);
       y.set(centerY);
       
@@ -65,8 +66,10 @@ const FullScreenStartup = ({ onComplete }) => {
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const navbarLogo = document.querySelector('.hero-logo');
+      console.log('Navbar logo element:', navbarLogo);
       if (navbarLogo) {
         const rect = navbarLogo.getBoundingClientRect();
+        console.log('Target rect:', rect);
         const targetX = rect.left;
         const targetY = rect.top;
         
@@ -115,7 +118,7 @@ const FullScreenStartup = ({ onComplete }) => {
             ref={logoRef}
             className="startup-logo-container"
             animate={controls}
-            style={{ x, y }}
+            style={{ x, y, scale }}
             initial={{
               scale: 0,
               opacity: 0,

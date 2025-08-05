@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { FaCalendarAlt, FaFire, FaSmog, FaSync, FaExclamationTriangle, FaCloudSun, FaInfoCircle } from 'react-icons/fa';
 
 const AlertsPanel = ({ farms }) => {
   const [alerts, setAlerts] = useState([]);
@@ -50,13 +51,13 @@ const AlertsPanel = ({ farms }) => {
 
   const getAlertIcon = (type) => {
     switch(type) {
-      case 'burn_scheduled': return 'CAL';
-      case 'burn_starting': return 'FIRE';
-      case 'smoke_warning': return 'SMOKE';
-      case 'schedule_change': return 'SYNC';
-      case 'conflict_detected': return 'ALERT';
-      case 'weather_alert': return 'WEATHER';
-      default: return 'INFO';
+      case 'burn_scheduled': return <FaCalendarAlt />;
+      case 'burn_starting': return <FaFire />;
+      case 'smoke_warning': return <FaSmog />;
+      case 'schedule_change': return <FaSync />;
+      case 'conflict_detected': return <FaExclamationTriangle />;
+      case 'weather_alert': return <FaCloudSun />;
+      default: return <FaInfoCircle />;
     }
   };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './AnimatedFlameLogo';
 import FullScreenStartup from './FullScreenStartup';
+import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
 import '../styles/Landing.css';
 
 const Landing = () => {
@@ -128,7 +129,7 @@ const Landing = () => {
               <div className="problem-grid">
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>SMOKE</span>
+                    <FaSmog style={{ fontSize: '4rem', color: '#ff6b35' }} />
                   </div>
                   <h3>Dangerous PM2.5 Levels</h3>
                   <p>Uncoordinated burns create PM2.5 concentrations exceeding EPA limits (35 µg/m³)<sup>1</sup>, 
@@ -137,7 +138,7 @@ const Landing = () => {
                 
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>AUTO</span>
+                    <FaCar style={{ fontSize: '4rem', color: '#ff6b35' }} />
                   </div>
                   <h3>Highway Visibility Crisis</h3>
                   <p>Smoke drift reduces visibility to under 100 meters on major highways, 
@@ -146,7 +147,7 @@ const Landing = () => {
                 
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>HEALTH</span>
+                    <FaHospital style={{ fontSize: '4rem', color: '#ff6b35' }} />
                   </div>
                   <h3>Community Health Impact</h3>
                   <p>Vulnerable populations including children and elderly face respiratory distress 
@@ -155,7 +156,7 @@ const Landing = () => {
                 
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>LAW</span>
+                    <FaBalanceScale style={{ fontSize: '4rem', color: '#ff6b35' }} />
                   </div>
                   <h3>Regulatory Violations</h3>
                   <p>Farmers face EPA fines up to $37,500 per day for air quality violations 
