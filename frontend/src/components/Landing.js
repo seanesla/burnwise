@@ -10,11 +10,12 @@ const Landing = () => {
   const [showCinematicBootup, setShowCinematicBootup] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 
-  // Video URLs for slideshow (you can replace with actual video URLs)
+  // Fire-themed video URLs for cinematic slideshow
   const videos = [
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+    '/forest-fire-night.mp4',
+    '/rice-straw-burning.mp4', 
+    '/rice-fields-wide-burn.mp4',
+    '/gentle-field-fire.mp4'
   ];
 
   // Check for first visit and show cinematic bootup
@@ -25,11 +26,11 @@ const Landing = () => {
     }
   }, []);
 
-  // Video slideshow effect
+  // Video slideshow effect with cinematic timing
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length);
-    }, 8000); // Change video every 8 seconds
+    }, 12000); // Change video every 12 seconds for more cinematic pacing
 
     return () => clearInterval(interval);
   }, [videos.length]);
@@ -49,8 +50,10 @@ const Landing = () => {
     setShowCinematicBootup(false);
   };
 
-  // Calculate video opacity based on scroll
-  const videoOpacity = Math.max(0, 1 - scrollY / 800);
+  // Calculate cinematic video opacity and parallax based on scroll
+  const videoOpacity = Math.max(0, 1 - Math.pow(scrollY / 1000, 1.5));
+  const videoTransform = `translateY(${scrollY * 0.5}px) scale(${1.05 + scrollY * 0.0001})`;
+  const overlayOpacity = Math.min(1, scrollY / 600);
 
   return (
     <>
@@ -61,7 +64,10 @@ const Landing = () => {
 
       <div className="landing-container">
         {/* Video Background */}
-        <div className="video-background" style={{ opacity: videoOpacity }}>
+        <div className="video-background" style={{ 
+          opacity: videoOpacity,
+          transform: videoTransform
+        }}>
           {videos.map((videoSrc, index) => (
             <video
               key={index}
@@ -70,11 +76,17 @@ const Landing = () => {
               muted
               loop
               playsInline
+              preload="metadata"
             >
               <source src={videoSrc} type="video/mp4" />
             </video>
           ))}
-          <div className="video-overlay"></div>
+          <div className="video-overlay" style={{
+            background: `
+              radial-gradient(ellipse at center, rgba(0, 0, 0, ${0.2 + overlayOpacity * 0.3}) 0%, rgba(0, 0, 0, ${0.8 + overlayOpacity * 0.2}) 100%),
+              linear-gradient(180deg, rgba(0, 0, 0, ${0.3 + overlayOpacity * 0.4}) 0%, rgba(0, 0, 0, ${0.6 + overlayOpacity * 0.3}) 70%, rgba(0, 0, 0, ${0.9 + overlayOpacity * 0.1}) 100%)
+            `
+          }}></div>
         </div>
 
         <div className="landing-content">
