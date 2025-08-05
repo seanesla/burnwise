@@ -212,8 +212,8 @@ const Map = ({ farms, burnRequests, selectedDate }) => {
               <p><strong>Date:</strong> ${properties.requestedDate}</p>
               <p><strong>Time:</strong> ${properties.startTime}</p>
               ${conflicts.data?.conflictsFound > 0 ? 
-                `<p class="conflict-warning">⚠️ ${conflicts.data.conflictsFound} conflicts detected</p>` : 
-                '<p class="no-conflicts">✅ No conflicts</p>'
+                `<p class="conflict-warning">WARNING: ${conflicts.data.conflictsFound} conflicts detected</p>` : 
+                '<p class="no-conflicts">CLEAR: No conflicts</p>'
               }
             </div>
           `)

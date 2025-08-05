@@ -526,7 +526,7 @@
 }
 
 .benefit-card li::before {
-  content: '✓';
+  content: 'CHECK';
   position: absolute;
   left: 0;
   color: #ff6b35;

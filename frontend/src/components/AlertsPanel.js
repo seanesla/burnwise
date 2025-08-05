@@ -50,13 +50,13 @@ const AlertsPanel = ({ farms }) => {
 
   const getAlertIcon = (type) => {
     switch(type) {
-      case 'burn_scheduled': return '📅';
-      case 'burn_starting': return '🔥';
-      case 'smoke_warning': return '💨';
-      case 'schedule_change': return '🔄';
-      case 'conflict_detected': return '⚠️';
-      case 'weather_alert': return '🌤️';
-      default: return '📢';
+      case 'burn_scheduled': return 'CAL';
+      case 'burn_starting': return 'FIRE';
+      case 'smoke_warning': return 'SMOKE';
+      case 'schedule_change': return 'SYNC';
+      case 'conflict_detected': return 'ALERT';
+      case 'weather_alert': return 'WEATHER';
+      default: return 'INFO';
     }
   };
 

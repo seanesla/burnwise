@@ -127,7 +127,7 @@ const Landing = () => {
               <div className="problem-grid">
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem' }}>💨</span>
+                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>SMOKE</span>
                   </div>
                   <h3>Dangerous PM2.5 Levels</h3>
                   <p>Uncoordinated burns create PM2.5 concentrations exceeding EPA limits (35 µg/m³)<sup>1</sup>, 
@@ -136,7 +136,7 @@ const Landing = () => {
                 
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem' }}>🚗</span>
+                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>AUTO</span>
                   </div>
                   <h3>Highway Visibility Crisis</h3>
                   <p>Smoke drift reduces visibility to under 100 meters on major highways, 
@@ -145,7 +145,7 @@ const Landing = () => {
                 
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem' }}>🏥</span>
+                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>HEALTH</span>
                   </div>
                   <h3>Community Health Impact</h3>
                   <p>Vulnerable populations including children and elderly face respiratory distress 
@@ -154,7 +154,7 @@ const Landing = () => {
                 
                 <div className="problem-card">
                   <div className="problem-icon">
-                    <span style={{ fontSize: '4rem' }}>⚖️</span>
+                    <span style={{ fontSize: '4rem', fontWeight: 'bold' }}>LAW</span>
                   </div>
                   <h3>Regulatory Violations</h3>
                   <p>Farmers face EPA fines up to $37,500 per day for air quality violations 
@@ -226,7 +226,7 @@ const Landing = () => {
               
               <div className="tech-grid">
                 <div className="tech-card">
-                  <h3>🗄️ TiDB Vector Database</h3>
+                  <h3>TiDB Vector Database</h3>
                   <ul>
                     <li><strong>Weather Pattern Embeddings:</strong> 128-dimensional vectors for historical weather matching</li>
                     <li><strong>Smoke Plume Vectors:</strong> 64-dimensional dispersion pattern storage</li>
@@ -236,7 +236,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="tech-card">
-                  <h3>🌤️ Weather Intelligence</h3>
+                  <h3>Weather Intelligence</h3>
                   <ul>
                     <li><strong>OpenWeatherMap Integration:</strong> Real-time meteorological data</li>
                     <li><strong>Gaussian Plume Model:</strong> Physics-based smoke dispersion calculation</li>
@@ -265,7 +265,7 @@ const Landing = () => {
               
               <div className="benefits-grid">
                 <div className="benefit-card">
-                  <h3>🌍 Environmental Protection</h3>
+                  <h3>Environmental Protection</h3>
                   <ul>
                     <li>75% reduction in PM2.5 exceedance events</li>
                     <li>Improved air quality index scores regionally</li>
@@ -275,7 +275,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="benefit-card">
-                  <h3>👥 Public Safety</h3>
+                  <h3>Public Safety</h3>
                   <ul>
                     <li>90% reduction in smoke-related traffic incidents</li>
                     <li>Fewer emergency room visits during burn season</li>
@@ -285,7 +285,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="benefit-card">
-                  <h3>💰 Economic Benefits</h3>
+                  <h3>Economic Benefits</h3>
                   <ul>
                     <li>Zero EPA violations for participating farms</li>
                     <li>$2.3M saved in avoided fines annually</li>
