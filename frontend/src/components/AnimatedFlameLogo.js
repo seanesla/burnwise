@@ -7,7 +7,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
       <svg
         width={size}
         height={size}
-        viewBox="0 0 504 495"
+        viewBox="0 0 1000 1200"
         className={`animated-flame-logo ${animated ? 'animated' : ''}`}
         style={{ filter: 'drop-shadow(0 0 20px rgba(255, 107, 53, 0.6))' }}
       >
@@ -102,7 +102,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
         </defs>
 
         {/* Transform group to properly position and scale */}
-        <g transform="translate(0,495) scale(0.248,-0.248)">
+        <g transform="translate(100,1150) scale(0.248,-0.248)">
           
           {/* Main Flame Body - Largest Path */}
           <path 
