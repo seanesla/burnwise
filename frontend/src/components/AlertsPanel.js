@@ -2,10 +2,32 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { FaCalendarAlt, FaFire, FaSmog, FaSync, FaExclamationTriangle, FaCloudSun, FaInfoCircle } from 'react-icons/fa';
 
-const AlertsPanel = ({ farms }) => {
+const AlertsPanel = ({ farms = [] }) => {
   const [alerts, setAlerts] = useState([]);
   const [selectedFarm, setSelectedFarm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [farmsData, setFarmsData] = useState(farms);
+
+  useEffect(() => {
+    if (farms.length === 0) {
+      fetchFarms();
+    }
+  }, []);
+
+  const fetchFarms = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/api/farms');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setFarmsData(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching farms:', error);
+      setFarmsData([]);
+    }
+  };
 
   useEffect(() => {
     if (selectedFarm) {
@@ -99,7 +121,7 @@ const AlertsPanel = ({ farms }) => {
             className="farm-selector"
           >
             <option value="">-- Select Farm --</option>
-            {farms.map(farm => (
+            {farmsData.map(farm => (
               <option key={farm.farm_id} value={farm.farm_id}>
                 {farm.farm_name}
               </option>

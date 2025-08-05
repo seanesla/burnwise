@@ -21,6 +21,12 @@ body {
   background: var(--bg-gradient);
 }
 
+.app-content {
+  padding-top: 70px; /* Account for fixed navigation */
+  min-height: calc(100vh - 70px);
+  width: 100%;
+}
+
 .navbar {
   background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(20px) saturate(150%);
@@ -112,8 +118,9 @@ body {
 
 .map-container {
   display: flex;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 70px);
   background: #000;
+  position: relative;
 }
 
 .map-sidebar {

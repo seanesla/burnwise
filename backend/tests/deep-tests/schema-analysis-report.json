@@ -1,0 +1,202 @@
+{
+  "issues": [
+    {
+      "table": "farms",
+      "issue": "Missing columns: id, name, location, total_acreage",
+      "severity": "high",
+      "missingColumns": [
+        "id",
+        "name",
+        "location",
+        "total_acreage"
+      ]
+    },
+    {
+      "table": "burn_requests",
+      "issue": "Missing columns: id, farm_id, acreage, crop_type, requested_window_start, requested_window_end",
+      "severity": "high",
+      "missingColumns": [
+        "id",
+        "farm_id",
+        "acreage",
+        "crop_type",
+        "requested_window_start",
+        "requested_window_end"
+      ]
+    },
+    {
+      "table": "alerts",
+      "issue": "Missing columns: id, type, status, acknowledged_at, resolved_at",
+      "severity": "high",
+      "missingColumns": [
+        "id",
+        "type",
+        "status",
+        "acknowledged_at",
+        "resolved_at"
+      ]
+    },
+    {
+      "table": "weather_conditions",
+      "issue": "Missing columns: id, location_lat, location_lng, temperature, humidity, wind_speed, wind_direction, timestamp",
+      "severity": "high",
+      "missingColumns": [
+        "id",
+        "location_lat",
+        "location_lng",
+        "temperature",
+        "humidity",
+        "wind_speed",
+        "wind_direction",
+        "timestamp"
+      ]
+    },
+    {
+      "table": "smoke_predictions",
+      "issue": "Missing columns: id, max_dispersion_km, peak_pm25_concentration",
+      "severity": "high",
+      "missingColumns": [
+        "id",
+        "max_dispersion_km",
+        "peak_pm25_concentration"
+      ]
+    },
+    {
+      "table": "burn_requests",
+      "issue": "Vector column burn_vector missing",
+      "severity": "high"
+    }
+  ],
+  "fixes": [
+    {
+      "table": "farms",
+      "column": "id",
+      "sql": "ALTER TABLE farms ADD COLUMN id INT PRIMARY KEY AUTO_INCREMENT;"
+    },
+    {
+      "table": "farms",
+      "column": "name",
+      "sql": "ALTER TABLE farms ADD COLUMN name VARCHAR(255) NOT NULL;"
+    },
+    {
+      "table": "farms",
+      "column": "location",
+      "sql": "ALTER TABLE farms ADD COLUMN location POINT;"
+    },
+    {
+      "table": "farms",
+      "column": "total_acreage",
+      "sql": "ALTER TABLE farms ADD COLUMN total_acreage DECIMAL(10, 2);"
+    },
+    {
+      "table": "burn_requests",
+      "column": "id",
+      "sql": "ALTER TABLE burn_requests ADD COLUMN id INT PRIMARY KEY AUTO_INCREMENT;"
+    },
+    {
+      "table": "burn_requests",
+      "column": "farm_id",
+      "sql": "ALTER TABLE burn_requests ADD COLUMN farm_id INT;"
+    },
+    {
+      "table": "burn_requests",
+      "column": "acreage",
+      "sql": "ALTER TABLE burn_requests ADD COLUMN acreage DECIMAL(10, 2);"
+    },
+    {
+      "table": "burn_requests",
+      "column": "crop_type",
+      "sql": "ALTER TABLE burn_requests ADD COLUMN crop_type VARCHAR(100);"
+    },
+    {
+      "table": "burn_requests",
+      "column": "requested_window_start",
+      "sql": "ALTER TABLE burn_requests ADD COLUMN requested_window_start DATETIME;"
+    },
+    {
+      "table": "burn_requests",
+      "column": "requested_window_end",
+      "sql": "ALTER TABLE burn_requests ADD COLUMN requested_window_end DATETIME;"
+    },
+    {
+      "table": "alerts",
+      "column": "id",
+      "sql": "ALTER TABLE alerts ADD COLUMN id INT PRIMARY KEY AUTO_INCREMENT;"
+    },
+    {
+      "table": "alerts",
+      "column": "type",
+      "sql": "ALTER TABLE alerts ADD COLUMN type ENUM('warning', 'danger', 'info', 'success') DEFAULT 'info';"
+    },
+    {
+      "table": "alerts",
+      "column": "status",
+      "sql": "ALTER TABLE alerts ADD COLUMN status ENUM('pending', 'approved', 'scheduled', 'active', 'completed', 'cancelled') DEFAULT 'pending';"
+    },
+    {
+      "table": "alerts",
+      "column": "acknowledged_at",
+      "sql": "ALTER TABLE alerts ADD COLUMN acknowledged_at TIMESTAMP NULL;"
+    },
+    {
+      "table": "alerts",
+      "column": "resolved_at",
+      "sql": "ALTER TABLE alerts ADD COLUMN resolved_at TIMESTAMP NULL;"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "id",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN id INT PRIMARY KEY AUTO_INCREMENT;"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "location_lat",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN location_lat DECIMAL(10, 8);"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "location_lng",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN location_lng DECIMAL(11, 8);"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "temperature",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN temperature DECIMAL(5, 2);"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "humidity",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN humidity INT;"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "wind_speed",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN wind_speed DECIMAL(5, 2);"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "wind_direction",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN wind_direction INT;"
+    },
+    {
+      "table": "weather_conditions",
+      "column": "timestamp",
+      "sql": "ALTER TABLE weather_conditions ADD COLUMN timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"
+    },
+    {
+      "table": "smoke_predictions",
+      "column": "id",
+      "sql": "ALTER TABLE smoke_predictions ADD COLUMN id INT PRIMARY KEY AUTO_INCREMENT;"
+    },
+    {
+      "table": "smoke_predictions",
+      "column": "max_dispersion_km",
+      "sql": "ALTER TABLE smoke_predictions ADD COLUMN max_dispersion_km DECIMAL(10, 3);"
+    },
+    {
+      "table": "smoke_predictions",
+      "column": "peak_pm25_concentration",
+      "sql": "ALTER TABLE smoke_predictions ADD COLUMN peak_pm25_concentration DECIMAL(10, 3);"
+    }
+  ]
+}

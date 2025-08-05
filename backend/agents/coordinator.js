@@ -65,14 +65,15 @@ class CoordinatorAgent {
     try {
       const historicalData = await query(`
         SELECT 
-          crop_type,
-          AVG(priority_score) as avg_priority,
+          bf.crop_type,
+          AVG(br.priority_score) as avg_priority,
           COUNT(*) as request_count,
-          AVG(acres) as avg_acres
-        FROM burn_requests 
-        WHERE status = 'completed' 
-        AND created_at > DATE_SUB(NOW(), INTERVAL 2 YEAR)
-        GROUP BY crop_type
+          AVG(bf.area_hectares) as avg_acres
+        FROM burn_requests br
+        JOIN burn_fields bf ON br.field_id = bf.field_id
+        WHERE br.status = 'completed' 
+        AND br.created_at > DATE_SUB(NOW(), INTERVAL 2 YEAR)
+        GROUP BY bf.crop_type
       `);
       
       this.historicalPriorities = {};

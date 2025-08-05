@@ -5,13 +5,54 @@ import toast from 'react-hot-toast';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
 
-const Map = ({ farms, burnRequests, selectedDate }) => {
+const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOString().split('T')[0] }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [lng, setLng] = useState(-98.5795);
   const [lat, setLat] = useState(39.8283);
   const [zoom, setZoom] = useState(5);
   const [smokeOverlays, setSmokeOverlays] = useState([]);
+  const [farmsData, setFarmsData] = useState(farms);
+  const [burnData, setBurnData] = useState(burnRequests);
+
+  useEffect(() => {
+    if (farms.length === 0) {
+      fetchFarms();
+    }
+    if (burnRequests.length === 0) {
+      fetchBurnRequests();
+    }
+  }, [selectedDate]);
+
+  const fetchFarms = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/api/farms');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setFarmsData(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching farms:', error);
+      setFarmsData([]);
+    }
+  };
+
+  const fetchBurnRequests = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/burn-requests?date=${selectedDate}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setBurnData(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching burn requests:', error);
+      setBurnData([]);
+    }
+  };
 
   useEffect(() => {
     if (map.current) return;
@@ -52,12 +93,12 @@ const Map = ({ farms, burnRequests, selectedDate }) => {
       updateBurnRequestLayers();
       fetchSmokeDispersion();
     }
-  }, [burnRequests, selectedDate]);
+  }, [burnData, farmsData, selectedDate]);
 
   const addFarmLayers = () => {
-    if (!map.current || !farms.length) return;
+    if (!map.current || !farmsData.length) return;
 
-    const farmFeatures = farms.map(farm => ({
+    const farmFeatures = farmsData.map(farm => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
@@ -133,9 +174,9 @@ const Map = ({ farms, burnRequests, selectedDate }) => {
   };
 
   const addBurnRequestLayers = () => {
-    if (!map.current || !burnRequests.length) return;
+    if (!map.current || !burnData.length) return;
 
-    const burnFeatures = burnRequests.map(burn => {
+    const burnFeatures = burnData.map(burn => {
       if (!burn.geometry) return null;
       
       return {
@@ -233,7 +274,7 @@ const Map = ({ farms, burnRequests, selectedDate }) => {
 
   const fetchSmokeDispersion = async () => {
     try {
-      const activeBurns = burnRequests.filter(b => 
+      const activeBurns = burnData.filter(b => 
         b.status === 'active' || b.status === 'scheduled'
       );
 
@@ -468,13 +509,13 @@ const Map = ({ farms, burnRequests, selectedDate }) => {
         <div className="sidebar-section">
           <h3>Statistics</h3>
           <div className="stat-item">
-            <span>Active Farms:</span> {farms.length}
+            <span>Active Farms:</span> {farmsData.length}
           </div>
           <div className="stat-item">
-            <span>Burn Requests:</span> {burnRequests.length}
+            <span>Burn Requests:</span> {burnData.length}
           </div>
           <div className="stat-item">
-            <span>Active Burns:</span> {burnRequests.filter(b => b.status === 'active').length}
+            <span>Active Burns:</span> {burnData.filter(b => b.status === 'active').length}
           </div>
         </div>
       </div>

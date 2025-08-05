@@ -1,0 +1,236 @@
+.burn-request-form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(30, 30, 30, 0.95) 100%);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  box-shadow: 0 8px 32px rgba(255, 107, 53, 0.1);
+}
+
+.form-title {
+  color: #ff6b35;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+}
+
+/* Agent Workflow Status */
+.agent-workflow-status {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.agent-workflow-status h3 {
+  color: #FFB000;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.agent-status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+.agent-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.agent-status.processing {
+  border-color: #FFB000;
+  animation: pulse 1.5s infinite;
+  background: rgba(255, 176, 0, 0.1);
+}
+
+.agent-status.complete {
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 176, 0, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
+  }
+}
+
+.agent-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.agent-name {
+  color: #fff;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.agent-state {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+/* Form Styles */
+.burn-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group label {
+  color: #FFB000;
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 15px rgba(255, 107, 53, 0.3);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.submit-button {
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 1rem;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+  background: linear-gradient(135deg, #ff5722 0%, #ff6b35 100%);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Vector Info Section */
+.vector-info {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 176, 0, 0.2);
+}
+
+.vector-note {
+  color: #FFB000;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vector-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.vector-list li {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.vector-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #ff6b35;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .agent-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .vector-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .agent-status-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .burn-request-form-container {
+    padding: 1rem;
+  }
+}

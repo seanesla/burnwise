@@ -71,7 +71,7 @@ const generalLimiter = rateLimit({
     // Skip rate limiting for health checks
     return req.path === '/health';
   },
-  onLimitReached: (req, res, options) => {
+  handler: (req, res, next, options) => {
     const key = keyGenerator(req);
     logger.security('Rate limit exceeded', {
       key,
@@ -81,6 +81,8 @@ const generalLimiter = rateLimit({
       method: req.method
     });
     circuitBreaker.recordFailure();
+    
+    res.status(options.statusCode).json(options.message);
   }
 });
 
@@ -96,7 +98,7 @@ const strictLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator,
-  onLimitReached: (req, res, options) => {
+  handler: (req, res, next, options) => {
     const key = keyGenerator(req);
     logger.security('Strict rate limit exceeded', {
       key,
@@ -105,6 +107,8 @@ const strictLimiter = rateLimit({
       method: req.method,
       limitType: 'strict'
     });
+    
+    res.status(options.statusCode).json(options.message);
   }
 });
 
@@ -120,12 +124,14 @@ const vectorSearchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator,
-  onLimitReached: (req, res, options) => {
+  handler: (req, res, next, options) => {
     logger.security('Vector search rate limit exceeded', {
       key: keyGenerator(req),
       ip: req.ip,
       path: req.path
     });
+    
+    res.status(options.statusCode).json(options.message);
   }
 });
 

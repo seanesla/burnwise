@@ -123,30 +123,81 @@ const FullScreenStartup = ({ onComplete }) => {
       // Phase 3: Living Flame with Organic Motion + Shape Flickering (3-4s)
       setPhase('living');
       
-      // Gentle oscillation with spring physics
-      const livingSpring = { type: "spring", stiffness: 200, damping: 50, mass: 1.2 };
+      // Create living flame effect with sequential animations
+      const livingDuration = 1000; // 1 second total
       
-      // Independent fragment movements with springs + shape flickering
+      // Main fragment gentle sway - chain animations for oscillation
+      const mainOscillation = async () => {
+        await animate(mainX, -5, { type: "spring", stiffness: 200, damping: 50 });
+        await animate(mainX, 5, { type: "spring", stiffness: 200, damping: 50 });
+        await animate(mainX, 0, { type: "spring", stiffness: 200, damping: 50 });
+      };
+      
+      const mainYOscillation = async () => {
+        await animate(mainY, -3, { type: "spring", stiffness: 200, damping: 50 });
+        await animate(mainY, 3, { type: "spring", stiffness: 200, damping: 50 });
+        await animate(mainY, 0, { type: "spring", stiffness: 200, damping: 50 });
+      };
+      
+      const mainRotateOscillation = async () => {
+        await animate(mainRotate, -2, { type: "spring", stiffness: 200, damping: 50 });
+        await animate(mainRotate, 2, { type: "spring", stiffness: 200, damping: 50 });
+        await animate(mainRotate, 0, { type: "spring", stiffness: 200, damping: 50 });
+      };
+      
+      // Middle fragment oscillations
+      const middleOscillation = async () => {
+        await animate(middleX, 8, { type: "spring", stiffness: 250, damping: 45 });
+        await animate(middleX, -8, { type: "spring", stiffness: 250, damping: 45 });
+        await animate(middleX, 0, { type: "spring", stiffness: 250, damping: 45 });
+      };
+      
+      const middleYOscillation = async () => {
+        await animate(middleY, -5, { type: "spring", stiffness: 250, damping: 45 });
+        await animate(middleY, 5, { type: "spring", stiffness: 250, damping: 45 });
+        await animate(middleY, 0, { type: "spring", stiffness: 250, damping: 45 });
+      };
+      
+      const middleRotateOscillation = async () => {
+        await animate(middleRotate, 3, { type: "spring", stiffness: 250, damping: 45 });
+        await animate(middleRotate, -3, { type: "spring", stiffness: 250, damping: 45 });
+        await animate(middleRotate, 0, { type: "spring", stiffness: 250, damping: 45 });
+      };
+      
+      // Small fragment oscillations  
+      const smallOscillation = async () => {
+        await animate(smallX, -10, { type: "spring", stiffness: 300, damping: 40 });
+        await animate(smallX, 10, { type: "spring", stiffness: 300, damping: 40 });
+        await animate(smallX, 0, { type: "spring", stiffness: 300, damping: 40 });
+      };
+      
+      const smallYOscillation = async () => {
+        await animate(smallY, 8, { type: "spring", stiffness: 300, damping: 40 });
+        await animate(smallY, -8, { type: "spring", stiffness: 300, damping: 40 });
+        await animate(smallY, 0, { type: "spring", stiffness: 300, damping: 40 });
+      };
+      
+      const smallRotateOscillation = async () => {
+        await animate(smallRotate, -5, { type: "spring", stiffness: 300, damping: 40 });
+        await animate(smallRotate, 5, { type: "spring", stiffness: 300, damping: 40 });
+        await animate(smallRotate, 0, { type: "spring", stiffness: 300, damping: 40 });
+      };
+      
+      // Run all oscillations in parallel with shape morphing
       await Promise.all([
-        // Main fragment gentle sway
-        animate(mainX, [0, -5, 5, 0], { ...livingSpring, duration: 1 }),
-        animate(mainY, [0, -3, 3, 0], { ...livingSpring, duration: 1 }),
-        animate(mainRotate, [0, -2, 2, 0], { ...livingSpring, duration: 1 }),
-        
-        // Middle fragment more active
-        animate(middleX, [0, 8, -8, 0], { ...livingSpring, duration: 0.8 }),
-        animate(middleY, [0, -5, 5, 0], { ...livingSpring, duration: 0.8 }),
-        animate(middleRotate, [0, 3, -3, 0], { ...livingSpring, duration: 0.8 }),
-        
-        // Small fragment most active
-        animate(smallX, [0, -10, 10, 0], { ...livingSpring, duration: 0.6 }),
-        animate(smallY, [0, 8, -8, 0], { ...livingSpring, duration: 0.6 }),
-        animate(smallRotate, [0, -5, 5, 0], { ...livingSpring, duration: 0.6 }),
-        
-        // Shape morphing to living flame variations
-        animate(mainPathMorph, 2, { ...livingSpring, duration: 1 }),
-        animate(middlePathMorph, 2, { ...livingSpring, duration: 0.8 }),
-        animate(smallPathMorph, 2, { ...livingSpring, duration: 0.6 }),
+        mainOscillation(),
+        mainYOscillation(),
+        mainRotateOscillation(),
+        middleOscillation(),
+        middleYOscillation(),
+        middleRotateOscillation(),
+        smallOscillation(),
+        smallYOscillation(),
+        smallRotateOscillation(),
+        // Shape morphing
+        animate(mainPathMorph, 2, { type: "spring", stiffness: 200, damping: 50 }),
+        animate(middlePathMorph, 2, { type: "spring", stiffness: 250, damping: 45 }),
+        animate(smallPathMorph, 2, { type: "spring", stiffness: 300, damping: 40 }),
       ]);
       
       // Phase 4: Flight to navbar with Spring Physics (4-5s)
@@ -210,15 +261,12 @@ const FullScreenStartup = ({ onComplete }) => {
   
   // Helper function to get morphed path
   const getMorphedPath = (paths, morphValue) => {
-    const index = Math.floor(morphValue);
-    const progress = morphValue - index;
+    // Ensure morphValue is a number and not undefined
+    const value = typeof morphValue === 'number' ? morphValue : 0;
+    const index = Math.min(Math.floor(value), paths.length - 1);
     
-    if (index >= paths.length - 1) {
-      return paths[paths.length - 1];
-    }
-    
-    // Simple path interpolation - in production, use a proper SVG morphing library
-    return paths[index];
+    // Return the path at the current index
+    return paths[Math.max(0, index)];
   };
   
   return (
@@ -345,11 +393,15 @@ const FullScreenStartup = ({ onComplete }) => {
                 
                 {/* Dynamic motion blur for flight */}
                 <filter id="motionBlurFlight" x="-50%" y="-10%" width="200%" height="120%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="4,0" />
-                  <feOffset dx="-3" dy="0" />
-                  <feFlood floodColor="#ff6b35" floodOpacity="0.3" />
-                  <feComposite operator="multiply" in2="SourceGraphic" />
-                  <feComposite operator="screen" in2="SourceGraphic" />
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="4,0" result="blur" />
+                  <feOffset in="blur" dx="-3" dy="0" result="offsetBlur" />
+                  <feFlood floodColor="#ff6b35" floodOpacity="0.3" result="floodColor" />
+                  <feComposite operator="in" in="floodColor" in2="offsetBlur" result="tinted" />
+                  <feComposite operator="over" in="tinted" in2="SourceGraphic" result="final" />
+                  <feMerge>
+                    <feMergeNode in="final" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
                 </filter>
                 
                 {/* Particle glow effect */}
@@ -365,7 +417,7 @@ const FullScreenStartup = ({ onComplete }) => {
               <g transform="translate(100,1150) scale(0.248,-0.248)">
                 {/* Main flame fragment with morphing */}
                 <motion.path
-                  d={getMorphedPath(flamePathVariants.mainPaths, mainPathMorph.get())}
+                  d={flamePathVariants.mainPaths[0]}
                   fill={phase === 'ignition' ? "url(#fireGradientIgnition)" : 
                         phase === 'living' ? "url(#fireGradientLiving)" : 
                         "url(#fireGradient1)"}
@@ -380,15 +432,11 @@ const FullScreenStartup = ({ onComplete }) => {
                     scale: mainScale,
                     opacity: mainOpacity,
                   }}
-                  animate={{
-                    d: flamePathVariants.mainPaths[Math.floor(mainPathMorph.get())] || flamePathVariants.mainPaths[0]
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 40 }}
                 />
                 
                 {/* Middle flame fragment with morphing */}
                 <motion.path
-                  d={getMorphedPath(flamePathVariants.middlePaths, middlePathMorph.get())}
+                  d={flamePathVariants.middlePaths[0]}
                   fill={phase === 'ignition' ? "url(#fireGradientIgnition)" : 
                         phase === 'living' ? "url(#fireGradientLiving)" : 
                         "url(#fireGradient1)"}
@@ -403,15 +451,11 @@ const FullScreenStartup = ({ onComplete }) => {
                     scale: middleScale,
                     opacity: middleOpacity,
                   }}
-                  animate={{
-                    d: flamePathVariants.middlePaths[Math.floor(middlePathMorph.get())] || flamePathVariants.middlePaths[0]
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 40 }}
                 />
                 
                 {/* Small flame fragment with morphing */}
                 <motion.path
-                  d={getMorphedPath(flamePathVariants.smallPaths, smallPathMorph.get())}
+                  d={flamePathVariants.smallPaths[0]}
                   fill={phase === 'ignition' ? "url(#fireGradientIgnition)" : 
                         phase === 'living' ? "url(#fireGradientLiving)" : 
                         "url(#fireGradient1)"}
@@ -426,10 +470,6 @@ const FullScreenStartup = ({ onComplete }) => {
                     scale: smallScale,
                     opacity: smallOpacity,
                   }}
-                  animate={{
-                    d: flamePathVariants.smallPaths[Math.floor(smallPathMorph.get())] || flamePathVariants.smallPaths[0]
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 40 }}
                 />
               </g>
             </svg>

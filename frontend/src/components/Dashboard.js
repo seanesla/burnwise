@@ -1,14 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
+import BurnRequestForm from './BurnRequestForm';
 
-const Dashboard = ({ burnRequests, selectedDate }) => {
+const Dashboard = ({ burnRequests = [], selectedDate = new Date().toISOString().split('T')[0] }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [burnData, setBurnData] = useState(burnRequests);
+  const [showBurnForm, setShowBurnForm] = useState(false);
 
   useEffect(() => {
     fetchAnalytics();
+    if (burnRequests.length === 0) {
+      fetchBurnRequests();
+    }
   }, [selectedDate]);
+
+  const fetchBurnRequests = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5001/api/burn-requests?date=${selectedDate}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setBurnData(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching burn requests:', error);
+      setBurnData([]);
+    }
+  };
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -16,9 +39,11 @@ const Dashboard = ({ burnRequests, selectedDate }) => {
       const response = await fetch(
         `http://localhost:5001/api/analytics/dashboard?startDate=${selectedDate}&endDate=${selectedDate}`
       );
-      const data = await response.json();
-      if (data.success) {
-        setAnalytics(data.data);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAnalytics(data.data);
+        }
       }
     } catch (error) {
       toast.error('Failed to load analytics');
@@ -28,7 +53,7 @@ const Dashboard = ({ burnRequests, selectedDate }) => {
     }
   };
 
-  const statusData = burnRequests.reduce((acc, req) => {
+  const statusData = (burnData || []).reduce((acc, req) => {
     const status = req.status;
     const existing = acc.find(item => item.name === status);
     if (existing) {
@@ -50,13 +75,13 @@ const Dashboard = ({ burnRequests, selectedDate }) => {
 
   const hourlyData = Array.from({ length: 24 }, (_, i) => ({
     hour: `${i}:00`,
-    burns: burnRequests.filter(r => {
+    burns: (burnData || []).filter(r => {
       const hour = parseInt(r.requested_start_time?.split(':')[0] || 0);
       return hour === i;
     }).length
   }));
 
-  const cropData = burnRequests.reduce((acc, req) => {
+  const cropData = (burnData || []).reduce((acc, req) => {
     const crop = req.crop_type || 'Unknown';
     const existing = acc.find(item => item.crop === crop);
     if (existing) {
@@ -86,7 +111,38 @@ const Dashboard = ({ burnRequests, selectedDate }) => {
       <div className="dashboard-header">
         <h2>Burn Coordination Dashboard</h2>
         <p>Date: {selectedDate}</p>
+        <button 
+          onClick={() => setShowBurnForm(!showBurnForm)}
+          className="burn-request-toggle"
+          style={{
+            marginTop: '1rem',
+            padding: '0.75rem 1.5rem',
+            background: 'linear-gradient(135deg, #ff6b35 0%, #ff5722 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}
+        >
+          {showBurnForm ? 'Hide Burn Request Form' : '🔥 Submit New Burn Request'}
+        </button>
       </div>
+
+      {showBurnForm && (
+        <div style={{ marginBottom: '3rem' }}>
+          <BurnRequestForm 
+            onSubmitSuccess={(data) => {
+              setShowBurnForm(false);
+              fetchBurnRequests();
+              fetchAnalytics();
+              toast.success('Burn request processed by 5-agent system!');
+            }}
+          />
+        </div>
+      )}
 
       <div className="metrics-grid">
         <div className="metric-card">

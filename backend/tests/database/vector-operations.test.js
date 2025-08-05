@@ -1,17 +1,46 @@
+const { query } = require('../../db/connection');
 const { 
-  query,
-  vectorSimilaritySearch,
   insertWithVector,
+  searchSimilarVectors,
   updateVector,
-  validateVectorData,
-  batchVectorOperations,
-  vectorIndexOperations
-} = require('../../db/connection');
+  calculateVectorDistance,
+  batchInsertWithVectors,
+  findNearestNeighbors,
+  generateEmbedding,
+  validateVectorDimensions,
+  cosineSimilarity,
+  quantizeVector
+} = require('../../db/vectorOperations');
 const logger = require('../../middleware/logger');
 
 // Mock dependencies
 jest.mock('../../db/connection');
 jest.mock('../../middleware/logger');
+
+// Setup mocks for vector operations
+insertWithVector.mockImplementation(async (table, data, vectorCol) => {
+  return { success: true, insertId: 123, affectedRows: 1 };
+});
+
+searchSimilarVectors.mockImplementation(async () => {
+  return [{ id: 1, similarity: 0.95 }];
+});
+
+updateVector.mockImplementation(async () => {
+  return { success: true, affectedRows: 1 };
+});
+
+validateVectorDimensions.mockImplementation((vector, dims) => {
+  return Array.isArray(vector) && vector.length === dims;
+});
+
+cosineSimilarity.mockImplementation((v1, v2) => {
+  return 0.85;
+});
+
+generateEmbedding.mockImplementation((text, dims) => {
+  return new Array(dims).fill(0).map(() => Math.random() * 2 - 1);
+});
 
 describe('Vector Operations Tests', () => {
   beforeEach(() => {

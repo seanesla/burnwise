@@ -5,19 +5,23 @@ import Dashboard from './components/Dashboard';
 import Map from './components/Map';
 import Schedule from './components/Schedule';
 import AlertsPanel from './components/AlertsPanel';
+import Navigation from './components/Navigation';
 import './styles/App.css';
 
 function App() {
   return (
     <div className="App">
       <Router>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/map" element={<Map />} />
-          <Route path="/schedule" element={<Schedule />} />
-          <Route path="/alerts" element={<AlertsPanel />} />
-        </Routes>
+        <Navigation />
+        <div className="app-content">
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/map" element={<Map />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/alerts" element={<AlertsPanel />} />
+          </Routes>
+        </div>
       </Router>
     </div>
   );
