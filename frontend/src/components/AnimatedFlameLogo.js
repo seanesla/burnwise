@@ -19,13 +19,13 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
               type="rotate"
               from="0 0.5 0.5"
               to="360 0.5 0.5"
-              dur="8s"
+              dur="11s"
               repeatCount="indefinite"
             />
             <stop offset="0%" stopColor="#d32f2f">
               <animate attributeName="stop-color" 
                 values="#d32f2f;#ff4500;#ff5722;#ff4500;#d32f2f" 
-                dur="3s" 
+                dur="4.1s" 
                 repeatCount="indefinite"/>
               <animate attributeName="offset" 
                 values="0%;5%;0%" 
@@ -45,7 +45,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
             <stop offset="60%" stopColor="#ff8a50">
               <animate attributeName="stop-color" 
                 values="#ff8a50;#FFB000;#ffd54f;#FFB000;#ff8a50" 
-                dur="2s" 
+                dur="3.1s" 
                 repeatCount="indefinite"/>
             </stop>
             <stop offset="85%" stopColor="#ffd54f">
@@ -57,7 +57,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
             <stop offset="100%" stopColor="#ffffff">
               <animate attributeName="stop-color" 
                 values="#ffffff;#fff8e1;#fff3a0;#fff8e1;#ffffff" 
-                dur="1.5s" 
+                dur="2.3s" 
                 repeatCount="indefinite"/>
             </stop>
           </linearGradient>
@@ -93,13 +93,13 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
               seed="2">
               <animate attributeName="baseFrequency" 
                 values="0.02 0.1;0.02 0.15;0.02 0.1" 
-                dur="3s" 
+                dur="4.1s" 
                 repeatCount="indefinite"/>
             </feTurbulence>
             <feDisplacementMap in="SourceGraphic" scale="8">
               <animate attributeName="scale" 
                 values="8;12;8" 
-                dur="2s" 
+                dur="3.1s" 
                 repeatCount="indefinite"/>
             </feDisplacementMap>
             {/* Glow effect */}
@@ -119,7 +119,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
               seed="5">
               <animate attributeName="seed" 
                 values="5;10;5" 
-                dur="1.5s" 
+                dur="2.3s" 
                 repeatCount="indefinite"/>
             </feTurbulence>
             <feDisplacementMap in="SourceGraphic" scale="3"/>
@@ -179,19 +179,21 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
             <animate 
               attributeName="d" 
               values="M2737 4632 c-3 -4 -8 -63 -11 -132 -14 -249 -52 -487 -95 -585 -5 -11 -21 -53 -37 -94 -65 -170 -236 -386 -615 -776 -153 -158 -236 -248 -293 -318 -34 -42 -38 -52 -32 -85 10 -66 104 -368 152 -488 25 -64 47 -124 49 -133 5 -26 37 -104 53 -129 l15 -24 26 33 c14 18 32 45 41 60 61 110 424 667 580 889 33 47 103 153 157 235 53 83 100 152 105 153 4 2 8 10 8 17 0 7 3 15 8 17 4 2 20 29 36 62 16 32 35 63 41 70 13 13 95 149 95 158 0 3 29 58 65 122 36 64 65 123 65 131 0 8 -31 79 -69 157 -37 79 -92 193 -121 253 -29 61 -56 112 -61 113 -5 2 -9 12 -9 23 0 17 -89 197 -111 225 -5 6 -7 13 -6 15 2 2 -4 12 -14 21 -10 10 -20 14 -22 10z;
+                      M2737 4632 c-3 -4 -10 -68 -13 -137 -16 -254 -54 -492 -100 -590 -6 -13 -23 -58 -39 -99 -70 -175 -241 -391 -625 -786 -158 -163 -241 -253 -298 -323 -36 -44 -40 -54 -34 -87 12 -68 106 -373 156 -498 27 -66 49 -129 51 -138 6 -28 39 -109 55 -134 l17 -26 28 35 c16 20 34 47 43 62 63 115 434 677 590 899 35 49 105 158 162 240 55 85 102 157 107 158 5 2 9 11 9 18 0 8 4 16 9 18 5 2 22 31 38 64 18 34 37 65 43 72 14 14 97 154 97 163 0 4 31 60 67 124 38 66 67 128 67 136 0 9 -33 81 -71 162 -39 81 -94 198 -123 258 -31 63 -58 117 -63 118 -6 2 -10 13 -10 24 0 18 -91 202 -113 230 -6 7 -8 14 -7 16 3 2 -3 13 -13 22 -11 11 -21 15 -23 11z;
                       M2737 4632 c-3 -4 -12 -73 -15 -142 -18 -259 -56 -497 -105 -605 -7 -15 -25 -63 -41 -104 -75 -180 -246 -406 -635 -796 -163 -168 -246 -258 -303 -328 -38 -46 -42 -56 -36 -89 14 -70 108 -378 160 -508 29 -68 51 -134 53 -143 7 -30 41 -114 57 -139 l19 -28 30 37 c18 22 36 49 45 64 65 120 444 687 600 909 37 51 107 163 167 245 57 87 104 162 109 163 6 2 10 12 10 19 0 9 5 17 10 19 6 2 24 33 40 66 20 36 39 67 45 74 15 15 99 159 99 168 0 5 33 62 69 126 40 68 69 133 69 141 0 10 -35 83 -73 167 -41 83 -96 203 -125 263 -33 65 -60 122 -65 123 -7 2 -11 14 -11 25 0 19 -93 207 -115 235 -7 8 -9 15 -8 17 4 2 -2 14 -12 23 -12 12 -22 16 -24 12z;
+                      M2737 4632 c-3 -4 -9 -65 -12 -134 -15 -251 -53 -489 -97 -587 -5 -12 -22 -55 -38 -96 -67 -172 -238 -388 -620 -781 -155 -160 -238 -250 -295 -320 -35 -43 -39 -53 -33 -86 11 -67 105 -370 154 -493 26 -65 48 -126 50 -135 5 -27 38 -106 54 -131 l16 -25 27 34 c15 19 33 46 42 61 62 112 428 672 585 894 34 48 104 155 159 237 54 84 101 154 106 155 4 2 8 10 8 17 0 7 3 15 8 17 4 2 21 30 37 63 17 33 36 64 42 71 13 13 96 151 96 160 0 3 30 59 66 123 37 65 66 125 66 133 0 8 -32 80 -70 159 -38 80 -93 195 -122 256 -30 62 -57 114 -62 115 -5 2 -9 12 -9 23 0 17 -90 199 -112 227 -5 6 -7 13 -6 15 2 2 -4 12 -14 21 -10 10 -20 14 -22 10z;
                       M2737 4632 c-3 -4 -8 -63 -11 -132 -14 -249 -52 -487 -95 -585 -5 -11 -21 -53 -37 -94 -65 -170 -236 -386 -615 -776 -153 -158 -236 -248 -293 -318 -34 -42 -38 -52 -32 -85 10 -66 104 -368 152 -488 25 -64 47 -124 49 -133 5 -26 37 -104 53 -129 l15 -24 26 33 c14 18 32 45 41 60 61 110 424 667 580 889 33 47 103 153 157 235 53 83 100 152 105 153 4 2 8 10 8 17 0 7 3 15 8 17 4 2 20 29 36 62 16 32 35 63 41 70 13 13 95 149 95 158 0 3 29 58 65 122 36 64 65 123 65 131 0 8 -31 79 -69 157 -37 79 -92 193 -121 253 -29 61 -56 112 -61 113 -5 2 -9 12 -9 23 0 17 -89 197 -111 225 -5 6 -7 13 -6 15 2 2 -4 12 -14 21 -10 10 -20 14 -22 10z"
-              dur="4s"
+              dur="7.3s"
               repeatCount="indefinite"
               calcMode="spline"
-              keySplines="0.4 0 0.6 1;0.4 0 0.6 1"
-              keyTimes="0;0.5;1"
+              keySplines="0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1;0.42 0 0.58 1"
+              keyTimes="0;0.2;0.4;0.7;1"
             />
             <animateTransform
               attributeName="transform"
               type="scale"
               values="1,1; 1.02,1.05; 1,1"
-              dur="3s"
+              dur="5.3s"
               repeatCount="indefinite"
               additive="sum"
             />
@@ -208,7 +210,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
               attributeName="transform"
               type="rotate"
               values="0 3146 3272; -3 3146 3272; 3 3146 3272; 0 3146 3272"
-              dur="2.3s"
+              dur="3.7s"
               repeatCount="indefinite"
               additive="sum"
             />
@@ -216,7 +218,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
               attributeName="transform"
               type="scale"
               values="1,1; 1.05,1.1; 0.95,1.05; 1,1"
-              dur="1.7s"
+              dur="2.9s"
               repeatCount="indefinite"
               additive="sum"
             />
@@ -232,7 +234,7 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
               attributeName="transform"
               type="rotate"
               values="0 3545 2476; -5 3545 2476; 5 3545 2476; 0 3545 2476"
-              dur="1.3s"
+              dur="2.3s"
               repeatCount="indefinite"
               additive="sum"
             />
@@ -240,14 +242,14 @@ const AnimatedFlameLogo = ({ size = 120, animated = true, startupAnimation = fal
               attributeName="transform"
               type="scale"
               values="1,1; 0.9,1.15; 1.1,0.95; 1,1"
-              dur="1.1s"
+              dur="1.9s"
               repeatCount="indefinite"
               additive="sum"
             />
             <animate
               attributeName="opacity"
               values="1; 0.8; 1"
-              dur="0.7s"
+              dur="1.3s"
               repeatCount="indefinite"
             />
           </path>

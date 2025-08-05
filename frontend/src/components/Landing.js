@@ -96,7 +96,7 @@ const Landing = () => {
               opacity: showCinematicBootup ? 0 : 1,
               transition: 'opacity 0.3s ease-in-out'
             }}>
-              <AnimatedFlameLogo size={120} animated={true} />
+              <AnimatedFlameLogo size={120} animated={true} startupAnimation={!showCinematicBootup} />
             </div>
             
             <h1 className="hero-title">BURNWISE</h1>
