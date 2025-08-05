@@ -58,12 +58,24 @@
 }
 
 /* Phase-specific animations */
+.fullscreen-startup[data-phase="ignition"] {
+  background: radial-gradient(ellipse at center, #000 0%, #0a0000 100%);
+}
+
 .fullscreen-startup[data-phase="ignition"] .startup-logo-container {
-  animation: ignitionShake 0.5s ease-out 0.5s;
+  animation: ignitionShake 0.5s ease-out 0.8s;
+}
+
+.fullscreen-startup[data-phase="pulse"] {
+  background: radial-gradient(ellipse at center, #000 0%, #100400 50%, #000 100%);
 }
 
 .fullscreen-startup[data-phase="pulse"] .startup-effects {
   animation: pulseGlow 1s ease-in-out infinite;
+}
+
+.fullscreen-startup[data-phase="flight"] {
+  background: radial-gradient(ellipse at center, #000 0%, #050000 100%);
 }
 
 @keyframes ignitionShake {

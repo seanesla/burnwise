@@ -67,8 +67,8 @@ const FullScreenStartup = ({ onComplete }) => {
       const navbarLogo = document.querySelector('.hero-logo');
       if (navbarLogo) {
         const rect = navbarLogo.getBoundingClientRect();
-        const targetX = rect.left + rect.width / 2 - 60; // Center of 120px logo
-        const targetY = rect.top + rect.height / 2 - 60;
+        const targetX = rect.left;
+        const targetY = rect.top;
         
         await controls.start({
           x: targetX,
@@ -106,6 +106,7 @@ const FullScreenStartup = ({ onComplete }) => {
       {phase !== 'complete' && (
         <motion.div
           className="fullscreen-startup"
+          data-phase={phase}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
