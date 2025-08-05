@@ -1,0 +1,321 @@
+/* Animated Flame Logo Styles */
+.animated-flame-container {
+  position: relative;
+  display: inline-block;
+  transform-origin: center bottom;
+}
+
+.animated-flame-logo {
+  filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.6));
+  transform-origin: center bottom;
+  transition: transform 0.3s ease;
+}
+
+/* Base Animation States */
+.animated-flame-logo.animated {
+  animation: flameBase 4s ease-in-out infinite;
+}
+
+/* Individual Flame Fragment Animations */
+.flame-fragment {
+  transform-origin: center bottom;
+  animation-fill-mode: both;
+}
+
+.flame-bottom {
+  animation: flameFlicker 3s ease-in-out infinite,
+             flameGlow 2s ease-in-out infinite alternate;
+  animation-delay: 0s, 0.5s;
+}
+
+.flame-middle {
+  animation: flameFlicker 2.5s ease-in-out infinite,
+             flameSway 4s ease-in-out infinite,
+             flameGlow 1.8s ease-in-out infinite alternate;
+  animation-delay: 0.3s, 0s, 0.8s;
+}
+
+.flame-top {
+  animation: flameFlicker 2s ease-in-out infinite,
+             flameSway 3s ease-in-out infinite,
+             flameIntensify 2.5s ease-in-out infinite;
+  animation-delay: 0.6s, 0.2s, 1s;
+}
+
+/* Startup Animation */
+.animated-flame-container.startup {
+  animation: startupIgnition 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animated-flame-container.startup .animated-flame-logo {
+  animation: startupFlameGrowth 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animated-flame-container.startup .flame-bottom {
+  animation: startupIgniteBottom 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameFlicker 3s ease-in-out 2s infinite;
+}
+
+.animated-flame-container.startup .flame-middle {
+  animation: startupIgniteMiddle 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameFlicker 2.5s ease-in-out 2.5s infinite,
+             flameSway 4s ease-in-out 3s infinite;
+}
+
+.animated-flame-container.startup .flame-top {
+  animation: startupIgniteTop 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             flameFlicker 2s ease-in-out 3s infinite,
+             flameSway 3s ease-in-out 3.2s infinite;
+}
+
+/* Keyframe Animations */
+
+/* Base flame movement */
+@keyframes flameBase {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+  }
+  25% {
+    transform: scale(1.02) translateY(-2px);
+  }
+  50% {
+    transform: scale(0.98) translateY(1px);
+  }
+  75% {
+    transform: scale(1.01) translateY(-1px);
+  }
+}
+
+/* Individual fragment flickering */
+@keyframes flameFlicker {
+  0%, 100% {
+    opacity: 1;
+    transform: scaleY(1) scaleX(1);
+  }
+  15% {
+    opacity: 0.9;
+    transform: scaleY(1.02) scaleX(0.98);
+  }
+  30% {
+    opacity: 0.95;
+    transform: scaleY(0.98) scaleX(1.01);
+  }
+  45% {
+    opacity: 1;
+    transform: scaleY(1.01) scaleX(0.99);
+  }
+  60% {
+    opacity: 0.92;
+    transform: scaleY(0.99) scaleX(1.02);
+  }
+  80% {
+    opacity: 0.97;
+    transform: scaleY(1.03) scaleX(0.97);
+  }
+}
+
+/* Swaying motion for upper flames */
+@keyframes flameSway {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(1px) rotate(0.5deg);
+  }
+  50% {
+    transform: translateX(-0.5px) rotate(-0.3deg);
+  }
+  75% {
+    transform: translateX(0.8px) rotate(0.2deg);
+  }
+}
+
+/* Glow intensity variation */
+@keyframes flameGlow {
+  0% {
+    filter: brightness(1) saturate(1) drop-shadow(0 0 10px rgba(255, 107, 53, 0.4));
+  }
+  100% {
+    filter: brightness(1.1) saturate(1.2) drop-shadow(0 0 20px rgba(255, 107, 53, 0.8));
+  }
+}
+
+/* Top flame intensification */
+@keyframes flameIntensify {
+  0%, 100% {
+    filter: brightness(1) contrast(1) saturate(1);
+  }
+  50% {
+    filter: brightness(1.15) contrast(1.1) saturate(1.3);
+  }
+}
+
+/* Startup Animation Keyframes */
+@keyframes startupIgnition {
+  0% {
+    transform: scale(0.3) translateY(20px);
+    opacity: 0;
+    filter: blur(3px);
+  }
+  20% {
+    transform: scale(0.5) translateY(10px);
+    opacity: 0.3;
+    filter: blur(2px);
+  }
+  40% {
+    transform: scale(0.7) translateY(5px);
+    opacity: 0.6;
+    filter: blur(1px);
+  }
+  60% {
+    transform: scale(0.85) translateY(2px);
+    opacity: 0.8;
+    filter: blur(0.5px);
+  }
+  80% {
+    transform: scale(0.95) translateY(1px);
+    opacity: 0.9;
+    filter: blur(0px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@keyframes startupFlameGrowth {
+  0% {
+    filter: drop-shadow(0 0 5px rgba(255, 107, 53, 0.2)) brightness(0.5);
+  }
+  25% {
+    filter: drop-shadow(0 0 10px rgba(255, 107, 53, 0.4)) brightness(0.7);
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(255, 107, 53, 0.5)) brightness(0.85);
+  }
+  75% {
+    filter: drop-shadow(0 0 18px rgba(255, 107, 53, 0.6)) brightness(0.95);
+  }
+  100% {
+    filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.6)) brightness(1);
+  }
+}
+
+/* Individual fragment startup ignition */
+@keyframes startupIgniteBottom {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.2) scaleX(1.2) translateY(10px);
+  }
+  30% {
+    opacity: 0.4;
+    transform: scaleY(0.5) scaleX(1.1) translateY(5px);
+  }
+  60% {
+    opacity: 0.7;
+    transform: scaleY(0.8) scaleX(1.05) translateY(2px);
+  }
+  80% {
+    opacity: 0.9;
+    transform: scaleY(0.95) scaleX(1.02) translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1) scaleX(1) translateY(0);
+  }
+}
+
+@keyframes startupIgniteMiddle {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.1) scaleX(1.3) translateY(15px);
+  }
+  20% {
+    opacity: 0.2;
+    transform: scaleY(0.3) scaleX(1.2) translateY(10px);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scaleY(0.7) scaleX(1.1) translateY(5px);
+  }
+  70% {
+    opacity: 0.8;
+    transform: scaleY(0.9) scaleX(1.05) translateY(2px);
+  }
+  90% {
+    opacity: 0.95;
+    transform: scaleY(0.98) scaleX(1.02) translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1) scaleX(1) translateY(0);
+  }
+}
+
+@keyframes startupIgniteTop {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.05) scaleX(1.4) translateY(20px);
+  }
+  10% {
+    opacity: 0.1;
+    transform: scaleY(0.2) scaleX(1.3) translateY(15px);
+  }
+  40% {
+    opacity: 0.5;
+    transform: scaleY(0.6) scaleX(1.2) translateY(8px);
+  }
+  60% {
+    opacity: 0.7;
+    transform: scaleY(0.8) scaleX(1.1) translateY(4px);
+  }
+  80% {
+    opacity: 0.9;
+    transform: scaleY(0.95) scaleX(1.05) translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1) scaleX(1) translateY(0);
+  }
+}
+
+/* Hover Effects */
+.animated-flame-container:hover .animated-flame-logo {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.8));
+}
+
+.animated-flame-container:hover .flame-fragment {
+  animation-duration: 1.5s, 2s, 1.2s; /* Speed up animations on hover */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .animated-flame-logo {
+    filter: drop-shadow(0 0 15px rgba(255, 107, 53, 0.5));
+  }
+  
+  .animated-flame-container.startup {
+    animation-duration: 3s;
+  }
+  
+  .animated-flame-container.startup .animated-flame-logo,
+  .animated-flame-container.startup .flame-bottom,
+  .animated-flame-container.startup .flame-middle,
+  .animated-flame-container.startup .flame-top {
+    animation-duration: 3s;
+  }
+}
+
+/* Performance optimizations */
+.flame-fragment {
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.animated-flame-logo {
+  will-change: transform, filter;
+  backface-visibility: hidden;
+}

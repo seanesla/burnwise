@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BurnwiseLogoPotraceExact from './BurnwiseLogoPotraceExact';
+import AnimatedFlameLogo from './AnimatedFlameLogo';
 import BurnwiseCinematicBootup from './BurnwiseCinematicBootup';
 import '../styles/Landing.css';
 
@@ -96,7 +96,7 @@ const Landing = () => {
               opacity: showCinematicBootup ? 0 : 1,
               transition: 'opacity 0.3s ease-in-out'
             }}>
-              <BurnwiseLogoPotraceExact size={120} animated={true} />
+              <AnimatedFlameLogo size={120} animated={true} />
             </div>
             
             <h1 className="hero-title">BURNWISE</h1>
