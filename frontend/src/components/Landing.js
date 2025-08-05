@@ -21,8 +21,10 @@ const Landing = () => {
 
   // Check for first visit and show cinematic bootup
   useEffect(() => {
+    // Force show for development/testing
+    const forceShow = true; // TODO: Change to false for production
     const hasSeenBootup = localStorage.getItem('burnwise-bootup-seen');
-    if (!hasSeenBootup) {
+    if (!hasSeenBootup || forceShow) {
       setShowCinematicBootup(true);
     }
   }, []);
