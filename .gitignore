@@ -46,4 +46,8 @@ coverage/
 
 # Temporary files
 *.tmp
-*.temptest-results/
+*.temp
+
+# Test artifacts
+test-results/
+e2e-tests/*.png
