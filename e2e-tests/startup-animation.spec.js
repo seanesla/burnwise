@@ -19,14 +19,18 @@ test.describe('Startup Animation', () => {
     await expect(logoContainer).toBeVisible();
     
     // Check if animation phases occur
+    await expect(startupContainer).toHaveAttribute('data-phase', 'assembly');
+    
+    // Wait for ignition phase
+    await page.waitForTimeout(2000);
     await expect(startupContainer).toHaveAttribute('data-phase', 'ignition');
     
-    // Wait for pulse phase
-    await page.waitForTimeout(1600);
-    await expect(startupContainer).toHaveAttribute('data-phase', 'pulse');
+    // Wait for living phase
+    await page.waitForTimeout(1000);
+    await expect(startupContainer).toHaveAttribute('data-phase', 'living');
     
     // Wait for flight phase
-    await page.waitForTimeout(1100);
+    await page.waitForTimeout(1000);
     await expect(startupContainer).toHaveAttribute('data-phase', 'flight');
     
     // Animation should complete and container should disappear
@@ -41,8 +45,8 @@ test.describe('Startup Animation', () => {
   test('should show proper icons instead of emojis', async ({ page }) => {
     await page.goto('http://localhost:3000');
     
-    // Wait for animation to complete
-    await page.waitForTimeout(4500);
+    // Wait for animation to complete (assembly:2s + ignition:1s + living:1s + flight:1s + buffer:0.5s)
+    await page.waitForTimeout(5500);
     
     // Scroll to problem section
     await page.evaluate(() => {
@@ -58,7 +62,7 @@ test.describe('Startup Animation', () => {
     await page.goto('http://localhost:3000');
     
     // Wait for animation to complete
-    await page.waitForTimeout(4500);
+    await page.waitForTimeout(5500);
     
     // Check if video elements exist
     const videos = await page.locator('video.background-video');
@@ -74,7 +78,7 @@ test.describe('Startup Animation', () => {
     await page.goto('http://localhost:3000');
     
     // Wait for animation
-    await page.waitForTimeout(4500);
+    await page.waitForTimeout(5500);
     
     // Click Get Started
     await page.click('button.cta-primary');
