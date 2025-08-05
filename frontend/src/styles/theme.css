@@ -1,0 +1,260 @@
+/* BURNWISE Fire Theme - Shared CSS Variables and Utilities */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+
+:root {
+  /* Fire Theme Color Palette */
+  --fire-primary: #ff6b35;
+  --fire-secondary: #ff5722;
+  --fire-accent: #FFB000;
+  --fire-warning: #ff9800;
+  
+  /* Neutral Colors */
+  --white: #ffffff;
+  --black: #000000;
+  --gray-light: rgba(255, 255, 255, 0.1);
+  --gray-medium: rgba(255, 255, 255, 0.3);
+  --gray-text: rgba(255, 255, 255, 0.7);
+  --gray-text-light: rgba(255, 255, 255, 0.6);
+  
+  /* Glass Morphism */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-hover: rgba(255, 255, 255, 0.05);
+  --glass-bg-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-hover: rgba(255, 107, 53, 0.3);
+  --glass-blur: blur(20px);
+  --glass-blur-strong: blur(40px);
+  
+  /* Background Gradients */
+  --bg-gradient: linear-gradient(180deg, #000 0%, rgba(10, 10, 10, 0.95) 100%);
+  --fire-gradient: linear-gradient(135deg, var(--fire-primary) 0%, var(--fire-secondary) 100%);
+  --fire-gradient-hover: linear-gradient(135deg, var(--fire-secondary) 0%, var(--fire-primary) 100%);
+  
+  /* Text Gradients */
+  --text-gradient: linear-gradient(135deg, var(--white) 0%, rgba(255, 255, 255, 0.8) 100%);
+  
+  /* Shadows */
+  --shadow-fire: 0 4px 20px rgba(255, 107, 53, 0.3);
+  --shadow-fire-hover: 0 10px 40px rgba(255, 107, 53, 0.4);
+  --shadow-glass: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-glass-hover: 0 15px 30px rgba(0, 0, 0, 0.4);
+  
+  /* Typography */
+  --font-family: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Spacing */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 50px;
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.4s ease;
+  
+  /* Z-Index Scale */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+}
+
+/* Utility Classes */
+
+/* Glass Morphism Components */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-normal);
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-glass-hover);
+  transform: translateY(-5px);
+}
+
+.glass-card-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
+/* Fire Theme Buttons */
+.btn-fire {
+  background: var(--fire-gradient);
+  color: var(--white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: var(--shadow-fire);
+}
+
+.btn-fire:hover {
+  background: var(--fire-gradient-hover);
+  box-shadow: var(--shadow-fire-hover);
+  transform: translateY(-3px);
+}
+
+.btn-glass {
+  background: var(--glass-bg);
+  color: var(--white);
+  border: 2px solid var(--glass-border);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  backdrop-filter: var(--glass-blur);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-glass:hover {
+  background: var(--glass-bg-strong);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Typography */
+.text-fire {
+  color: var(--fire-primary);
+}
+
+.text-gradient {
+  background: var(--text-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-hero {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 900;
+  background: var(--text-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 107, 53, 0.3);
+}
+
+/* Form Elements */
+.input-glass {
+  background: var(--glass-bg);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  color: var(--white);
+  font-family: var(--font-family);
+  backdrop-filter: blur(10px);
+  transition: all var(--transition-normal);
+}
+
+.input-glass:focus {
+  outline: none;
+  border-color: var(--fire-primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+}
+
+.input-glass::placeholder {
+  color: var(--gray-text-light);
+}
+
+/* Status Colors */
+.status-pending { color: var(--fire-accent); }
+.status-approved { color: var(--fire-warning); }
+.status-scheduled { color: var(--fire-primary); }
+.status-active { color: var(--fire-secondary); }
+.status-completed { color: var(--gray-medium); }
+
+/* Layout Utilities */
+.container-fire {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  font-family: var(--font-family);
+  color: var(--white);
+}
+
+/* Animation Utilities */
+.glow-fire {
+  text-shadow: 
+    0 0 20px rgba(255, 255, 255, 0.5),
+    0 0 40px rgba(255, 107, 53, 0.3),
+    0 0 60px rgba(255, 107, 53, 0.2);
+  animation: fireGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes fireGlow {
+  from {
+    text-shadow: 
+      0 0 20px rgba(255, 255, 255, 0.5),
+      0 0 40px rgba(255, 107, 53, 0.3),
+      0 0 60px rgba(255, 107, 53, 0.2);
+  }
+  to {
+    text-shadow: 
+      0 0 30px rgba(255, 255, 255, 0.7),
+      0 0 50px rgba(255, 107, 53, 0.5),
+      0 0 70px rgba(255, 107, 53, 0.3);
+  }
+}
+
+.float-gentle {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .container-fire {
+    padding: var(--spacing-md);
+  }
+  
+  .text-hero {
+    font-size: 2.5rem;
+  }
+  
+  .glass-card {
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* Dark Mode Overrides (if needed) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Already optimized for dark theme */
+  }
+}
