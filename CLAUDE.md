@@ -28,6 +28,12 @@ npm test                # Run all tests (backend and frontend)
 npm run test:backend    # Run backend tests with coverage
 npm run test:frontend   # Run frontend tests
 npm run test:workflow   # Test complete multi-agent workflow
+
+# E2E Testing with Playwright
+cd e2e-tests
+npx playwright test                    # Run all E2E tests
+npx playwright test startup-animation.spec.js  # Test startup animation specifically
+npx playwright test --headed           # Run tests with browser visible
 ```
 
 ## Architecture
@@ -102,9 +108,15 @@ Located in `frontend/src/`:
 
 - Unit tests: `backend/tests/agents/*.test.js` for each agent
 - Integration tests: `backend/tests/integration/five-agent-workflow.test.js`
-- E2E tests: `e2e-tests/` with Playwright
+- E2E tests: `e2e-tests/` with Playwright for startup animation and navigation
 - Performance tests: `backend/tests/performance/*.test.js`
 - Test workflow demonstration: `test-workflow.js` shows complete pipeline
+
+### E2E Test Structure
+- **Startup Animation Tests**: Phase transitions, timing, visual elements
+- **Icon Rendering Tests**: React Icons replacement verification
+- **Navigation Tests**: Route transitions and user interactions
+- **Video Background Tests**: Media element functionality
 
 ## Error Handling
 
@@ -123,7 +135,14 @@ Located in `frontend/src/`:
 
 ## Fire-Themed Design System
 
-BURNWISE uses a comprehensive fire-themed design system implemented across all components:
+BURNWISE uses a comprehensive fire-themed design system with advanced animation capabilities:
+
+### Animation Architecture
+- **Unified Motion System**: Single motion value approach eliminates animation conflicts
+- **Spring Physics**: Natural movement using stiffness, damping, and mass parameters
+- **SVG Morphing**: Dynamic path changes for flame shape transformation
+- **Filter Effects**: Real-time turbulence, heat distortion, and motion blur
+- **Phase Management**: Coordinated transitions between assembly, ignition, living, and flight states
 
 ### Core Theme (frontend/src/styles/theme.css)
 - **Fire Color Palette**: #ff6b35 (primary), #ff5722 (secondary), #FFB000 (accent)
@@ -150,7 +169,16 @@ BURNWISE uses a comprehensive fire-themed design system implemented across all c
 - **ImprovedBurnRequestForm.js**: Multi-step wizard with field drawing capabilities
 - **Schedule.js/AlertsPanel.js**: Fire-themed data management interfaces
 
+### Advanced Animation System
+- **FullScreenStartup.js**: Sophisticated startup animation with unified spring physics
+- **SVG Path Morphing**: Actual flame shape changes during animation phases
+- **Phase-Based Animation**: Assembly → Ignition → Living → Flight sequence
+- **Spring Physics**: Organic movement using Framer Motion spring configurations
+- **Dynamic SVG Filters**: Phase-specific turbulence, heat distortion, and motion blur
+- **Motion Values**: Unified animation system avoiding conflicts between controls
+
 ### Logo System
 - **BurnwiseLogoPotraceExact.js**: Mathematically precise SVG logo generated via potrace
-- **BurnwiseCinematicBootup.js**: Animated bootup sequence with individual flame animations
+- **Individual Fragment Control**: 3 flame fragments with independent motion values
+- **Advanced Visual Effects**: Turbulence filters, gradient morphing, particle systems
 - Uses exact 1:1 recreation of original logo with proper fire gradients
