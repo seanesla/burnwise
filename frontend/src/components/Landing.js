@@ -56,11 +56,6 @@ const Landing = () => {
         <StartupAnimation onComplete={handleStartupComplete} />
       ) : (
         <div className="landing-container visible">
-          {/* Hero Logo */}
-          <div className="hero-logo-container">
-            <AnimatedFlameLogo size={120} animated={true} />
-          </div>
-
           {/* Video Background */}
           <div className="video-background" style={{ 
           opacity: videoOpacity,
@@ -90,7 +85,9 @@ const Landing = () => {
         <div className="landing-content">
           {/* Hero Section */}
           <section className="hero-section">
-            {/* Logo is already positioned above via unified-flame-logo */}
+            <div className="hero-logo">
+              <AnimatedFlameLogo size={120} animated={true} />
+            </div>
             
             <h1 className="hero-title">BURNWISE</h1>
             <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>

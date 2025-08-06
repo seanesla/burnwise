@@ -4,69 +4,122 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: radial-gradient(ellipse at center, #1a0000 0%, #000000 100%);
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 99999;
-  opacity: 1;
+  overflow: hidden;
 }
 
-.startup-animation.entering {
-  animation: fadeIn 0.5s ease-out;
+/* Background subtle glow */
+.startup-background-effects {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-.startup-animation.centered {
-  opacity: 1;
-}
-
-.startup-animation.exiting {
+/* Subtle fire glow behind logo */
+.fire-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.2) 0%, transparent 70%);
+  filter: blur(40px);
   opacity: 0;
-  transition: opacity 0.8s ease-out;
 }
 
-.startup-logo {
-  filter: drop-shadow(0 0 60px rgba(255, 107, 53, 0.6));
-  transition: transform 0.8s ease-out;
-  transform: scale(1); /* Start visible */
+.startup-animation.intro .fire-ring {
+  animation: gentleGlow 1.2s ease-out forwards;
 }
 
-.startup-animation.entering .startup-logo {
-  animation: logoEntry 0.5s ease-out forwards;
-}
-
-.startup-animation.centered .startup-logo {
-  transform: scale(1);
-  animation: logoPulse 2s ease-in-out infinite;
-}
-
-.startup-animation.exiting .startup-logo {
-  transform: scale(0.67) translateY(150px);
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fadeIn {
-  to {
+@keyframes gentleGlow {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
     opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
-@keyframes logoEntry {
-  from {
+/* Logo wrapper */
+.startup-logo-wrapper {
+  position: relative;
+  z-index: 2;
+  transform-origin: center;
+}
+
+/* Phase 1: Intro - Logo fades in smoothly */
+.startup-logo-wrapper.intro {
+  animation: logoFadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes logoFadeIn {
+  0% {
     transform: scale(0.8);
     opacity: 0;
+    filter: brightness(0.5) drop-shadow(0 0 20px rgba(255, 107, 53, 0));
   }
-  to {
+  100% {
     transform: scale(1);
     opacity: 1;
+    filter: brightness(1) drop-shadow(0 0 40px rgba(255, 107, 53, 0.6));
   }
 }
 
-@keyframes logoPulse {
-  0%, 100% {
+/* Phase 2: Expanding - Gentle breathing effect */
+.startup-logo-wrapper.expanding {
+  animation: logoBreathing 1.5s ease-in-out forwards;
+}
+
+@keyframes logoBreathing {
+  0% {
     transform: scale(1);
   }
   50% {
-    transform: scale(1.05);
+    transform: scale(1.1);
+    filter: brightness(1.2) drop-shadow(0 0 60px rgba(255, 107, 53, 0.8));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 40px rgba(255, 107, 53, 0.6));
+  }
+}
+
+/* Phase 3: Morphing - Smooth transition to final position */
+.startup-logo-wrapper.morphing {
+  animation: logoTransition 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes logoTransition {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.6) translateY(-150px);
+    opacity: 0.9;
+  }
+}
+
+/* Fade out the entire screen smoothly */
+.startup-animation.morphing {
+  animation: screenFadeOut 0.8s ease-out 0.2s forwards;
+}
+
+@keyframes screenFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
   }
 }

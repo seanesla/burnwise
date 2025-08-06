@@ -1,0 +1,186 @@
+.startup-flame-logo {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  transform-origin: center;
+}
+
+.flame-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Phase 1: Intro - Fragments ignite from sparks */
+.startup-flame-logo.phase-intro .flame-fragment {
+  animation: flameIgnite 1s ease-out forwards;
+}
+
+.startup-flame-logo.phase-intro .flame-left {
+  transform-origin: 300px 900px;
+  animation-delay: 0s;
+}
+
+.startup-flame-logo.phase-intro .flame-center {
+  transform-origin: 500px 950px;
+  animation-delay: 0.2s;
+}
+
+.startup-flame-logo.phase-intro .flame-right {
+  transform-origin: 700px 900px;
+  animation-delay: 0.4s;
+}
+
+@keyframes flameIgnite {
+  0% {
+    transform: scale(0) translateY(100px);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  20% {
+    transform: scale(0.3) translateY(50px);
+    opacity: 0.3;
+    filter: blur(5px) brightness(2);
+  }
+  50% {
+    transform: scale(1.2) translateY(-20px);
+    opacity: 1;
+    filter: blur(0) brightness(1.5);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    filter: blur(0) brightness(1);
+  }
+}
+
+/* Phase 2: Expanding - Fragments dance and merge */
+.startup-flame-logo.phase-expanding .flame-left {
+  animation: flameLeft 1.5s ease-in-out forwards;
+}
+
+.startup-flame-logo.phase-expanding .flame-center {
+  animation: flameCenter 1.5s ease-in-out forwards;
+}
+
+.startup-flame-logo.phase-expanding .flame-right {
+  animation: flameRight 1.5s ease-in-out forwards;
+}
+
+@keyframes flameLeft {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+  25% {
+    transform: translateX(-50px) translateY(-30px) scale(1.3) rotate(-10deg);
+  }
+  50% {
+    transform: translateX(-30px) translateY(-50px) scale(1.5) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(20px) translateY(-30px) scale(1.2) rotate(5deg);
+  }
+  100% {
+    transform: translateX(50px) translateY(0) scale(0.9) rotate(0);
+  }
+}
+
+@keyframes flameCenter {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+  25% {
+    transform: translateX(0) translateY(-60px) scale(1.8) rotate(0);
+  }
+  50% {
+    transform: translateX(0) translateY(-80px) scale(2) rotate(0);
+  }
+  75% {
+    transform: translateX(0) translateY(-40px) scale(1.5) rotate(0);
+  }
+  100% {
+    transform: translateX(0) translateY(0) scale(1) rotate(0);
+  }
+}
+
+@keyframes flameRight {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+  25% {
+    transform: translateX(50px) translateY(-30px) scale(1.3) rotate(10deg);
+  }
+  50% {
+    transform: translateX(30px) translateY(-50px) scale(1.5) rotate(5deg);
+  }
+  75% {
+    transform: translateX(-20px) translateY(-30px) scale(1.2) rotate(-5deg);
+  }
+  100% {
+    transform: translateX(-50px) translateY(0) scale(0.9) rotate(0);
+  }
+}
+
+/* Phase 3: Morphing - Settle into final position */
+.startup-flame-logo.phase-morphing {
+  animation: logoSettle 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.startup-flame-logo.phase-morphing .flame-fragment {
+  animation: flameSettle 0.8s ease-out forwards;
+}
+
+@keyframes logoSettle {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 60px rgba(255, 107, 53, 1));
+  }
+  100% {
+    transform: scale(0.6) translateY(-150px);
+    filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.6));
+  }
+}
+
+@keyframes flameSettle {
+  0% {
+    filter: brightness(1.5) contrast(1.3);
+  }
+  100% {
+    filter: brightness(1) contrast(1);
+  }
+}
+
+/* Ember animation */
+.startup-flame-logo .embers {
+  opacity: 0;
+}
+
+.startup-flame-logo.phase-intro .embers {
+  animation: emberAppear 1s ease-out 0.5s forwards;
+}
+
+.startup-flame-logo.phase-expanding .embers {
+  opacity: 1;
+}
+
+.startup-flame-logo.phase-morphing .embers {
+  animation: emberFade 0.8s ease-out forwards;
+}
+
+@keyframes emberAppear {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes emberFade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
