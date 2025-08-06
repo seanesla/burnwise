@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './AnimatedFlameLogo';
+import StartupAnimation from './StartupAnimation';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
 import '../styles/Landing.css';
 
 const Landing = () => {
   const navigate = useNavigate();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [animationPhase, setAnimationPhase] = useState('intro'); // 'intro' | 'transforming' | 'complete'
+  const [showStartup, setShowStartup] = useState(true);
   const [scrollY, setScrollY] = useState(0);
 
   // Fire-themed video URLs for cinematic slideshow
@@ -18,22 +19,10 @@ const Landing = () => {
     '/gentle-field-fire.mp4'
   ];
 
-  // Animation phase progression
-  useEffect(() => {
-    // Start with intro phase
-    const introTimer = setTimeout(() => {
-      setAnimationPhase('transforming');
-      
-      // Move to complete phase
-      const transformTimer = setTimeout(() => {
-        setAnimationPhase('complete');
-      }, 1500); // Time for logo to move to header
-      
-      return () => clearTimeout(transformTimer);
-    }, 3000); // Time for initial logo animation
-    
-    return () => clearTimeout(introTimer);
-  }, []);
+  // Handle startup animation completion
+  const handleStartupComplete = () => {
+    setShowStartup(false);
+  };
 
   // Video slideshow effect with cinematic timing
   useEffect(() => {
@@ -63,13 +52,12 @@ const Landing = () => {
 
   return (
     <>
-      <div className={`landing-container ${animationPhase}`}>
-        {/* Unified Flame Logo - transforms from intro to hero */}
-        <div className={`unified-flame-logo flame-${animationPhase}`}>
-          <AnimatedFlameLogo 
-            size={animationPhase === 'intro' ? 180 : 120} 
-            animated={true} 
-          />
+      {showStartup && <StartupAnimation onComplete={handleStartupComplete} />}
+      
+      <div className={`landing-container ${showStartup ? 'hidden' : 'visible'}`}>
+        {/* Hero Logo */}
+        <div className="hero-logo-container">
+          <AnimatedFlameLogo size={120} animated={true} />
         </div>
 
 

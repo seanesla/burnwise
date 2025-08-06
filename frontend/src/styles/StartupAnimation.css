@@ -1,0 +1,68 @@
+.startup-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.startup-animation.entering {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.startup-animation.centered {
+  opacity: 1;
+}
+
+.startup-animation.exiting {
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+}
+
+.startup-logo {
+  filter: drop-shadow(0 0 60px rgba(255, 107, 53, 0.6));
+  transition: transform 0.8s ease-out;
+}
+
+.startup-animation.entering .startup-logo {
+  transform: scale(0);
+  animation: logoEntry 0.5s ease-out forwards;
+}
+
+.startup-animation.centered .startup-logo {
+  transform: scale(1);
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+.startup-animation.exiting .startup-logo {
+  transform: scale(0.67) translateY(150px);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes logoEntry {
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
