@@ -1,0 +1,101 @@
+/* Torch Effect Animation - Single continuous animation */
+
+.torch-animation-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
+  pointer-events: none;
+}
+
+.torch-animation-wrapper.hidden {
+  display: none;
+}
+
+/* Black background with built-in fade timing */
+.torch-black-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: -1;
+  animation: blackBgFade 4.3s ease-out forwards;
+}
+
+@keyframes blackBgFade {
+  0%, 58% {  /* 0-2.5s: Stay solid black */
+    opacity: 1;
+  }
+  100% {  /* 2.5s-4.3s: Fade out */
+    opacity: 0;
+  }
+}
+
+/* Logo with complete animation sequence */
+.torch-logo {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 10;
+  /* Start centered */
+  transform: translate(-50%, -50%);
+  /* Run the complete animation sequence */
+  animation: torchSequence 4.6s ease-out forwards;
+}
+
+@keyframes torchSequence {
+  /* Phase 1: Stay centered (0-2.5s = 54%) */
+  0%, 54% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  
+  /* Phase 2: Morph to torch position (2.5s-4s = 54%-87%) */
+  87% {
+    transform: translate(
+      calc(-50% + var(--torch-x, 123px)), 
+      calc(-50% + var(--torch-y, -530px))
+    ) scale(var(--torch-scale, 0.36));
+    opacity: 1;
+  }
+  
+  /* Phase 3: Stay at position (4s-4.3s = 87%-93%) */
+  93% {
+    transform: translate(
+      calc(-50% + var(--torch-x, 123px)), 
+      calc(-50% + var(--torch-y, -530px))
+    ) scale(var(--torch-scale, 0.36));
+    opacity: 1;
+  }
+  
+  /* Phase 4: Fade out (4.3s-4.6s = 93%-100%) */
+  100% {
+    transform: translate(
+      calc(-50% + var(--torch-x, 123px)), 
+      calc(-50% + var(--torch-y, -530px))
+    ) scale(var(--torch-scale, 0.36));
+    opacity: 0;
+  }
+}
+
+/* Smooth cubic-bezier for the morphing portion */
+.torch-logo {
+  animation-timing-function: linear;
+}
+
+/* Override timing for morphing phase */
+@keyframes torchMorphOnly {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    transform: translate(
+      calc(-50% + var(--torch-x, 123px)), 
+      calc(-50% + var(--torch-y, -530px))
+    ) scale(var(--torch-scale, 0.36));
+  }
+}

@@ -8,39 +8,17 @@ import AlertsPanel from './components/AlertsPanel';
 import Navigation from './components/Navigation';
 import AnimatedFlameLogo from './components/AnimatedFlameLogo';
 import './styles/App.css';
+import './styles/TorchAnimation.css';
 
 // Debug system (disabled for production)
 const DEBUG = false;
 const LOG_PREFIX = '🔥 BURNWISE:';
 
 function App() {
-  const [startupPhase, setStartupPhase] = useState('startup');
+  const [showAnimation, setShowAnimation] = useState(true);
   const [debugLog, setDebugLog] = useState([]);
   const mountTimeRef = useRef(Date.now());
-  const phaseTimersRef = useRef({});
   const renderCountRef = useRef(0);
-  const animationFrameRef = useRef(null);
-  const logoRef = useRef(null); // Direct DOM reference for animation
-  
-  // Calculate target position for the torch effect
-  const calculateTargetPosition = () => {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    // The "I" in BURNWISE is 123.38px to the RIGHT of center
-    const iOffsetFromCenter = 123.38;
-    const scaleFactor = viewportWidth / 1512;
-    const targetX = iOffsetFromCenter * scaleFactor;
-    
-    // Vertical position - flame needs to move UP to touch top of text
-    const targetY = -viewportHeight * 0.35;
-    
-    return {
-      x: targetX,
-      y: targetY,
-      scale: 65 / 180  // Scale down to ~36% to match I width
-    };
-  };
   
   // Log function that tracks everything WITHOUT causing re-renders
   const log = (message, data = {}) => {
@@ -54,7 +32,7 @@ function App() {
   // Track every render WITHOUT causing infinite loop
   useEffect(() => {
     renderCountRef.current++;
-    console.log(LOG_PREFIX, `RENDER #${renderCountRef.current}`, { phase: startupPhase });
+    console.log(LOG_PREFIX, `RENDER #${renderCountRef.current}`, { showAnimation });
   });
   
   // Track mount
@@ -72,101 +50,40 @@ function App() {
     if (!AnimatedFlameLogo) {
       log('ERROR: AnimatedFlameLogo NOT FOUND!');
     }
-    
-    // Track animation frames (REMOVED - causing issues)
-    
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
   }, []);
   
-  // Track phase changes
+  // Set CSS custom properties for the torch position and manage animation
   useEffect(() => {
-    const now = Date.now();
-    phaseTimersRef.current[startupPhase] = now;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     
-    log(`PHASE CHANGE: ${startupPhase}`, {
-      previousPhases: phaseTimersRef.current,
-      timeSinceMount: now - mountTimeRef.current
-    });
+    // Calculate exact position of "I" in BURNWISE
+    // The "I" is the 7th character in an 8-character word
+    // With the font at ~6rem (96px) and weight 900, each char is ~60-70px
+    // The "I" is approximately 123px right of the word's center
+    const targetX = 123;
     
-    // Check DOM state
-    const startupScreen = document.querySelector('.startup-screen');
-    const appMain = document.querySelector('.app-main');
+    // Vertical positioning:
+    // The h1 is centered in viewport (at 50% height)
+    // Font size is 6rem (96px), so text top is ~48px above center
+    // Flame needs to be 65px above the text top
+    // Total offset from center: 48px + 65px = 113px upward
+    const targetY = -113;
     
-    log('DOM STATE', {
-      startupScreenExists: !!startupScreen,
-      startupScreenDisplay: startupScreen?.style.display,
-      startupScreenOpacity: startupScreen ? window.getComputedStyle(startupScreen).opacity : null,
-      appMainExists: !!appMain,
-      appMainOpacity: appMain ? window.getComputedStyle(appMain).opacity : null
-    });
-  }, [startupPhase]);
-  
-  useEffect(() => {
-    log('STARTING ANIMATION SEQUENCE');
+    // Set CSS variables for the animation
+    const root = document.documentElement;
+    root.style.setProperty('--torch-x', `${targetX}px`);
+    root.style.setProperty('--torch-y', `${targetY}px`);
+    root.style.setProperty('--torch-scale', '0.36');
     
-    // Phase 1: Show startup for 2.5 seconds
-    const startupTimer = setTimeout(() => {
-      log('PHASE 1 COMPLETE - Starting morph transition');
-      setStartupPhase('morphing');
-      
-      // Phase 2: Morph for 1.5 seconds (longer for smooth movement)
-      const morphTimer = setTimeout(() => {
-        log('PHASE 2 COMPLETE - Starting fade');
-        setStartupPhase('transitioning');
-        
-        // Phase 3: Quick fade out for 300ms
-        const transitionTimer = setTimeout(() => {
-          log('PHASE 3 COMPLETE - Animation done');
-          setStartupPhase('done');
-        }, 300);
-        
-        return () => clearTimeout(transitionTimer);
-      }, 1500);
-      
-      return () => clearTimeout(morphTimer);
-    }, 2500);
+    // Hide animation after it completes
+    const hideTimer = setTimeout(() => {
+      setShowAnimation(false);
+      log('Animation complete - hiding wrapper');
+    }, 4600); // Animation duration
     
-    return () => {
-      log('Cleanup: Clearing startup timer');
-      clearTimeout(startupTimer);
-    };
-  }, []);
-  
-  // Direct DOM animation to avoid React re-render jumps
-  useEffect(() => {
-    if (!logoRef.current) return;
-    
-    const logo = logoRef.current;
-    const target = calculateTargetPosition();
-    
-    // Set initial transition for smooth animation
-    logo.style.transition = 'none';
-    
-    if (startupPhase === 'startup') {
-      // Center the logo initially
-      logo.style.transform = 'translate(-50%, -50%)';
-      logo.style.opacity = '1';
-    } else if (startupPhase === 'morphing') {
-      // Enable transition and morph to target position
-      setTimeout(() => {
-        logo.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
-        const finalX = -90 + target.x; // -90 is half of 180px logo
-        const finalY = -90 + target.y;
-        logo.style.transform = `translate(${finalX}px, ${finalY}px) scale(${target.scale})`;
-      }, 10); // Small delay to ensure transition takes effect
-    } else if (startupPhase === 'transitioning') {
-      // Fade out
-      logo.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out';
-      logo.style.opacity = '0';
-    } else if (startupPhase === 'done') {
-      // Keep hidden
-      logo.style.opacity = '0';
-    }
-  }, [startupPhase]);
+    return () => clearTimeout(hideTimer);
+  }, []); // Only run once on mount
   
   return (
     <Router>
@@ -190,60 +107,20 @@ function App() {
             <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
               🔥 BRUTE FORCE DEBUG MODE 🔥
             </div>
-            <div>Phase: {startupPhase} | Renders: {renderCountRef.current}</div>
+            <div>Animation: {showAnimation ? 'RUNNING' : 'DONE'} | Renders: {renderCountRef.current}</div>
             <div>Time: {Date.now() - mountTimeRef.current}ms</div>
             <div style={{ marginTop: '5px', fontSize: '10px' }}>
-              Startup visible: {startupPhase !== 'done' ? 'YES' : 'NO'} | 
-              Logo exists: {AnimatedFlameLogo ? 'YES' : 'NO'} |
-              Morphing: {startupPhase === 'morphing' ? 'YES' : 'NO'}
+              Animation visible: {showAnimation ? 'YES' : 'NO'} | 
+              Logo exists: {AnimatedFlameLogo ? 'YES' : 'NO'}
             </div>
           </div>
         )}
         
-        {/* Startup Animation with SEAMLESS MORPH */}
-        {startupPhase !== 'done' && (
-          <div 
-            className="startup-screen"
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'transparent', // Never show background on this div
-              zIndex: 999999,
-              pointerEvents: startupPhase === 'transitioning' ? 'none' : 'auto'
-            }}
-            onTransitionEnd={() => log('TRANSITION END EVENT')}
-          >
-            {/* Black background that fades out during morphing */}
-            <div className="startup-bg" style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: '#000',
-              opacity: startupPhase === 'morphing' ? 0 : (startupPhase === 'transitioning' ? 0 : 1),
-              transition: 'opacity 1.5s ease-out', // Slower fade for smooth transition
-              zIndex: -2,
-              pointerEvents: 'none'
-            }}></div>
-            
-            {/* Logo container that morphs to landing position */}
-            <div 
-              ref={logoRef}
-              className="startup-logo-container" 
-              style={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                zIndex: 10,
-                // Initial transform will be set by useEffect
-                transform: 'translate(-50%, -50%)',
-                // Transition will be controlled by useEffect
-                transition: 'none'
-              }}>
+        {/* Startup Animation - Single continuous animation */}
+        {showAnimation && (
+          <div className="torch-animation-wrapper">
+            <div className="torch-black-bg"></div>
+            <div className="torch-logo">
               {AnimatedFlameLogo ? (
                 <AnimatedFlameLogo size={180} animated={true} />
               ) : (
@@ -259,19 +136,12 @@ function App() {
           </div>
         )}
         
-        {/* Main App - Fade in during transition phase */}
-        <div 
-          className={`app-main ${startupPhase === 'done' ? 'app-main-visible' : ''}`}
-          style={{
-            opacity: (startupPhase === 'transitioning' || startupPhase === 'done') ? 1 : 0,
-            transition: 'opacity 0.5s ease-out',
-            pointerEvents: (startupPhase === 'transitioning' || startupPhase === 'done') ? 'auto' : 'none'
-          }}
-        >
+        {/* Main App - Always visible, animation overlays on top */}
+        <div className="app-main">
           <Navigation />
           <div className="app-content">
             <Routes>
-              <Route path="/" element={<Landing fromStartup={startupPhase === 'transitioning' || startupPhase === 'done'} hideLogoInitially={startupPhase !== 'done'} animationPhase={startupPhase} />} />
+              <Route path="/" element={<Landing fromStartup={!showAnimation} hideLogoInitially={showAnimation} animationPhase={showAnimation ? 'animating' : 'done'} />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/map" element={<Map />} />
               <Route path="/schedule" element={<Schedule />} />

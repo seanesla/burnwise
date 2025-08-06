@@ -22,12 +22,12 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   // Show logo and enable videos synchronized with startup animation
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show torch flame earlier so it docks BEFORE content appears
+      // Show torch flame after animation completes to avoid overlap
       const timer = setTimeout(() => {
         setLogoVisible(true);
-      }, 3500); // Show flame while still morphing, before transitioning
+      }, 4100); // Show flame after morph completes but before fade
       
-      // Enable videos later, after flame has docked
+      // Enable videos after flame has docked
       const videoTimer = setTimeout(() => {
         setVideosEnabled(true);
       }, 4200);
