@@ -88,27 +88,26 @@ function App() {
   useEffect(() => {
     log('STARTING ANIMATION SEQUENCE');
     
-    // Calculate position for torch effect - using fixed viewport positions
+    // Calculate position for torch effect - EXACT "I" position from measurements
     const calculateTargetPosition = () => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // Use viewport-based calculations to ensure stable positioning
-      // Start at center of viewport
-      const startX = 0;
-      const startY = 0;
+      // MEASURED: "I" is consistently at ~123.38px RIGHT of viewport center
+      // This is based on Inter 900 font metrics at the current size
+      // The "I" is the 6th character in BURNWISE, positioned at ~71.6% through the word
+      const iOffsetRatio = 123.38 / 1512; // Measured offset / measured viewport width
+      const targetX = viewportWidth * iOffsetRatio; // Scale to current viewport
       
-      // Calculate final position based on viewport dimensions
-      // This positions the flame where the I will be in BURNWISE
-      const targetX = viewportWidth * 0.125; // ~12.5% from center (where the I is)
-      const targetY = -viewportHeight * 0.15; // ~15% up from center
+      // Vertical position - flame touches top of text
+      const targetY = -viewportHeight * 0.08;
       
       return {
-        startX: startX,
-        startY: startY,
-        x: targetX,
+        startX: 0,
+        startY: 0,
+        x: targetX,  // ~123px right of center on 1512px viewport
         y: targetY,
-        scale: 65 / 180  // Scale up ~30% (from 50px to 65px) to match I width
+        scale: 65 / 180  // Scale up ~30% to match I width
       };
     };
     

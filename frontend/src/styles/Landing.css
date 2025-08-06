@@ -173,7 +173,7 @@
 .torch-flame-absolute {
   position: absolute;
   top: -65px; /* Flame touches/kisses the top of the I */
-  left: 62.5%; /* Fine-tuned position over the "I" in BURNWISE */
+  left: calc(50% + 123px); /* EXACT position: viewport center + 123px offset to "I" */
   transform: translateX(-50%);
   z-index: 10;
   filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
