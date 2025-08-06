@@ -27,10 +27,13 @@
 }
 
 @keyframes blackBgFade {
-  0%, 58% {  /* 0-2.5s: Stay solid black */
+  0%, 54% {  /* 0-2.5s: Stay solid black */
     opacity: 1;
   }
-  100% {  /* 2.5s-4.3s: Fade out */
+  87% {  /* 2.5s-4s: Start fading */
+    opacity: 0.3;
+  }
+  100% {  /* 4s-4.3s: Fully faded */
     opacity: 0;
   }
 }
@@ -57,17 +60,17 @@
   /* Phase 2: Morph to torch position (2.5s-4s = 54%-87%) */
   87% {
     transform: translate(
-      calc(-50% + var(--torch-x, 123px)), 
-      calc(-50% + var(--torch-y, -530px))
+      calc(-50% + var(--torch-x, 0px)), 
+      calc(-50% + var(--torch-y, -100px))
     ) scale(var(--torch-scale, 0.36));
     opacity: 1;
   }
   
-  /* Phase 3: Stay at position (4s-4.3s = 87%-93%) */
+  /* Phase 3: Stay at position briefly (4s-4.3s = 87%-93%) */
   93% {
     transform: translate(
-      calc(-50% + var(--torch-x, 123px)), 
-      calc(-50% + var(--torch-y, -530px))
+      calc(-50% + var(--torch-x, 0px)), 
+      calc(-50% + var(--torch-y, -100px))
     ) scale(var(--torch-scale, 0.36));
     opacity: 1;
   }
@@ -75,8 +78,8 @@
   /* Phase 4: Fade out (4.3s-4.6s = 93%-100%) */
   100% {
     transform: translate(
-      calc(-50% + var(--torch-x, 123px)), 
-      calc(-50% + var(--torch-y, -530px))
+      calc(-50% + var(--torch-x, 0px)), 
+      calc(-50% + var(--torch-y, -100px))
     ) scale(var(--torch-scale, 0.36));
     opacity: 0;
   }

@@ -54,27 +54,76 @@ function App() {
   
   // Set CSS custom properties for the torch position and manage animation
   useEffect(() => {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+    // Function to measure and set torch position
+    const measureAndSetPosition = async () => {
+      // Wait for Inter font to load
+      try {
+        await document.fonts.load('900 6rem Inter');
+      } catch (e) {
+        log('Font load error, continuing anyway', e);
+      }
+      
+      // Create a temporary element to measure the exact "I" position
+      const tempDiv = document.createElement('div');
+      tempDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 6rem;
+        font-weight: 900;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 99999;
+        color: transparent;
+      `;
+      
+      // Create spans for each character to measure positions
+      const chars = 'BURNWISE'.split('');
+      tempDiv.innerHTML = chars.map(char => `<span style="display: inline-block;">${char}</span>`).join('');
+      document.body.appendChild(tempDiv);
+      
+      // Force layout
+      tempDiv.offsetHeight;
+      
+      // Get the position of the "I" (index 6)
+      const spans = tempDiv.querySelectorAll('span');
+      const iSpan = spans[6];
+      const tempRect = tempDiv.getBoundingClientRect();
+      const iRect = iSpan.getBoundingClientRect();
+      
+      // Calculate offset from center of viewport
+      const viewportCenterX = window.innerWidth / 2;
+      const viewportCenterY = window.innerHeight / 2;
+      const iCenterX = iRect.left + iRect.width / 2;
+      const targetX = iCenterX - viewportCenterX;
+      
+      // Calculate vertical position - flame should be above the text
+      const textTop = tempRect.top;
+      const targetY = textTop - viewportCenterY - 65; // 65px above text
+      
+      // Clean up
+      document.body.removeChild(tempDiv);
+      
+      // Set CSS variables for the animation
+      const root = document.documentElement;
+      root.style.setProperty('--torch-x', `${targetX}px`);
+      root.style.setProperty('--torch-y', `${targetY}px`);
+      root.style.setProperty('--torch-scale', '0.36');
+      
+      log('Torch position calculated', { 
+        targetX, 
+        targetY,
+        iCenterX,
+        viewportCenterX,
+        textTop
+      });
+    };
     
-    // Calculate exact position of "I" in BURNWISE
-    // The "I" is the 7th character in an 8-character word
-    // With the font at ~6rem (96px) and weight 900, each char is ~60-70px
-    // The "I" is approximately 123px right of the word's center
-    const targetX = 123;
-    
-    // Vertical positioning:
-    // The h1 is centered in viewport (at 50% height)
-    // Font size is 6rem (96px), so text top is ~48px above center
-    // Flame needs to be 65px above the text top
-    // Total offset from center: 48px + 65px = 113px upward
-    const targetY = -113;
-    
-    // Set CSS variables for the animation
-    const root = document.documentElement;
-    root.style.setProperty('--torch-x', `${targetX}px`);
-    root.style.setProperty('--torch-y', `${targetY}px`);
-    root.style.setProperty('--torch-scale', '0.36');
+    // Run measurement immediately
+    measureAndSetPosition();
     
     // Hide animation after it completes
     const hideTimer = setTimeout(() => {
@@ -82,7 +131,9 @@ function App() {
       log('Animation complete - hiding wrapper');
     }, 4600); // Animation duration
     
-    return () => clearTimeout(hideTimer);
+    return () => {
+      clearTimeout(hideTimer);
+    };
   }, []); // Only run once on mount
   
   return (

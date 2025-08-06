@@ -22,10 +22,10 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   // Show logo and enable videos synchronized with startup animation
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show torch flame after animation completes to avoid overlap
+      // Show torch flame right when the animation reaches its target
       const timer = setTimeout(() => {
         setLogoVisible(true);
-      }, 4100); // Show flame after morph completes but before fade
+      }, 3900); // Show flame when morphing completes (87% of 4.6s)
       
       // Enable videos after flame has docked
       const videoTimer = setTimeout(() => {
@@ -106,12 +106,26 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
                      (animationPhase === 'transitioning' ? 0.5 : 1)),
             transition: 'opacity 0.8s ease-out'
           }}>
-            BURNWISE
-            {logoVisible && (
-              <div className="torch-flame-absolute">
-                <AnimatedFlameLogo size={65} animated={true} />
-              </div>
-            )}
+            <span style={{ position: 'relative', display: 'inline-block' }}>
+              {'BURNW'}
+              <span style={{ position: 'relative', display: 'inline-block' }}>
+                {'I'}
+                {logoVisible && (
+                  <div className="torch-flame-absolute" style={{
+                    position: 'absolute',
+                    top: '-65px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 10,
+                    width: '65px',
+                    height: '65px'
+                  }}>
+                    <AnimatedFlameLogo size={65} animated={true} />
+                  </div>
+                )}
+              </span>
+              {'SE'}
+            </span>
           </h1>
           <p className="hero-subtitle" style={{
             opacity: animationPhase === 'startup' ? 0 : 
