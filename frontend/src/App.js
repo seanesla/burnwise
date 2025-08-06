@@ -213,9 +213,28 @@ function App() {
               left: '50%',
               zIndex: 10,
               // Transform handles both centering AND morphing
-              transform: (startupPhase === 'morphing' || startupPhase === 'transitioning') ? 
-                `translate(calc(-50% + ${logoTargetPosition?.x || 0}px), calc(-50% + ${logoTargetPosition?.y || 0}px)) scale(${logoTargetPosition?.scale || 1})` :
-                `translate(-50%, -50%) scale(1)`,
+              // Using explicit pixel calculations instead of calc() for better browser compatibility
+              transform: (() => {
+                if (startupPhase === 'morphing' || startupPhase === 'transitioning') {
+                  // Get the scale factor
+                  const scale = logoTargetPosition?.scale || 1;
+                  
+                  // Calculate the centering offset accounting for scale
+                  // When scaled, the element's visual size changes, so we need to adjust the centering
+                  const scaledLogoSize = 180 * scale; // Actual size after scaling
+                  const centerOffsetX = -scaledLogoSize / 2; // Half of scaled width
+                  const centerOffsetY = -scaledLogoSize / 2; // Half of scaled height
+                  
+                  // Add the target position to the centering offset
+                  const finalX = centerOffsetX + (logoTargetPosition?.x || 0);
+                  const finalY = centerOffsetY + (logoTargetPosition?.y || 0);
+                  
+                  return `translate(${finalX}px, ${finalY}px) scale(${scale})`;
+                } else {
+                  // Initial centered position
+                  return `translate(-50%, -50%) scale(1)`;
+                }
+              })(),
               // Fade out during transitioning phase to hand over to torch
               opacity: startupPhase === 'transitioning' ? 0 : 1,
               transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
