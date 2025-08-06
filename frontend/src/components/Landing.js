@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './AnimatedFlameLogo';
-import StartupAnimation from './StartupAnimation';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
 import '../styles/Landing.css';
 
-const Landing = () => {
+const Landing = ({ fromStartup, hideLogoInitially }) => {
   const navigate = useNavigate();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [showStartup, setShowStartup] = useState(true);
   const [scrollY, setScrollY] = useState(0);
+  const [logoVisible, setLogoVisible] = useState(!hideLogoInitially);
+  const [videosEnabled, setVideosEnabled] = useState(false);
 
   // Fire-themed video URLs for cinematic slideshow
   const videos = [
@@ -19,10 +19,20 @@ const Landing = () => {
     '/gentle-field-fire.mp4'
   ];
 
-  // Handle startup animation completion
-  const handleStartupComplete = () => {
-    setShowStartup(false);
-  };
+  // Show logo and enable videos after startup animation completely finishes
+  useEffect(() => {
+    if (hideLogoInitially) {
+      // Show landing logo exactly when startup animation is done
+      const timer = setTimeout(() => {
+        setLogoVisible(true);
+        setVideosEnabled(true); // Enable videos after startup
+      }, 4000); // Show exactly when startup phase becomes 'done'
+      
+      return () => clearTimeout(timer);
+    } else {
+      setVideosEnabled(true); // Enable videos immediately if no startup
+    }
+  }, [hideLogoInitially]);
 
   // Video slideshow effect with cinematic timing
   useEffect(() => {
@@ -51,274 +61,272 @@ const Landing = () => {
   const overlayOpacity = Math.min(1, scrollY / 600);
 
   return (
-    <>
-      {showStartup ? (
-        <StartupAnimation onComplete={handleStartupComplete} />
-      ) : (
-        <div className="landing-container visible">
-          {/* Video Background */}
-          <div className="video-background" style={{ 
-          opacity: videoOpacity,
-          transform: videoTransform
-        }}>
-          {videos.map((videoSrc, index) => (
-            <video
-              key={index}
-              className={`background-video ${index === currentVideoIndex ? 'active' : ''}`}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-            >
-              <source src={videoSrc} type="video/mp4" />
-            </video>
-          ))}
-          <div className="video-overlay" style={{
-            background: `
-              radial-gradient(ellipse at center, rgba(0, 0, 0, ${0.2 + overlayOpacity * 0.3}) 0%, rgba(0, 0, 0, ${0.8 + overlayOpacity * 0.2}) 100%),
-              linear-gradient(180deg, rgba(0, 0, 0, ${0.3 + overlayOpacity * 0.4}) 0%, rgba(0, 0, 0, ${0.6 + overlayOpacity * 0.3}) 70%, rgba(0, 0, 0, ${0.9 + overlayOpacity * 0.1}) 100%)
-            `
-          }}></div>
-        </div>
+    <div className="landing-container visible">
+      {/* Video Background - Only show after startup */}
+      <div className="video-background" style={{ 
+        opacity: videosEnabled ? videoOpacity : 0,
+        transform: videoTransform,
+        transition: 'opacity 1s ease-out'
+      }}>
+        {videosEnabled && videos.map((videoSrc, index) => (
+          <video
+            key={index}
+            className={`background-video ${index === currentVideoIndex ? 'active' : ''}`}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+          >
+            <source src={videoSrc} type="video/mp4" />
+          </video>
+        ))}
+        <div className="video-overlay" style={{
+          background: `
+            radial-gradient(ellipse at center, rgba(0, 0, 0, ${0.2 + overlayOpacity * 0.3}) 0%, rgba(0, 0, 0, ${0.8 + overlayOpacity * 0.2}) 100%),
+            linear-gradient(180deg, rgba(0, 0, 0, ${0.3 + overlayOpacity * 0.4}) 0%, rgba(0, 0, 0, ${0.6 + overlayOpacity * 0.3}) 70%, rgba(0, 0, 0, ${0.9 + overlayOpacity * 0.1}) 100%)
+          `
+        }}></div>
+      </div>
 
-        <div className="landing-content">
-          {/* Hero Section */}
-          <section className="hero-section">
-            <div className="hero-logo">
+      <div className="landing-content">
+        {/* Hero Section */}
+        <section className="hero-section">
+          {/* REMOVE LOGO DURING ANIMATION - startup logo becomes this */}
+          {logoVisible && (
+            <div className="hero-logo logo-visible">
               <AnimatedFlameLogo size={120} animated={true} />
             </div>
-            
-            <h1 className="hero-title">BURNWISE</h1>
-            <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
-            <p className="hero-description">
-              Intelligent coordination system preventing dangerous smoke overlap between farms using 
-              multi-agent AI, real-time weather analysis, and TiDB vector search technology.
-            </p>
-            
-            <div className="cta-buttons">
-              <button className="cta-primary" onClick={() => navigate('/dashboard')}>
-                Get Started
-              </button>
-              <button className="cta-secondary" onClick={() => navigate('/map')}>
-                View Live Map
-              </button>
-            </div>
-          </section>
-
-          {/* Problem Section */}
-          <section className="problem-section">
-            <div className="section-container">
-              <h2 className="section-title">The Crisis We're Solving</h2>
-              <p className="section-subtitle">
-                Agricultural burning without coordination creates dangerous air quality conditions and regulatory violations
-              </p>
-              
-              <div className="problem-grid">
-                <div className="problem-card">
-                  <div className="problem-icon">
-                    <FaSmog style={{ fontSize: '4rem', color: '#ff6b35' }} />
-                  </div>
-                  <h3>Dangerous PM2.5 Levels</h3>
-                  <p>Uncoordinated burns create PM2.5 concentrations exceeding EPA limits (35 µg/m³)<sup>1</sup>, 
-                     endangering public health across multiple counties.</p>
-                </div>
-                
-                <div className="problem-card">
-                  <div className="problem-icon">
-                    <FaCar style={{ fontSize: '4rem', color: '#ff6b35' }} />
-                  </div>
-                  <h3>Highway Visibility Crisis</h3>
-                  <p>Smoke drift reduces visibility to under 100 meters on major highways, 
-                     causing multi-vehicle accidents and traffic disruptions.</p>
-                </div>
-                
-                <div className="problem-card">
-                  <div className="problem-icon">
-                    <FaHospital style={{ fontSize: '4rem', color: '#ff6b35' }} />
-                  </div>
-                  <h3>Community Health Impact</h3>
-                  <p>Vulnerable populations including children and elderly face respiratory distress 
-                     when multiple farms burn simultaneously.</p>
-                </div>
-                
-                <div className="problem-card">
-                  <div className="problem-icon">
-                    <FaBalanceScale style={{ fontSize: '4rem', color: '#ff6b35' }} />
-                  </div>
-                  <h3>Regulatory Violations</h3>
-                  <p>Farmers face EPA fines up to $37,500 per day for air quality violations 
-                     due to lack of coordination.</p>
-                </div>
-              </div>
-              
-              <div className="problem-highlight">
-                <blockquote>
-                  "Without real-time coordination, agricultural burning becomes a public health emergency 
-                  waiting to happen. The technology exists to solve this - we just need to implement it."
-                </blockquote>
-                <cite>- Dr. Sarah Chen, Environmental Health Researcher, UC Davis</cite>
-              </div>
-            </div>
-          </section>
-
-          {/* Solution Section */}
-          <section className="solution-section">
-            <div className="section-container">
-              <h2 className="section-title">5-Agent AI Coordination System</h2>
-              <p className="section-subtitle">
-                BURNWISE deploys five specialized AI agents working in concert to prevent smoke conflicts 
-                and optimize burning schedules across multiple farms
-              </p>
-              
-              <div className="solution-workflow">
-                <div className="workflow-step">
-                  <div className="step-number">1</div>
-                  <h4>Request Coordinator</h4>
-                  <p>Validates burn requests, assigns priority scores based on crop type, field size, and urgency</p>
-                </div>
-                <div className="workflow-arrow">→</div>
-                
-                <div className="workflow-step">
-                  <div className="step-number">2</div>
-                  <h4>Weather Analyst</h4>
-                  <p>Real-time weather monitoring with TiDB vector search for pattern matching and prediction</p>
-                </div>
-                <div className="workflow-arrow">→</div>
-                
-                <div className="workflow-step">
-                  <div className="step-number">3</div>
-                  <h4>Smoke Predictor</h4>
-                  <p>Gaussian plume modeling calculates smoke dispersion patterns and overlap zones</p>
-                </div>
-                <div className="workflow-arrow">→</div>
-                
-                <div className="workflow-step">
-                  <div className="step-number">4</div>
-                  <h4>Schedule Optimizer</h4>
-                  <p>Simulated annealing algorithm optimizes burn timing to minimize conflicts</p>
-                </div>
-                <div className="workflow-arrow">→</div>
-                
-                <div className="workflow-step">
-                  <div className="step-number">5</div>
-                  <h4>Alert System</h4>
-                  <p>SMS/email notifications to affected farms with real-time updates and recommendations</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Technical Features */}
-          <section className="tech-features-section">
-            <div className="section-container">
-              <h2 className="section-title">Advanced Technology Stack</h2>
-              
-              <div className="tech-grid">
-                <div className="tech-card">
-                  <h3>TiDB Vector Database</h3>
-                  <ul>
-                    <li><strong>Weather Pattern Embeddings:</strong> 128-dimensional vectors for historical weather matching</li>
-                    <li><strong>Smoke Plume Vectors:</strong> 64-dimensional dispersion pattern storage</li>
-                    <li><strong>Real-time Similarity Search:</strong> Sub-second pattern matching across terabytes</li>
-                    <li><strong>Distributed Architecture:</strong> Horizontal scaling for multi-region deployment</li>
-                  </ul>
-                </div>
-                
-                <div className="tech-card">
-                  <h3>Weather Intelligence</h3>
-                  <ul>
-                    <li><strong>OpenWeatherMap Integration:</strong> Real-time meteorological data</li>
-                    <li><strong>Gaussian Plume Model:</strong> Physics-based smoke dispersion calculation</li>
-                    <li><strong>Wind Pattern Analysis:</strong> Vector field analysis for optimal burn timing</li>
-                    <li><strong>Atmospheric Stability:</strong> Boundary layer height and inversion detection</li>
-                  </ul>
-                </div>
-                
-                <div className="tech-card">
-                  <h3>AI Optimization</h3>
-                  <ul>
-                    <li><strong>Simulated Annealing:</strong> Global optimization for complex scheduling</li>
-                    <li><strong>Multi-objective Function:</strong> Balances farmer needs with safety constraints</li>
-                    <li><strong>Real-time Adaptation:</strong> Dynamic rescheduling based on weather changes</li>
-                    <li><strong>Machine Learning:</strong> Continuous improvement from historical outcomes</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Benefits Section */}
-          <section className="benefits-section">
-            <div className="section-container">
-              <h2 className="section-title">Measurable Impact</h2>
-              
-              <div className="benefits-grid">
-                <div className="benefit-card">
-                  <h3>Environmental Protection</h3>
-                  <ul>
-                    <li>75% reduction in PM2.5 exceedance events</li>
-                    <li>Improved air quality index scores regionally</li>
-                    <li>Reduced impact on sensitive ecosystems</li>
-                    <li>Lower carbon footprint through optimization</li>
-                  </ul>
-                </div>
-                
-                <div className="benefit-card">
-                  <h3>Public Safety</h3>
-                  <ul>
-                    <li>90% reduction in smoke-related traffic incidents</li>
-                    <li>Fewer emergency room visits during burn season</li>
-                    <li>Protected air quality for schools and hospitals</li>
-                    <li>Enhanced visibility on critical transportation routes</li>
-                  </ul>
-                </div>
-                
-                <div className="benefit-card">
-                  <h3>Economic Benefits</h3>
-                  <ul>
-                    <li>Zero EPA violations for participating farms</li>
-                    <li>$2.3M saved in avoided fines annually</li>
-                    <li>Reduced insurance premiums for coordinated farms</li>
-                    <li>Increased crop yields through optimal burn timing</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* CTA Section */}
-          <section className="cta-section">
-            <div className="section-container">
-              <h2>Ready to Transform Agricultural Burning?</h2>
-              <p>
-                Join the future of coordinated agricultural management. BURNWISE is revolutionizing 
-                how farms coordinate burns for safer, cleaner, and more efficient operations.
-              </p>
-              
-              <div className="cta-buttons-bottom">
-                <button className="cta-primary-large" onClick={() => navigate('/dashboard')}>
-                  Start Coordinating
-                </button>
-                <button className="cta-secondary-large" onClick={() => navigate('/request-burn')}>
-                  Request a Burn
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* Attribution */}
-          <div className="attribution">
-            <p>
-              <a href="https://www.epa.gov/pm-pollution" target="_blank" rel="noopener noreferrer">
-                <sup>1</sup> EPA PM2.5 Standards Reference
-              </a>
-            </p>
+          )}
+          
+          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`}>BURNWISE</h1>
+          <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
+          <p className="hero-description">
+            Intelligent coordination system preventing dangerous smoke overlap between farms using 
+            multi-agent AI, real-time weather analysis, and TiDB vector search technology.
+          </p>
+          
+          <div className="cta-buttons">
+            <button className="cta-primary" onClick={() => navigate('/dashboard')}>
+              Get Started
+            </button>
+            <button className="cta-secondary" onClick={() => navigate('/map')}>
+              View Live Map
+            </button>
           </div>
+        </section>
+
+        {/* Problem Section */}
+        <section className="problem-section">
+          <div className="section-container">
+            <h2 className="section-title">The Crisis We're Solving</h2>
+            <p className="section-subtitle">
+              Agricultural burning without coordination creates dangerous air quality conditions and regulatory violations
+            </p>
+            
+            <div className="problem-grid">
+              <div className="problem-card">
+                <div className="problem-icon">
+                  <FaSmog style={{ fontSize: '4rem', color: '#ff6b35' }} />
+                </div>
+                <h3>Dangerous PM2.5 Levels</h3>
+                <p>Uncoordinated burns create PM2.5 concentrations exceeding EPA limits (35 µg/m³)<sup>1</sup>, 
+                   endangering public health across multiple counties.</p>
+              </div>
+              
+              <div className="problem-card">
+                <div className="problem-icon">
+                  <FaCar style={{ fontSize: '4rem', color: '#ff6b35' }} />
+                </div>
+                <h3>Highway Visibility Crisis</h3>
+                <p>Smoke drift reduces visibility to under 100 meters on major highways, 
+                   causing multi-vehicle accidents and traffic disruptions.</p>
+              </div>
+              
+              <div className="problem-card">
+                <div className="problem-icon">
+                  <FaHospital style={{ fontSize: '4rem', color: '#ff6b35' }} />
+                </div>
+                <h3>Community Health Impact</h3>
+                <p>Vulnerable populations including children and elderly face respiratory distress 
+                   when multiple farms burn simultaneously.</p>
+              </div>
+              
+              <div className="problem-card">
+                <div className="problem-icon">
+                  <FaBalanceScale style={{ fontSize: '4rem', color: '#ff6b35' }} />
+                </div>
+                <h3>Regulatory Violations</h3>
+                <p>Farmers face EPA fines up to $37,500 per day for air quality violations 
+                   due to lack of coordination.</p>
+              </div>
+            </div>
+            
+            <div className="problem-highlight">
+              <blockquote>
+                "Without real-time coordination, agricultural burning becomes a public health emergency 
+                waiting to happen. The technology exists to solve this - we just need to implement it."
+              </blockquote>
+              <cite>- Dr. Sarah Chen, Environmental Health Researcher, UC Davis</cite>
+            </div>
+          </div>
+        </section>
+
+        {/* Solution Section */}
+        <section className="solution-section">
+          <div className="section-container">
+            <h2 className="section-title">5-Agent AI Coordination System</h2>
+            <p className="section-subtitle">
+              BURNWISE deploys five specialized AI agents working in concert to prevent smoke conflicts 
+              and optimize burning schedules across multiple farms
+            </p>
+            
+            <div className="solution-workflow">
+              <div className="workflow-step">
+                <div className="step-number">1</div>
+                <h4>Request Coordinator</h4>
+                <p>Validates burn requests, assigns priority scores based on crop type, field size, and urgency</p>
+              </div>
+              <div className="workflow-arrow">→</div>
+              
+              <div className="workflow-step">
+                <div className="step-number">2</div>
+                <h4>Weather Analyst</h4>
+                <p>Real-time weather monitoring with TiDB vector search for pattern matching and prediction</p>
+              </div>
+              <div className="workflow-arrow">→</div>
+              
+              <div className="workflow-step">
+                <div className="step-number">3</div>
+                <h4>Smoke Predictor</h4>
+                <p>Gaussian plume modeling calculates smoke dispersion patterns and overlap zones</p>
+              </div>
+              <div className="workflow-arrow">→</div>
+              
+              <div className="workflow-step">
+                <div className="step-number">4</div>
+                <h4>Schedule Optimizer</h4>
+                <p>Simulated annealing algorithm optimizes burn timing to minimize conflicts</p>
+              </div>
+              <div className="workflow-arrow">→</div>
+              
+              <div className="workflow-step">
+                <div className="step-number">5</div>
+                <h4>Alert System</h4>
+                <p>SMS/email notifications to affected farms with real-time updates and recommendations</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Technical Features */}
+        <section className="tech-features-section">
+          <div className="section-container">
+            <h2 className="section-title">Advanced Technology Stack</h2>
+            
+            <div className="tech-grid">
+              <div className="tech-card">
+                <h3>TiDB Vector Database</h3>
+                <ul>
+                  <li><strong>Weather Pattern Embeddings:</strong> 128-dimensional vectors for historical weather matching</li>
+                  <li><strong>Smoke Plume Vectors:</strong> 64-dimensional dispersion pattern storage</li>
+                  <li><strong>Real-time Similarity Search:</strong> Sub-second pattern matching across terabytes</li>
+                  <li><strong>Distributed Architecture:</strong> Horizontal scaling for multi-region deployment</li>
+                </ul>
+              </div>
+              
+              <div className="tech-card">
+                <h3>Weather Intelligence</h3>
+                <ul>
+                  <li><strong>OpenWeatherMap Integration:</strong> Real-time meteorological data</li>
+                  <li><strong>Gaussian Plume Model:</strong> Physics-based smoke dispersion calculation</li>
+                  <li><strong>Wind Pattern Analysis:</strong> Vector field analysis for optimal burn timing</li>
+                  <li><strong>Atmospheric Stability:</strong> Boundary layer height and inversion detection</li>
+                </ul>
+              </div>
+              
+              <div className="tech-card">
+                <h3>AI Optimization</h3>
+                <ul>
+                  <li><strong>Simulated Annealing:</strong> Global optimization for complex scheduling</li>
+                  <li><strong>Multi-objective Function:</strong> Balances farmer needs with safety constraints</li>
+                  <li><strong>Real-time Adaptation:</strong> Dynamic rescheduling based on weather changes</li>
+                  <li><strong>Machine Learning:</strong> Continuous improvement from historical outcomes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="benefits-section">
+          <div className="section-container">
+            <h2 className="section-title">Measurable Impact</h2>
+            
+            <div className="benefits-grid">
+              <div className="benefit-card">
+                <h3>Environmental Protection</h3>
+                <ul>
+                  <li>75% reduction in PM2.5 exceedance events</li>
+                  <li>Improved air quality index scores regionally</li>
+                  <li>Reduced impact on sensitive ecosystems</li>
+                  <li>Lower carbon footprint through optimization</li>
+                </ul>
+              </div>
+              
+              <div className="benefit-card">
+                <h3>Public Safety</h3>
+                <ul>
+                  <li>90% reduction in smoke-related traffic incidents</li>
+                  <li>Fewer emergency room visits during burn season</li>
+                  <li>Protected air quality for schools and hospitals</li>
+                  <li>Enhanced visibility on critical transportation routes</li>
+                </ul>
+              </div>
+              
+              <div className="benefit-card">
+                <h3>Economic Benefits</h3>
+                <ul>
+                  <li>Zero EPA violations for participating farms</li>
+                  <li>$2.3M saved in avoided fines annually</li>
+                  <li>Reduced insurance premiums for coordinated farms</li>
+                  <li>Increased crop yields through optimal burn timing</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="cta-section">
+          <div className="section-container">
+            <h2>Ready to Transform Agricultural Burning?</h2>
+            <p>
+              Join the future of coordinated agricultural management. BURNWISE is revolutionizing 
+              how farms coordinate burns for safer, cleaner, and more efficient operations.
+            </p>
+            
+            <div className="cta-buttons-bottom">
+              <button className="cta-primary-large" onClick={() => navigate('/dashboard')}>
+                Start Coordinating
+              </button>
+              <button className="cta-secondary-large" onClick={() => navigate('/request-burn')}>
+                Request a Burn
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Attribution */}
+        <div className="attribution">
+          <p>
+            <a href="https://www.epa.gov/pm-pollution" target="_blank" rel="noopener noreferrer">
+              <sup>1</sup> EPA PM2.5 Standards Reference
+            </a>
+          </p>
         </div>
       </div>
-      )}
-    </>
+    </div>
   );
 };
 

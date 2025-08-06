@@ -130,10 +130,22 @@
 
 .hero-logo {
   margin-bottom: 2.5rem;
-  animation: logoFloat 6s ease-in-out infinite;
   filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.4));
   position: relative;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero-logo.logo-visible {
+  opacity: 1;
+  transform: scale(1);
+  animation: logoFloat 6s ease-in-out infinite 0.5s; /* Add delay to start animation after appearing */
+}
+
+.hero-logo.logo-hidden {
+  opacity: 0;
+  transform: scale(1); /* Keep same scale to avoid jump */
+  animation: none;
 }
 
 .hero-logo::after {
@@ -185,7 +197,20 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s,
+              transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
+}
+
+.hero-title.title-visible {
+  opacity: 1;
+  transform: translateY(0);
   animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+.hero-title.title-hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: none;
 }
 
 @keyframes titleGlow {
