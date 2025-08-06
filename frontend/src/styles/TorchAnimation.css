@@ -87,18 +87,5 @@
 
 /* Smooth cubic-bezier for the morphing portion */
 .torch-logo {
-  animation-timing-function: linear;
-}
-
-/* Override timing for morphing phase */
-@keyframes torchMorphOnly {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    transform: translate(
-      calc(-50% + var(--torch-x, 123px)), 
-      calc(-50% + var(--torch-y, -530px))
-    ) scale(var(--torch-scale, 0.36));
-  }
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
