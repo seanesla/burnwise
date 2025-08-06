@@ -22,15 +22,15 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   // Show logo and enable videos synchronized with startup animation
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show torch flame after animation wrapper is removed
+      // Show torch flame after animation completes
       const timer = setTimeout(() => {
         setLogoVisible(true);
-      }, 4650); // Show flame after animation completes
+      }, 4100); // Show flame right after morph completes
       
       // Enable videos after flame has docked
       const videoTimer = setTimeout(() => {
         setVideosEnabled(true);
-      }, 4700);
+      }, 4200);
       
       return () => {
         clearTimeout(timer);
