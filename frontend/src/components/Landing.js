@@ -4,7 +4,7 @@ import AnimatedFlameLogo from './AnimatedFlameLogo';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
 import '../styles/Landing.css';
 
-const Landing = ({ fromStartup, hideLogoInitially }) => {
+const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   const navigate = useNavigate();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [scrollY, setScrollY] = useState(0);
@@ -19,14 +19,14 @@ const Landing = ({ fromStartup, hideLogoInitially }) => {
     '/gentle-field-fire.mp4'
   ];
 
-  // Show logo and enable videos after startup animation completely finishes
+  // Show logo and enable videos synchronized with startup animation
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show torch flame exactly when startup logo finishes morphing
+      // Show torch flame exactly when startup logo starts fading (transitioning phase)
       const timer = setTimeout(() => {
         setLogoVisible(true);
         setVideosEnabled(true); // Enable videos after startup
-      }, 3800); // Show just before 'done' phase to ensure seamless transition
+      }, 4000); // 2500ms startup + 1500ms morphing = 4000ms (start of transitioning)
       
       return () => clearTimeout(timer);
     } else {
@@ -90,8 +90,11 @@ const Landing = ({ fromStartup, hideLogoInitially }) => {
       </div>
 
       <div className="landing-content">
-        {/* Hero Section */}
-        <section className="hero-section">
+        {/* Hero Section - Hidden until startup animation finishes morphing */}
+        <section className="hero-section" style={{
+          opacity: animationPhase === 'startup' ? 0 : (animationPhase === 'morphing' ? 0.3 : 1),
+          transition: 'opacity 0.8s ease-out'
+        }}>
           <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`}>
             <span>BURNW</span>
             <span className="title-i-container">

@@ -138,7 +138,7 @@
 
 .torch-flame {
   position: absolute;
-  top: -55px;
+  top: -60px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -154,7 +154,16 @@
 .title-i {
   position: relative;
   display: inline-block;
-  color: transparent; /* Hide the actual I since flame replaces it */
+  /* Match the gradient text effect of the parent title */
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #ffffff 50%,
+    rgba(255, 255, 255, 0.7) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .hero-title {

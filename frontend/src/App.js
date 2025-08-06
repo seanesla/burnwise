@@ -93,11 +93,12 @@ function App() {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // The "I" is approximately at the center of BURNWISE
-      // Title is about 200px above center when content is centered
-      // Flame needs to be on top of the "I"
-      const targetY = -200; // Position above center where title will be
-      const targetX = 0; // The "I" is roughly centered in BURNWISE
+      // Calculate based on the hero section centering
+      // The title is part of vertically centered content
+      // Estimate: Title is about 150px above viewport center
+      const targetY = -150;
+      // The "I" is slightly off-center in "BURNWISE" (approximately at position 5/8 of the word)
+      const targetX = 10; // Slight offset to the right for the "I" position
       
       return {
         x: targetX,
@@ -113,19 +114,19 @@ function App() {
       log('PHASE 1 COMPLETE - Starting morph transition');
       setStartupPhase('morphing');
       
-      // Phase 2: Morph for 1 second
+      // Phase 2: Morph for 1.5 seconds (longer for smooth movement)
       const morphTimer = setTimeout(() => {
         log('PHASE 2 COMPLETE - Starting fade');
         setStartupPhase('transitioning');
         
-        // Phase 3: Fade out for 500ms
+        // Phase 3: Quick fade out for 300ms
         const transitionTimer = setTimeout(() => {
           log('PHASE 3 COMPLETE - Animation done');
           setStartupPhase('done');
-        }, 500);
+        }, 300);
         
         return () => clearTimeout(transitionTimer);
-      }, 1000);
+      }, 1500);
       
       return () => clearTimeout(morphTimer);
     }, 2500);
@@ -213,9 +214,9 @@ function App() {
               transform: (startupPhase === 'morphing' || startupPhase === 'transitioning') ? 
                 `translate(${logoTargetPosition?.x || 0}px, ${logoTargetPosition?.y || 0}px) scale(${logoTargetPosition?.scale || 1})` :
                 'translate(0, 0) scale(1)',
-              // Stay visible during morphing and transitioning
-              opacity: 1,
-              transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)'
+              // Fade out during transitioning phase to hand over to torch
+              opacity: startupPhase === 'transitioning' ? 0 : 1,
+              transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
             }}>
               {AnimatedFlameLogo ? (
                 <AnimatedFlameLogo size={180} animated={true} />
@@ -244,7 +245,7 @@ function App() {
           <Navigation />
           <div className="app-content">
             <Routes>
-              <Route path="/" element={<Landing fromStartup={startupPhase === 'transitioning' || startupPhase === 'done'} hideLogoInitially={startupPhase !== 'done'} />} />
+              <Route path="/" element={<Landing fromStartup={startupPhase === 'transitioning' || startupPhase === 'done'} hideLogoInitially={startupPhase !== 'done'} animationPhase={startupPhase} />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/map" element={<Map />} />
               <Route path="/schedule" element={<Schedule />} />
