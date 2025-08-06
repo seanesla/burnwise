@@ -188,9 +188,6 @@ function App() {
               height: '100vh',
               background: 'transparent', // Never show background on this div
               zIndex: 999999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               pointerEvents: startupPhase === 'transitioning' ? 'none' : 'auto'
             }}
             onTransitionEnd={() => log('TRANSITION END EVENT')}
@@ -211,16 +208,14 @@ function App() {
             
             {/* Logo container that morphs to landing position */}
             <div className="startup-logo-container" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2rem',
               position: 'fixed',
+              top: '50%',
+              left: '50%',
               zIndex: 10,
-              // Start at center, then morph to torch position above the I
+              // Transform handles both centering AND morphing
               transform: (startupPhase === 'morphing' || startupPhase === 'transitioning') ? 
-                `translate(${logoTargetPosition?.x || 0}px, ${logoTargetPosition?.y || 0}px) scale(${logoTargetPosition?.scale || 1})` :
-                `translate(${logoTargetPosition?.startX || 0}px, ${logoTargetPosition?.startY || 0}px) scale(1)`,
+                `translate(calc(-50% + ${logoTargetPosition?.x || 0}px), calc(-50% + ${logoTargetPosition?.y || 0}px)) scale(${logoTargetPosition?.scale || 1})` :
+                `translate(-50%, -50%) scale(1)`,
               // Fade out during transitioning phase to hand over to torch
               opacity: startupPhase === 'transitioning' ? 0 : 1,
               transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
