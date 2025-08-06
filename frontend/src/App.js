@@ -54,99 +54,34 @@ function App() {
   
   // Set CSS custom properties for the torch position and manage animation
   useEffect(() => {
-    // Function to measure and set torch position
-    const measureAndSetPosition = async () => {
-      // Wait for Inter font to load
-      try {
-        await document.fonts.load('900 6rem Inter');
-      } catch (e) {
-        log('Font load error, continuing anyway', e);
-      }
-      
-      // The Landing component has the flame at:
-      // - The "I" wrapped in a span with position: relative
-      // - Flame positioned at left: 50%, transform: translateX(-50%)
-      // This centers it over the "I" character
-      
-      // In Landing.css, the absolute flame position for "I" is well-tested
-      // We need to match that exact position
-      // From the test: Landing Flame at (879.4) and "I" at (879.4) = perfect alignment
-      // But torch lands at (917.7) = 38.3px too far right
-      
-      // The issue is the "I" position calculation
-      // Let's use the same structure as Landing.js does
-      
-      // Create a test element matching the Landing.js structure
-      const tempDiv = document.createElement('div');
-      tempDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: clamp(3rem, 8vw, 6rem);
-        font-weight: 900;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        letter-spacing: -0.02em;
-        white-space: nowrap;
-        pointer-events: none;
-        z-index: -1;
-        visibility: hidden;
-      `;
-      
-      // Match the Landing.js structure exactly
-      // Use the same responsive font sizing
-      const fontSize = window.getComputedStyle(document.documentElement).fontSize;
-      const actualFontSize = Math.min(Math.max(3 * 16, window.innerWidth * 0.08), 6 * 16);
-      tempDiv.style.fontSize = `${actualFontSize}px`;
-      
-      // Match the Landing.js structure: BURNW[I]SE
-      tempDiv.innerHTML = `
-        <span style="position: relative; display: inline-block;">
-          BURNW<span style="position: relative; display: inline-block;">I</span>SE
-        </span>
-      `;
-      document.body.appendChild(tempDiv);
-      
-      // Force layout
-      void tempDiv.offsetHeight;
-      
-      // Get the "I" span
-      const iSpan = tempDiv.querySelector('span span');
-      const iRect = iSpan.getBoundingClientRect();
-      const tempRect = tempDiv.getBoundingClientRect();
-      
-      // Calculate offset from viewport center
-      const viewportCenterX = window.innerWidth / 2;
-      const viewportCenterY = window.innerHeight / 2;
-      
-      // The "I" center relative to viewport center
-      const iCenterX = iRect.left + iRect.width / 2;
-      const targetX = iCenterX - viewportCenterX;
-      
-      // Vertical: place flame 65px above the text top
-      // The gap in the test is 47.8px, we need 65px, so add 17.2px more
-      const targetY = tempRect.top - viewportCenterY - 82; // 65px ideal + 17px adjustment
-      
-      // Clean up
-      document.body.removeChild(tempDiv);
-      
-      // Set CSS variables for the animation
-      const root = document.documentElement;
-      root.style.setProperty('--torch-x', `${targetX}px`);
-      root.style.setProperty('--torch-y', `${targetY}px`);
-      root.style.setProperty('--torch-scale', '0.36');
-      
-      log('Torch position calculated', { 
-        targetX, 
-        targetY,
-        iCenterX,
-        viewportCenterX,
-        textTop: tempRect.top
-      });
-    };
+    // Simple, direct calculation for torch position
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     
-    // Run measurement immediately
-    measureAndSetPosition();
+    // The "I" in BURNWISE is at character position 6 of 8
+    // With centered text, the I is roughly 37.5% from the left edge of the word
+    // But since the word is centered, we need offset from center
+    // For an 8-character word with monospace-ish rendering:
+    // B U R N W I S E
+    // 0 1 2 3 4 5 6 7
+    // Center is at 3.5, I is at 5.5, so it's 2 characters right of center
+    // Each character is roughly word-width/8
+    // At 6rem font, BURNWISE is about 480px wide, so each char is ~60px
+    // I is 2 chars right = 120px right of center
+    const targetX = 120;
+    
+    // Vertical: flame should be above the title
+    // Title is centered vertically, roughly at 50% viewport
+    // We want flame ~65px above the text
+    const targetY = -120; // Move up from center
+    
+    // Set CSS variables for the animation
+    const root = document.documentElement;
+    root.style.setProperty('--torch-x', `${targetX}px`);
+    root.style.setProperty('--torch-y', `${targetY}px`);
+    root.style.setProperty('--torch-scale', '0.36');
+    
+    log('Torch position set', { targetX, targetY });
     
     // Hide animation after it completes
     const hideTimer = setTimeout(() => {

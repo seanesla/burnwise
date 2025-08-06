@@ -22,22 +22,24 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   // Show logo and enable videos synchronized with startup animation
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show torch flame right when the animation reaches its target
+      // Show torch flame after animation wrapper is removed
       const timer = setTimeout(() => {
         setLogoVisible(true);
-      }, 3900); // Show flame when morphing completes (87% of 4.6s)
+      }, 4650); // Show flame after animation completes
       
       // Enable videos after flame has docked
       const videoTimer = setTimeout(() => {
         setVideosEnabled(true);
-      }, 4200);
+      }, 4700);
       
       return () => {
         clearTimeout(timer);
         clearTimeout(videoTimer);
       };
     } else {
-      setVideosEnabled(true); // Enable videos immediately if no startup
+      // When hideLogoInitially becomes false, show the logo immediately
+      setLogoVisible(true);
+      setVideosEnabled(true);
     }
   }, [hideLogoInitially]);
 
