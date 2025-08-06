@@ -129,6 +129,25 @@
   position: relative; /* For absolute logo positioning */
 }
 
+/* Dark vignette behind wordmark for flame contrast */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 400px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.4) 40%,
+    transparent 70%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
 /* Torch effect for BURNWISE title */
 .title-i-container {
   position: relative;
@@ -151,10 +170,20 @@
   transition: opacity 0.3s ease-out;
 }
 
-.title-i {
-  position: relative;
-  display: inline-block;
-  /* Inherit gradient from parent - no overrides needed */
+.torch-flame-absolute {
+  position: absolute;
+  top: -65px; /* Flame touches/kisses the top of the I */
+  left: 62.5%; /* Fine-tuned position over the "I" in BURNWISE */
+  transform: translateX(-50%);
+  z-index: 10;
+  filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
+          drop-shadow(0 0 15px rgba(255, 87, 34, 0.6));
+  width: 65px; /* Scaled up 30% to match I width */
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease-out;
 }
 
 .hero-title {

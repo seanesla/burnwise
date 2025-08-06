@@ -22,13 +22,20 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   // Show logo and enable videos synchronized with startup animation
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show torch flame exactly when startup logo starts fading (transitioning phase)
+      // Show torch flame earlier so it docks BEFORE content appears
       const timer = setTimeout(() => {
         setLogoVisible(true);
-        setVideosEnabled(true); // Enable videos after startup
-      }, 4000); // 2500ms startup + 1500ms morphing = 4000ms (start of transitioning)
+      }, 3500); // Show flame while still morphing, before transitioning
       
-      return () => clearTimeout(timer);
+      // Enable videos later, after flame has docked
+      const videoTimer = setTimeout(() => {
+        setVideosEnabled(true);
+      }, 4200);
+      
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(videoTimer);
+      };
     } else {
       setVideosEnabled(true); // Enable videos immediately if no startup
     }
@@ -90,22 +97,20 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
       </div>
 
       <div className="landing-content">
-        {/* Hero Section - Hidden until startup animation finishes morphing */}
+        {/* Hero Section - Better staged appearance after flame docks */}
         <section className="hero-section" style={{
-          opacity: animationPhase === 'startup' ? 0 : (animationPhase === 'morphing' ? 0.3 : 1),
+          opacity: animationPhase === 'startup' ? 0 : 
+                   (animationPhase === 'morphing' ? 0 : 
+                   (animationPhase === 'transitioning' ? 0.5 : 1)),
           transition: 'opacity 0.8s ease-out'
         }}>
-          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`}>
-            <span>BURNW</span>
-            <span className="title-i-container">
-              {logoVisible && (
-                <div className="torch-flame">
-                  <AnimatedFlameLogo size={50} animated={true} />
-                </div>
-              )}
-              <span className="title-i">I</span>
-            </span>
-            <span>SE</span>
+          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`} style={{ position: 'relative' }}>
+            BURNWISE
+            {logoVisible && (
+              <div className="torch-flame-absolute">
+                <AnimatedFlameLogo size={65} animated={true} />
+              </div>
+            )}
           </h1>
           <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
           <p className="hero-description">
