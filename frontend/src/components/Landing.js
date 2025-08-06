@@ -22,11 +22,11 @@ const Landing = ({ fromStartup, hideLogoInitially }) => {
   // Show logo and enable videos after startup animation completely finishes
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show landing logo exactly when startup animation is done
+      // Show torch flame exactly when startup logo finishes morphing
       const timer = setTimeout(() => {
         setLogoVisible(true);
         setVideosEnabled(true); // Enable videos after startup
-      }, 4000); // Show exactly when startup phase becomes 'done'
+      }, 3800); // Show just before 'done' phase to ensure seamless transition
       
       return () => clearTimeout(timer);
     } else {
@@ -92,14 +92,18 @@ const Landing = ({ fromStartup, hideLogoInitially }) => {
       <div className="landing-content">
         {/* Hero Section */}
         <section className="hero-section">
-          {/* REMOVE LOGO DURING ANIMATION - startup logo becomes this */}
-          {logoVisible && (
-            <div className="hero-logo logo-visible">
-              <AnimatedFlameLogo size={120} animated={true} />
-            </div>
-          )}
-          
-          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`}>BURNWISE</h1>
+          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`}>
+            <span>BURNW</span>
+            <span className="title-i-container">
+              {logoVisible && (
+                <div className="torch-flame">
+                  <AnimatedFlameLogo size={50} animated={true} />
+                </div>
+              )}
+              <span className="title-i">I</span>
+            </span>
+            <span>SE</span>
+          </h1>
           <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
           <p className="hero-description">
             Intelligent coordination system preventing dangerous smoke overlap between farms using 

@@ -9,9 +9,9 @@ import Navigation from './components/Navigation';
 import AnimatedFlameLogo from './components/AnimatedFlameLogo';
 import './styles/App.css';
 
-// BRUTE FORCE DEBUG SYSTEM
-const DEBUG = true;
-const LOG_PREFIX = '🔥🔥🔥 BURNWISE DEBUG:';
+// Debug system (disabled for production)
+const DEBUG = false;
+const LOG_PREFIX = '🔥 BURNWISE:';
 
 function App() {
   const [startupPhase, setStartupPhase] = useState('startup');
@@ -88,19 +88,21 @@ function App() {
   useEffect(() => {
     log('STARTING ANIMATION SEQUENCE');
     
-    // Get EXACT position where landing logo will be
+    // Get EXACT position where the flame will be on the "I" in BURNWISE
     const calculateTargetPosition = () => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // The landing page centers its hero content
-      // Logo appears about 200px from top of viewport based on screenshots
-      const targetY = 200 - (viewportHeight / 2); // Logo final position from center
+      // The "I" is approximately at the center of BURNWISE
+      // Title is about 200px above center when content is centered
+      // Flame needs to be on top of the "I"
+      const targetY = -200; // Position above center where title will be
+      const targetX = 0; // The "I" is roughly centered in BURNWISE
       
       return {
-        x: 0,  // Stay centered horizontally
-        y: targetY, // Move to exact landing position
-        scale: 120 / 180  // Scale from 180px to 120px
+        x: targetX,
+        y: targetY,
+        scale: 50 / 180  // Scale from 180px to 50px for torch size
       };
     };
     
