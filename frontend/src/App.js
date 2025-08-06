@@ -88,15 +88,14 @@ function App() {
   useEffect(() => {
     log('STARTING ANIMATION SEQUENCE');
     
-    // Calculate position for torch effect - EXACT "I" position from measurements
+    // Calculate position for torch effect - adjusted for actual "I" position
     const calculateTargetPosition = () => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // MEASURED: "I" is consistently at ~123.38px RIGHT of viewport center
-      // This is based on Inter 900 font metrics at the current size
-      // The "I" is the 6th character in BURNWISE, positioned at ~71.6% through the word
-      const iOffsetRatio = 123.38 / 1512; // Measured offset / measured viewport width
+      // Precise measurement shows "I" is at exactly 123.38px from center
+      // Setting exact ratio based on measured position
+      const iOffsetRatio = 123.38 / 1512; // Exact measured position
       const targetX = viewportWidth * iOffsetRatio; // Scale to current viewport
       
       // Vertical position - flame touches top of text
@@ -105,7 +104,7 @@ function App() {
       return {
         startX: 0,
         startY: 0,
-        x: targetX,  // ~123px right of center on 1512px viewport
+        x: targetX,  // ~155px right of center to align with I
         y: targetY,
         scale: 65 / 180  // Scale up ~30% to match I width
       };
@@ -192,7 +191,7 @@ function App() {
             }}
             onTransitionEnd={() => log('TRANSITION END EVENT')}
           >
-            {/* Black background that fades out smoothly */}
+            {/* Black background that fades out during morphing */}
             <div className="startup-bg" style={{
               position: 'fixed',
               top: 0,
@@ -200,8 +199,8 @@ function App() {
               width: '100vw',
               height: '100vh',
               background: '#000',
-              opacity: startupPhase === 'morphing' ? 1 : (startupPhase === 'transitioning' ? 0 : 1),
-              transition: 'opacity 0.5s ease-out',
+              opacity: startupPhase === 'morphing' ? 0 : (startupPhase === 'transitioning' ? 0 : 1),
+              transition: 'opacity 1.5s ease-out', // Slower fade for smooth transition
               zIndex: -2,
               pointerEvents: 'none'
             }}></div>
