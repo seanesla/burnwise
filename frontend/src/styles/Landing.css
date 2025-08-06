@@ -31,8 +31,10 @@
 /* Phase 3: Complete - part of page content */
 .unified-flame-logo.flame-complete {
   position: relative;
-  margin-bottom: 2rem;
+  margin: 0 auto 2rem auto;
   opacity: 1;
+  display: flex;
+  justify-content: center;
 }
 
 /* Intro title and subtitle styling */
@@ -98,18 +100,30 @@
 .landing-container.intro .landing-content {
   opacity: 0;
   transform: translateY(30px);
+  pointer-events: none;
 }
 
 .landing-container.transforming .landing-content {
-  opacity: 0;
-  transform: translateY(20px);
+  opacity: 0.5;
+  transform: translateY(10px);
   transition: all 0.8s ease-out;
+  pointer-events: none;
 }
 
 .landing-container.complete .landing-content {
   opacity: 1;
   transform: translateY(0);
-  transition: all 1s ease-out 0.3s;
+  transition: all 1s ease-out;
+  pointer-events: auto;
+}
+
+/* Keep logo visible during complete phase */
+.landing-container.complete .unified-flame-logo {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
 /* Video background phase transitions */
@@ -216,6 +230,7 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 3rem;
+  padding-top: 180px; /* Space for logo when it's in complete phase */
 }
 
 .hero-logo {

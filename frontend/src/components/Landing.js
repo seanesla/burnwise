@@ -64,21 +64,13 @@ const Landing = () => {
   return (
     <>
       <div className={`landing-container ${animationPhase}`}>
-        {/* Unified Flame Logo - transforms from intro to header */}
-        {animationPhase !== 'complete' && (
-          <div className={`unified-flame-logo flame-${animationPhase}`}>
-            <AnimatedFlameLogo 
-              size={animationPhase === 'intro' ? 180 : 100} 
-              animated={true} 
-            />
-            <h1 className={`intro-title ${animationPhase === 'transforming' ? 'fading' : ''}`}>
-              BURNWISE
-            </h1>
-            <p className={`intro-subtitle ${animationPhase === 'transforming' ? 'fading' : ''}`}>
-              Multi-Farm Agricultural Burn Coordinator
-            </p>
-          </div>
-        )}
+        {/* Unified Flame Logo - transforms from intro to hero */}
+        <div className={`unified-flame-logo flame-${animationPhase}`}>
+          <AnimatedFlameLogo 
+            size={animationPhase === 'intro' ? 180 : 120} 
+            animated={true} 
+          />
+        </div>
 
 
         {/* Video Background */}
@@ -110,12 +102,7 @@ const Landing = () => {
         <div className="landing-content">
           {/* Hero Section */}
           <section className="hero-section">
-            {/* Logo appears here when animation is complete */}
-            {animationPhase === 'complete' && (
-              <div className="hero-logo">
-                <AnimatedFlameLogo size={120} animated={true} />
-              </div>
-            )}
+            {/* Logo is already positioned above via unified-flame-logo */}
             
             <h1 className="hero-title">BURNWISE</h1>
             <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
