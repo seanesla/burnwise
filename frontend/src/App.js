@@ -212,27 +212,28 @@ function App() {
               top: '50%',
               left: '50%',
               zIndex: 10,
-              // Transform handles both centering AND morphing
-              // Using explicit pixel calculations instead of calc() for better browser compatibility
+              // Transform handles both centering AND morphing - always use pixels for consistency
               transform: (() => {
+                // Always use pixel values to prevent unit mismatch jumps
+                const logoSize = 180; // Original logo size
+                const centerOffsetX = -logoSize / 2; // -90px to center horizontally
+                const centerOffsetY = -logoSize / 2; // -90px to center vertically
+                
                 if (startupPhase === 'morphing' || startupPhase === 'transitioning') {
-                  // Get the scale factor
+                  // Morphing to final position
                   const scale = logoTargetPosition?.scale || 1;
+                  const targetX = logoTargetPosition?.x || 0;
+                  const targetY = logoTargetPosition?.y || 0;
                   
-                  // Calculate the centering offset accounting for scale
-                  // When scaled, the element's visual size changes, so we need to adjust the centering
-                  const scaledLogoSize = 180 * scale; // Actual size after scaling
-                  const centerOffsetX = -scaledLogoSize / 2; // Half of scaled width
-                  const centerOffsetY = -scaledLogoSize / 2; // Half of scaled height
-                  
-                  // Add the target position to the centering offset
-                  const finalX = centerOffsetX + (logoTargetPosition?.x || 0);
-                  const finalY = centerOffsetY + (logoTargetPosition?.y || 0);
+                  // For morphing, we move from center (0,0) to target position
+                  // The scale is applied after the translation
+                  const finalX = centerOffsetX + targetX;
+                  const finalY = centerOffsetY + targetY;
                   
                   return `translate(${finalX}px, ${finalY}px) scale(${scale})`;
                 } else {
-                  // Initial centered position
-                  return `translate(-50%, -50%) scale(1)`;
+                  // Initial centered position - using pixels to match morphing units
+                  return `translate(${centerOffsetX}px, ${centerOffsetY}px) scale(1)`;
                 }
               })(),
               // Fade out during transitioning phase to hand over to torch
