@@ -134,27 +134,27 @@ const BurnRequestForm = ({ onSubmitSuccess }) => {
         <h3>5-Agent Workflow Status</h3>
         <div className="agent-status-grid">
           <div className={`agent-status agent-coordinator ${agentStatus.coordinator}`}>
-            <span className="agent-icon">🤖</span>
+            <span className="agent-icon">C</span>
             <span className="agent-name">Coordinator</span>
             <span className="agent-state">{agentStatus.coordinator}</span>
           </div>
           <div className={`agent-status agent-weather ${agentStatus.weather}`}>
-            <span className="agent-icon">🌤️</span>
+            <span className="agent-icon">W</span>
             <span className="agent-name">Weather</span>
             <span className="agent-state">{agentStatus.weather}</span>
           </div>
           <div className={`agent-status agent-predictor ${agentStatus.predictor}`}>
-            <span className="agent-icon">💨</span>
+            <span className="agent-icon">P</span>
             <span className="agent-name">Predictor</span>
             <span className="agent-state">{agentStatus.predictor}</span>
           </div>
           <div className={`agent-status agent-optimizer ${agentStatus.optimizer}`}>
-            <span className="agent-icon">📊</span>
+            <span className="agent-icon">O</span>
             <span className="agent-name">Optimizer</span>
             <span className="agent-state">{agentStatus.optimizer}</span>
           </div>
           <div className={`agent-status agent-alerts ${agentStatus.alerts}`}>
-            <span className="agent-icon">🔔</span>
+            <span className="agent-icon">A</span>
             <span className="agent-name">Alerts</span>
             <span className="agent-state">{agentStatus.alerts}</span>
           </div>
@@ -310,7 +310,7 @@ const BurnRequestForm = ({ onSubmitSuccess }) => {
       {/* Vector Search Indicator */}
       <div className="vector-info">
         <p className="vector-note">
-          🔍 This form triggers TiDB vector search with:
+          This form triggers TiDB vector search with:
         </p>
         <ul className="vector-list">
           <li>128-dimensional weather pattern matching</li>

@@ -1,0 +1,126 @@
+.actual-fire-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, #1a0000 0%, #000000 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.5s ease-in;
+  transition: opacity 0.8s ease-out;
+}
+
+
+.logo-wrapper {
+  margin-bottom: 40px;
+  animation: logoIntro 1.5s ease-out;
+  filter: drop-shadow(0 0 40px rgba(255, 107, 53, 0.6));
+}
+
+.burnwise-title {
+  font-size: 56px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #FF6B35 0%, #FF5722 50%, #FFB000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-transform: uppercase;
+  letter-spacing: 12px;
+  margin-bottom: 10px;
+  animation: titleGlow 2s ease-in-out infinite alternate, titleSlide 1s ease-out 0.5s both;
+  text-shadow: 0 0 40px rgba(255, 107, 53, 0.4);
+}
+
+.burnwise-subtitle {
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(255, 176, 0, 0.8);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  animation: subtitleFade 1s ease-out 1s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes logoIntro {
+  0% {
+    transform: scale(0.3) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes titleSlide {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes subtitleFade {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes titleGlow {
+  0% {
+    filter: brightness(1) drop-shadow(0 0 20px rgba(255, 107, 53, 0.5));
+  }
+  100% {
+    filter: brightness(1.2) drop-shadow(0 0 30px rgba(255, 107, 53, 0.8));
+  }
+}
+
+/* Particle effects overlay */
+.actual-fire-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(255, 176, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255, 87, 34, 0.15) 0%, transparent 70%);
+  animation: fireAmbient 4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes fireAmbient {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}

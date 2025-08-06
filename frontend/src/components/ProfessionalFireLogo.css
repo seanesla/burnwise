@@ -1,0 +1,17 @@
+.professional-fire-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+}
+
+.fire-svg {
+  filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.6));
+  will-change: transform;
+}
+
+/* Additional enhancements for performance */
+.fire-svg * {
+  vector-effect: non-scaling-stroke;
+}

@@ -8,97 +8,54 @@ BURNWISE is a multi-farm agricultural burn coordination system for the TiDB Agen
 
 ## Core Commands
 
-### Development
 ```bash
-npm run dev              # Start both backend (port 5001) and frontend (port 3000) concurrently
-npm run backend:dev      # Start backend only with nodemon
-npm run frontend:dev     # Start frontend only
-```
+# Development
+npm run dev              # Start both backend (5001) and frontend (3000)
+npm run backend:dev      # Backend only with nodemon
+npm run frontend:dev     # Frontend only
 
-### Setup & Installation
-```bash
-npm run install:all      # Install all dependencies (root, backend, frontend)
-npm run setup:check      # Verify all configurations and API keys
+# Setup & Installation  
+npm run install:all      # Install all dependencies
+npm run setup:check      # Verify configurations and API keys
 npm run seed            # Populate database with demo data
-```
 
-### Testing
-```bash
-npm test                # Run all tests (backend and frontend)
-npm run test:backend    # Run backend tests with coverage
-npm run test:frontend   # Run frontend tests
-npm run test:workflow   # Test complete multi-agent workflow
-
-# E2E Testing with Playwright
-cd e2e-tests
-npx playwright test                    # Run all E2E tests
-npx playwright test startup-animation.spec.js  # Test startup animation specifically
-npx playwright test --headed           # Run tests with browser visible
+# Testing
+npm test                # Run all tests
+npm run test:backend    # Backend tests with coverage
+npm run test:frontend   # Frontend tests
+npm run test:workflow   # Complete multi-agent workflow
+cd e2e-tests && npx playwright test [--headed]
 ```
 
 ## Architecture
 
-### Multi-Agent System (5 Agents)
-Located in `backend/agents/`:
-1. **coordinator.js** - Validates and stores burn requests, assigns priority scores
-2. **weather.js** - Fetches OpenWeatherMap data, stores weather pattern vectors
-3. **predictor.js** - Calculates smoke dispersion using Gaussian plume model, detects conflicts
-4. **optimizer.js** - Uses simulated annealing algorithm for schedule optimization  
-5. **alerts.js** - Manages alert system, sends SMS via Twilio
+**5-Agent System** (`backend/agents/`):
+1. **coordinator.js** - Validates burn requests, assigns priority scores
+2. **weather.js** - Fetches OpenWeatherMap data, stores weather vectors (128-dim)
+3. **predictor.js** - Gaussian plume model for smoke dispersion, conflict detection
+4. **optimizer.js** - Simulated annealing for schedule optimization
+5. **alerts.js** - Alert system with SMS via Twilio
 
-### Database (TiDB)
-- Connection: `backend/db/connection.js` with connection pooling and circuit breaker
-- Schema: `backend/db/agent-schema.sql`
-- Vector columns: `weather_pattern_embedding`, `plume_vector`, `burn_vector`
-- Vector search for weather pattern matching and smoke predictions
+**Database (TiDB)**: Connection pooling + circuit breaker (`backend/db/connection.js`), schema (`backend/db/agent-schema.sql`), vector columns for weather/smoke/burn patterns
 
-### API Endpoints
-Located in `backend/api/`:
-- `/api/burn-requests` - CRUD operations for burn requests
-- `/api/weather` - Weather analysis and predictions
-- `/api/schedule` - Schedule optimization
-- `/api/alerts` - Alert management
-- `/api/farms` - Farm management
-- `/api/analytics` - Dashboard metrics
+**API Endpoints** (`backend/api/`): `/api/burn-requests`, `/api/weather`, `/api/schedule`, `/api/alerts`, `/api/farms`, `/api/analytics`
 
-### Frontend (React)
-Located in `frontend/src/`:
-- Main app: `App.js` with React Router
-- Components: `Map.js` (Mapbox), `Dashboard.js`, `Schedule.js`, `AlertsPanel.js`, `ImprovedBurnRequestForm.js`
-- Proxy configured to backend on port 5001
+**Frontend (React)**: `App.js` with Router, key components: `Map.js` (Mapbox), `Dashboard.js`, `Schedule.js`, `AlertsPanel.js`, `ImprovedBurnRequestForm.js`
 
 ## External Dependencies & API Keys
 
-**Required for functionality:**
-1. **TiDB Serverless** - Database operations (set in backend/.env)
-2. **OpenWeatherMap API** - Weather data (OPENWEATHERMAP_API_KEY in backend/.env)
-3. **Mapbox** - Map visualization (REACT_APP_MAPBOX_TOKEN in frontend/.env)
-
-**Optional:**
-- **Twilio** - SMS alerts (TWILIO_* credentials in backend/.env)
-- **OpenAI** - Enhanced embeddings (has fallback implementation)
+**Required**: TiDB Serverless (backend/.env), OpenWeatherMap API (OPENWEATHERMAP_API_KEY), Mapbox (REACT_APP_MAPBOX_TOKEN in frontend/.env)
+**Optional**: Twilio SMS (TWILIO_*), OpenAI embeddings (has fallback)
 
 ## Key Algorithms
 
-### Gaussian Plume Model (Smoke Dispersion)
-- Implementation: `backend/agents/weather.js:predictSmokeDispersion()`
-- Calculates PM2.5 concentrations at different distances
-- Returns max dispersion radius and affected area
-
-### Simulated Annealing (Schedule Optimization)
-- Implementation: `backend/agents/optimizer.js:simulatedAnnealing()`
-- Temperature-based optimization with neighbor generation
-- Minimizes conflicts while respecting time windows
-
-### Vector Operations
-- Weather pattern embeddings: 128-dimensional vectors
-- Smoke plume vectors: 64-dimensional
-- Historical burn vectors: 32-dimensional
-- Used for similarity search and pattern matching
+**Gaussian Plume Model**: `backend/agents/weather.js:predictSmokeDispersion()` - calculates PM2.5 concentrations, max dispersion radius, affected area
+**Simulated Annealing**: `backend/agents/optimizer.js:simulatedAnnealing()` - temperature-based optimization, neighbor generation, minimizes conflicts
+**Vector Operations**: Weather embeddings (128-dim), smoke plumes (64-dim), historical burns (32-dim) for similarity search
 
 ## Important Implementation Details
 
-- **Rate Limiting**: Custom implementation in `backend/middleware/rateLimiter.js` with circuit breaker
+- **Rate Limiting**: Custom implementation (`backend/middleware/rateLimiter.js`) with circuit breaker
 - **Connection Pooling**: TiDB connection pool with automatic retry and circuit breaker pattern
 - **Real-time Updates**: Socket.io integration for live updates to farms
 - **Spatial Queries**: Uses ST_* functions for geographic calculations
@@ -106,79 +63,68 @@ Located in `frontend/src/`:
 
 ## Testing Approach
 
-- Unit tests: `backend/tests/agents/*.test.js` for each agent
-- Integration tests: `backend/tests/integration/five-agent-workflow.test.js`
-- E2E tests: `e2e-tests/` with Playwright for startup animation and navigation
-- Performance tests: `backend/tests/performance/*.test.js`
-- Test workflow demonstration: `test-workflow.js` shows complete pipeline
+**Unit tests**: `backend/tests/agents/*.test.js` for each agent
+**Integration**: `backend/tests/integration/five-agent-workflow.test.js`
+**E2E**: `e2e-tests/` with Playwright - startup animation, navigation, icon rendering, video background
+**Performance**: `backend/tests/performance/*.test.js`
+**Demo**: `test-workflow.js` shows complete pipeline
 
-### E2E Test Structure
-- **Startup Animation Tests**: Phase transitions, timing, visual elements
-- **Icon Rendering Tests**: React Icons replacement verification
-- **Navigation Tests**: Route transitions and user interactions
-- **Video Background Tests**: Media element functionality
+## System Reliability
 
-## Error Handling
-
-- Circuit breaker pattern for database connections
-- Exponential backoff for API retries
-- Graceful degradation when external services unavailable
-- Comprehensive error logging with Winston
-
-## Performance Considerations
-
-- Connection pool max size: 10 connections
-- Query timeout: 10 seconds
-- Circuit breaker opens after 5 consecutive failures
-- Rate limiting: 100 requests per 15 minutes per IP
-- Strict rate limiting on expensive endpoints: 10 requests per 15 minutes
+**Error Handling**: Circuit breaker for DB connections, exponential backoff for API retries, graceful degradation, Winston logging
+**Performance**: Connection pool (max 10), query timeout (10s), circuit breaker (5 failures), rate limiting (100 req/15min, 10 req/15min for expensive endpoints)
 
 ## Fire-Themed Design System
 
-BURNWISE uses a comprehensive fire-themed design system with advanced animation capabilities:
+**Colors**: #ff6b35 (primary), #ff5722 (secondary), #FFB000 (accent)
+**Theme**: Glass morphism (`backdrop-filter: blur(20px)`), dark gradients, Inter font (300-900 weights)
+**Animation**: Unified motion system, spring physics (Framer Motion), SVG morphing, phase management (assembly → ignition → living → flight)
+**Key Components**: `FullScreenStartup.js` (cinematic bootup), `AnimatedFlameLogo.js` (navigation), `BurnwiseLogoPotraceExact.js` (3 flame fragments), `Landing.js` (video slideshow)
+**CSS**: `frontend/src/styles/theme.css` for spacing variables, glass morphism cards, fire gradients, hover animations
 
-### Animation Architecture
-- **Unified Motion System**: Single motion value approach eliminates animation conflicts
-- **Spring Physics**: Natural movement using stiffness, damping, and mass parameters
-- **SVG Morphing**: Dynamic path changes for flame shape transformation
-- **Filter Effects**: Real-time turbulence, heat distortion, and motion blur
-- **Phase Management**: Coordinated transitions between assembly, ignition, living, and flight states
+## Development Standards
 
-### Core Theme (frontend/src/styles/theme.css)
-- **Fire Color Palette**: #ff6b35 (primary), #ff5722 (secondary), #FFB000 (accent)
-- **Glass Morphism**: `backdrop-filter: blur(20px)` with transparent backgrounds
-- **Dark Theme**: Black gradient backgrounds with subtle fire accents
-- **Typography**: Inter font family with multiple weights (300-900)
+### Code Quality
+- **NEVER** use profanity/offensive language in code, comments, variables, functions, or documentation
+- **ALWAYS** scan codebase for CLAUDE.md violations before changes
+- **NEVER** create redundant files - update/rename existing files instead
+- Use descriptive naming reflecting business domain
 
-### Design Patterns
-- **Glass Morphism Cards**: Semi-transparent cards with blur effects and fire-themed borders
-- **Fire Gradients**: Used for buttons, highlights, and interactive elements
-- **Consistent Spacing**: CSS variables for standardized spacing (--spacing-xs to --spacing-xl)
-- **Hover Animations**: Transform and shadow effects on interactive elements
+### Git Standards
+- Commit early/often, one logical change per commit
+- Message: `<type>(<scope>): <subject>\n\n<body – what & why>`
+- Never commit generated files, secrets, .env*, CLAUDE.md, agent configs
+- PRs need description, screenshots/gifs for UI, test evidence
 
-### Component Architecture
-- **Cinematic Bootup**: First-visit animation with individual flame controls using Framer Motion
-- **Responsive Design**: Mobile-first approach with breakpoints for tablets and desktop
-- **Consistent Navigation**: Dark navbar with fire-themed logo and date selector
-- **Real-time Updates**: Components update without page refresh using backend polling
+### Debugging Checklist
+- Bug reproducible? Offending line identified? Regression tests included?
+- Existing tests pass? Performance unchanged/improved? Docs updated?
+- Manual QA by mimicking real user behavior?
+If any box unchecked, do NOT declare issue fixed.
 
-### Key Components
-- **Landing.js**: Video slideshow with scroll-based fade effects and cinematic bootup
-- **Dashboard.js**: Analytics cards with fire-themed charts and glass morphism
-- **Map.js**: Mapbox integration with fire-themed sidebar and legend
-- **ImprovedBurnRequestForm.js**: Multi-step wizard with field drawing capabilities
-- **Schedule.js/AlertsPanel.js**: Fire-themed data management interfaces
+### Prohibited Behaviors
+- Claiming code works without running it
+- Large refactors without prior tests
+- Mock data unless explicitly required
+- Deleting code without user approval
+- Experimental language features without toolchain verification
 
-### Advanced Animation System
-- **FullScreenStartup.js**: Sophisticated startup animation with unified spring physics
-- **SVG Path Morphing**: Actual flame shape changes during animation phases
-- **Phase-Based Animation**: Assembly → Ignition → Living → Flight sequence
-- **Spring Physics**: Organic movement using Framer Motion spring configurations
-- **Dynamic SVG Filters**: Phase-specific turbulence, heat distortion, and motion blur
-- **Motion Values**: Unified animation system avoiding conflicts between controls
+### Response Format
+**Summary**: <plain-English explanation>
+**Changes Made**: <bulleted list of files & functions>
+**How to Test**: <commands & expected output>
+**Next Steps/Questions**: <clarifications needed>
 
-### Logo System
-- **BurnwiseLogoPotraceExact.js**: Mathematically precise SVG logo generated via potrace
-- **Individual Fragment Control**: 3 flame fragments with independent motion values
-- **Advanced Visual Effects**: Turbulence filters, gradient morphing, particle systems
-- Uses exact 1:1 recreation of original logo with proper fire gradients
+### Claude Code Notes
+- Use Run Panel and sandbox, attach transcript snippets
+- Run `claude test` before/after changes, paste results
+- Include fully-qualified identifiers for copy-paste
+- Provide ordered patch sequence for multi-file fixes
+
+## When Unsure
+
+STOP, ASK, AND WAIT. List concrete questions, propose assumptions, and pause until the user confirms.
+
+## Versioning
+
+Include this header in each future revision and update the rev date.

@@ -127,7 +127,7 @@ const Dashboard = ({ burnRequests = [], selectedDate = new Date().toISOString().
             transition: 'all 0.3s ease'
           }}
         >
-          {showBurnForm ? 'Hide Burn Request Form' : '🔥 Submit New Burn Request'}
+          {showBurnForm ? 'Hide Burn Request Form' : 'Submit New Burn Request'}
         </button>
       </div>
 

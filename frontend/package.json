@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@tsparticles/engine": "^3.9.1",
+    "@tsparticles/preset-fire": "^3.2.0",
+    "@tsparticles/react": "^3.0.0",
+    "@tsparticles/updater-color": "^3.9.1",
+    "@tsparticles/updater-opacity": "^3.9.1",
     "axios": "^1.6.7",
     "cannon-es": "^0.20.0",
     "framer-motion": "^12.23.12",
@@ -17,7 +22,8 @@
     "react-scripts": "5.0.1",
     "recharts": "^2.10.3",
     "three": "^0.179.1",
-    "three-nebula": "^10.0.3"
+    "three-nebula": "^10.0.3",
+    "tsparticles": "^3.9.1"
   },
   "scripts": {
     "start": "react-scripts start",

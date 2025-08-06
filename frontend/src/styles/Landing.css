@@ -1,5 +1,132 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
 
+/* Unified Flame Logo Animation System */
+.unified-flame-logo {
+  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* Phase 1: Intro - centered and large */
+.unified-flame-logo.flame-intro {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  z-index: 9999;
+}
+
+/* Phase 2: Transforming - moving to header */
+.unified-flame-logo.flame-transforming {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  z-index: 9999;
+}
+
+/* Phase 3: Complete - part of page content */
+.unified-flame-logo.flame-complete {
+  position: relative;
+  margin-bottom: 2rem;
+  opacity: 1;
+}
+
+/* Intro title and subtitle styling */
+.intro-title {
+  font-size: 72px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #FF6B35 0%, #FF5722 50%, #FFB000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-transform: uppercase;
+  letter-spacing: 16px;
+  margin: 20px 0 10px 0;
+  animation: introTitleFade 1s ease-out 0.5s both;
+  text-shadow: 0 0 60px rgba(255, 107, 53, 0.5);
+}
+
+.intro-title.fading {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+.intro-subtitle {
+  font-size: 20px;
+  font-weight: 300;
+  color: rgba(255, 176, 0, 0.9);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  animation: introSubtitleFade 1s ease-out 0.8s both;
+}
+
+.intro-subtitle.fading {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+
+@keyframes introTitleFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes introSubtitleFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Content visibility based on animation phase */
+.landing-container.intro .landing-content {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.landing-container.transforming .landing-content {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s ease-out;
+}
+
+.landing-container.complete .landing-content {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 1s ease-out 0.3s;
+}
+
+/* Video background phase transitions */
+.landing-container.intro .video-background {
+  opacity: 0;
+}
+
+.landing-container.transforming .video-background {
+  opacity: 0.3;
+  transition: opacity 1.5s ease-in;
+}
+
+.landing-container.complete .video-background {
+  opacity: 1;
+  transition: opacity 1.5s ease-in;
+}
+
 .landing-container {
   position: relative;
   width: 100%;
@@ -526,7 +653,7 @@
 }
 
 .benefit-card li::before {
-  content: '✓';
+  content: '>';
   position: absolute;
   left: 0;
   color: #ff6b35;

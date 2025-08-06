@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import AnimatedFlameLogo from './AnimatedFlameLogo';
 import '../styles/Navigation.css';
 
 const Navigation = () => {
@@ -11,19 +12,19 @@ const Navigation = () => {
   }
 
   const navItems = [
-    { path: '/dashboard', label: '📊 Dashboard', icon: '📊' },
-    { path: '/map', label: '🗺️ Map', icon: '🗺️' },
-    { path: '/schedule', label: '📅 Schedule', icon: '📅' },
-    { path: '/alerts', label: '🔔 Alerts', icon: '🔔' }
+    { path: '/dashboard', label: 'Dashboard' },
+    { path: '/map', label: 'Map' },
+    { path: '/schedule', label: 'Schedule' },
+    { path: '/alerts', label: 'Alerts' }
   ];
 
   return (
     <nav className="main-navigation">
       <div className="nav-container">
         <div className="nav-brand">
-          <Link to="/" className="brand-link">
-            <span className="brand-icon">🔥</span>
-            <span className="brand-text">BURNWISE</span>
+          <Link to="/" className="brand-link" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <AnimatedFlameLogo size={40} animated={false} />
+            <span className="brand-text" style={{ color: '#FF6B35', fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '1px' }}>BURNWISE</span>
           </Link>
         </div>
         

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './AnimatedFlameLogo';
-import FullScreenStartup from './FullScreenStartup';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
 import '../styles/Landing.css';
 
 const Landing = () => {
   const navigate = useNavigate();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [showCinematicBootup, setShowCinematicBootup] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState('intro'); // 'intro' | 'transforming' | 'complete'
   const [scrollY, setScrollY] = useState(0);
 
   // Fire-themed video URLs for cinematic slideshow
@@ -19,14 +18,21 @@ const Landing = () => {
     '/gentle-field-fire.mp4'
   ];
 
-  // Check for first visit and show cinematic bootup
+  // Animation phase progression
   useEffect(() => {
-    // Force show for development/testing
-    const forceShow = true; // TODO: Change to false for production
-    const hasSeenBootup = localStorage.getItem('burnwise-bootup-seen');
-    if (!hasSeenBootup || forceShow) {
-      setShowCinematicBootup(true);
-    }
+    // Start with intro phase
+    const introTimer = setTimeout(() => {
+      setAnimationPhase('transforming');
+      
+      // Move to complete phase
+      const transformTimer = setTimeout(() => {
+        setAnimationPhase('complete');
+      }, 1500); // Time for logo to move to header
+      
+      return () => clearTimeout(transformTimer);
+    }, 3000); // Time for initial logo animation
+    
+    return () => clearTimeout(introTimer);
   }, []);
 
   // Video slideshow effect with cinematic timing
@@ -49,9 +55,6 @@ const Landing = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleBootupComplete = () => {
-    setShowCinematicBootup(false);
-  };
 
   // Calculate cinematic video opacity and parallax based on scroll
   const videoOpacity = Math.max(0, 1 - Math.pow(scrollY / 1000, 1.5));
@@ -60,12 +63,24 @@ const Landing = () => {
 
   return (
     <>
-      {/* Full Screen Startup Animation */}
-      {showCinematicBootup && (
-        <FullScreenStartup onComplete={handleBootupComplete} />
-      )}
+      <div className={`landing-container ${animationPhase}`}>
+        {/* Unified Flame Logo - transforms from intro to header */}
+        {animationPhase !== 'complete' && (
+          <div className={`unified-flame-logo flame-${animationPhase}`}>
+            <AnimatedFlameLogo 
+              size={animationPhase === 'intro' ? 180 : 100} 
+              animated={true} 
+            />
+            <h1 className={`intro-title ${animationPhase === 'transforming' ? 'fading' : ''}`}>
+              BURNWISE
+            </h1>
+            <p className={`intro-subtitle ${animationPhase === 'transforming' ? 'fading' : ''}`}>
+              Multi-Farm Agricultural Burn Coordinator
+            </p>
+          </div>
+        )}
 
-      <div className="landing-container">
+
         {/* Video Background */}
         <div className="video-background" style={{ 
           opacity: videoOpacity,
@@ -95,13 +110,12 @@ const Landing = () => {
         <div className="landing-content">
           {/* Hero Section */}
           <section className="hero-section">
-            <div className="hero-logo" style={{ 
-              opacity: showCinematicBootup ? 0 : 1,
-              transition: 'opacity 0.5s ease-in-out',
-              transitionDelay: showCinematicBootup ? '0s' : '0.3s'
-            }}>
-              <AnimatedFlameLogo size={120} animated={true} />
-            </div>
+            {/* Logo appears here when animation is complete */}
+            {animationPhase === 'complete' && (
+              <div className="hero-logo">
+                <AnimatedFlameLogo size={120} animated={true} />
+              </div>
+            )}
             
             <h1 className="hero-title">BURNWISE</h1>
             <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
@@ -250,7 +264,7 @@ const Landing = () => {
                 </div>
                 
                 <div className="tech-card">
-                  <h3>🤖 AI Optimization</h3>
+                  <h3>AI Optimization</h3>
                   <ul>
                     <li><strong>Simulated Annealing:</strong> Global optimization for complex scheduling</li>
                     <li><strong>Multi-objective Function:</strong> Balances farmer needs with safety constraints</li>
