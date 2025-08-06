@@ -93,20 +93,24 @@ function App() {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // Precise measurement shows "I" is at exactly 123.38px from center
-      // Setting exact ratio based on measured position
-      const iOffsetRatio = 123.38 / 1512; // Exact measured position
-      const targetX = viewportWidth * iOffsetRatio; // Scale to current viewport
+      // The "I" in BURNWISE is 123.38px to the RIGHT of center
+      // This is the OFFSET from center, not absolute position
+      const iOffsetFromCenter = 123.38; // Exact measured offset from center
       
-      // Vertical position - flame touches top of text
-      const targetY = -viewportHeight * 0.08;
+      // Scale the offset based on viewport to maintain proportions
+      const scaleFactor = viewportWidth / 1512; // Original measurement viewport
+      const targetX = iOffsetFromCenter * scaleFactor; // Scale offset to current viewport
+      
+      // Vertical position - flame needs to move UP to touch top of text
+      // Approximate position based on layout
+      const targetY = -viewportHeight * 0.35; // Move up to align with text top
       
       return {
-        startX: 0,
-        startY: 0,
-        x: targetX,  // ~155px right of center to align with I
-        y: targetY,
-        scale: 65 / 180  // Scale up ~30% to match I width
+        startX: 0,  // Start at center (no offset)
+        startY: 0,  // Start at center (no offset)
+        x: targetX,  // Move RIGHT by scaled offset to align with I
+        y: targetY,  // Move UP to touch top of text
+        scale: 65 / 180  // Scale down to ~36% to match I width
       };
     };
     
