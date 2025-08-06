@@ -97,14 +97,15 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
       </div>
 
       <div className="landing-content">
-        {/* Hero Section - Better staged appearance after flame docks */}
-        <section className="hero-section" style={{
-          opacity: animationPhase === 'startup' ? 0 : 
-                   (animationPhase === 'morphing' ? 0 : 
-                   (animationPhase === 'transitioning' ? 0.5 : 1)),
-          transition: 'opacity 0.8s ease-out'
-        }}>
-          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`} style={{ position: 'relative' }}>
+        {/* Hero Section - Stable layout with content opacity animation */}
+        <section className="hero-section">
+          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`} style={{ 
+            position: 'relative',
+            opacity: animationPhase === 'startup' ? 0 : 
+                     (animationPhase === 'morphing' ? 0 : 
+                     (animationPhase === 'transitioning' ? 0.5 : 1)),
+            transition: 'opacity 0.8s ease-out'
+          }}>
             BURNWISE
             {logoVisible && (
               <div className="torch-flame-absolute">
@@ -112,13 +113,28 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
               </div>
             )}
           </h1>
-          <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
-          <p className="hero-description">
+          <p className="hero-subtitle" style={{
+            opacity: animationPhase === 'startup' ? 0 : 
+                     (animationPhase === 'morphing' ? 0 : 
+                     (animationPhase === 'transitioning' ? 0.5 : 1)),
+            transition: 'opacity 0.8s ease-out 0.1s'
+          }}>Multi-Farm Agricultural Burn Coordinator</p>
+          <p className="hero-description" style={{
+            opacity: animationPhase === 'startup' ? 0 : 
+                     (animationPhase === 'morphing' ? 0 : 
+                     (animationPhase === 'transitioning' ? 0.5 : 1)),
+            transition: 'opacity 0.8s ease-out 0.2s'
+          }}>
             Intelligent coordination system preventing dangerous smoke overlap between farms using 
             multi-agent AI, real-time weather analysis, and TiDB vector search technology.
           </p>
           
-          <div className="cta-buttons">
+          <div className="cta-buttons" style={{
+            opacity: animationPhase === 'startup' ? 0 : 
+                     (animationPhase === 'morphing' ? 0 : 
+                     (animationPhase === 'transitioning' ? 0.5 : 1)),
+            transition: 'opacity 0.8s ease-out 0.3s'
+          }}>
             <button className="cta-primary" onClick={() => navigate('/dashboard')}>
               Get Started
             </button>

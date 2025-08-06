@@ -88,20 +88,23 @@ function App() {
   useEffect(() => {
     log('STARTING ANIMATION SEQUENCE');
     
-    // Calculate position for torch effect - flame should dock with the I
+    // Calculate position for torch effect - using fixed viewport positions
     const calculateTargetPosition = () => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // Start flame much closer - just 2 letter heights below final position
-      // This makes the journey purposeful, not a long trek
-      const startY = -50; // Much closer to final position
+      // Use viewport-based calculations to ensure stable positioning
+      // Start at center of viewport
+      const startX = 0;
+      const startY = 0;
       
-      // Final position: flame should TOUCH the I, not float above
-      const targetY = -85; // Adjusted to make flame touch the I
-      const targetX = 10; // Slight offset to align with I
+      // Calculate final position based on viewport dimensions
+      // This positions the flame where the I will be in BURNWISE
+      const targetX = viewportWidth * 0.125; // ~12.5% from center (where the I is)
+      const targetY = -viewportHeight * 0.15; // ~15% up from center
       
       return {
+        startX: startX,
         startY: startY,
         x: targetX,
         y: targetY,
@@ -212,10 +215,10 @@ function App() {
               gap: '2rem',
               position: 'fixed',
               zIndex: 10,
-              // Start closer to final position, then morph to torch position
+              // Start at center, then morph to torch position above the I
               transform: (startupPhase === 'morphing' || startupPhase === 'transitioning') ? 
                 `translate(${logoTargetPosition?.x || 0}px, ${logoTargetPosition?.y || 0}px) scale(${logoTargetPosition?.scale || 1})` :
-                `translate(0, ${logoTargetPosition?.startY || 0}px) scale(1)`,
+                `translate(${logoTargetPosition?.startX || 0}px, ${logoTargetPosition?.startY || 0}px) scale(1)`,
               // Fade out during transitioning phase to hand over to torch
               opacity: startupPhase === 'transitioning' ? 0 : 1,
               transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
