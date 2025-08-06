@@ -52,17 +52,17 @@ const Landing = () => {
 
   return (
     <>
-      {showStartup && <StartupAnimation onComplete={handleStartupComplete} />}
-      
-      <div className={`landing-container ${showStartup ? 'hidden' : 'visible'}`}>
-        {/* Hero Logo */}
-        <div className="hero-logo-container">
-          <AnimatedFlameLogo size={120} animated={true} />
-        </div>
+      {showStartup ? (
+        <StartupAnimation onComplete={handleStartupComplete} />
+      ) : (
+        <div className="landing-container visible">
+          {/* Hero Logo */}
+          <div className="hero-logo-container">
+            <AnimatedFlameLogo size={120} animated={true} />
+          </div>
 
-
-        {/* Video Background */}
-        <div className="video-background" style={{ 
+          {/* Video Background */}
+          <div className="video-background" style={{ 
           opacity: videoOpacity,
           transform: videoTransform
         }}>
@@ -320,6 +320,7 @@ const Landing = () => {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 };

@@ -4,17 +4,16 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: #000;
+  background: radial-gradient(ellipse at center, #1a0000 0%, #000000 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
-  pointer-events: none;
+  z-index: 99999;
+  opacity: 1;
 }
 
 .startup-animation.entering {
-  opacity: 0;
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .startup-animation.centered {
@@ -29,10 +28,10 @@
 .startup-logo {
   filter: drop-shadow(0 0 60px rgba(255, 107, 53, 0.6));
   transition: transform 0.8s ease-out;
+  transform: scale(1); /* Start visible */
 }
 
 .startup-animation.entering .startup-logo {
-  transform: scale(0);
   animation: logoEntry 0.5s ease-out forwards;
 }
 
@@ -53,8 +52,13 @@
 }
 
 @keyframes logoEntry {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
   to {
     transform: scale(1);
+    opacity: 1;
   }
 }
 

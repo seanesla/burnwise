@@ -3,28 +3,34 @@ import AnimatedFlameLogo from './AnimatedFlameLogo';
 import '../styles/StartupAnimation.css';
 
 const StartupAnimation = ({ onComplete }) => {
-  const [phase, setPhase] = useState('entering'); // entering -> centered -> exiting
+  const [phase, setPhase] = useState('entering');
   
   useEffect(() => {
-    // Timeline for animation phases
-    const enterTimer = setTimeout(() => {
+    // Store all timer IDs for proper cleanup
+    let enterTimer, centerTimer, exitTimer;
+    
+    // Phase 1: Entering (0.5s)
+    enterTimer = setTimeout(() => {
       setPhase('centered');
       
-      const centerTimer = setTimeout(() => {
+      // Phase 2: Centered (2s)
+      centerTimer = setTimeout(() => {
         setPhase('exiting');
         
-        const exitTimer = setTimeout(() => {
+        // Phase 3: Exiting (0.8s)
+        exitTimer = setTimeout(() => {
           if (onComplete) onComplete();
-        }, 800); // Exit animation duration
-        
-        return () => clearTimeout(exitTimer);
-      }, 2000); // How long to stay centered
-      
-      return () => clearTimeout(centerTimer);
-    }, 500); // Entry animation duration
+        }, 800);
+      }, 2000);
+    }, 500);
     
-    return () => clearTimeout(enterTimer);
-  }, [onComplete]);
+    // Cleanup function
+    return () => {
+      clearTimeout(enterTimer);
+      clearTimeout(centerTimer);
+      clearTimeout(exitTimer);
+    };
+  }, []); // Empty dependency array - run once on mount
   
   return (
     <div className={`startup-animation ${phase}`}>
