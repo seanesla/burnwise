@@ -108,7 +108,7 @@ function App() {
       document.body.appendChild(tempDiv);
       
       // Force layout
-      tempDiv.offsetHeight;
+      void tempDiv.offsetHeight;
       
       // Get the "I" span
       const iSpan = tempDiv.querySelector('span span');
