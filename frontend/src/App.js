@@ -20,7 +20,27 @@ function App() {
   const phaseTimersRef = useRef({});
   const renderCountRef = useRef(0);
   const animationFrameRef = useRef(null);
-  const [logoTargetPosition, setLogoTargetPosition] = useState(null);
+  const logoRef = useRef(null); // Direct DOM reference for animation
+  
+  // Calculate target position for the torch effect
+  const calculateTargetPosition = () => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // The "I" in BURNWISE is 123.38px to the RIGHT of center
+    const iOffsetFromCenter = 123.38;
+    const scaleFactor = viewportWidth / 1512;
+    const targetX = iOffsetFromCenter * scaleFactor;
+    
+    // Vertical position - flame needs to move UP to touch top of text
+    const targetY = -viewportHeight * 0.35;
+    
+    return {
+      x: targetX,
+      y: targetY,
+      scale: 65 / 180  // Scale down to ~36% to match I width
+    };
+  };
   
   // Log function that tracks everything WITHOUT causing re-renders
   const log = (message, data = {}) => {
@@ -88,34 +108,6 @@ function App() {
   useEffect(() => {
     log('STARTING ANIMATION SEQUENCE');
     
-    // Calculate position for torch effect - adjusted for actual "I" position
-    const calculateTargetPosition = () => {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      // The "I" in BURNWISE is 123.38px to the RIGHT of center
-      // This is the OFFSET from center, not absolute position
-      const iOffsetFromCenter = 123.38; // Exact measured offset from center
-      
-      // Scale the offset based on viewport to maintain proportions
-      const scaleFactor = viewportWidth / 1512; // Original measurement viewport
-      const targetX = iOffsetFromCenter * scaleFactor; // Scale offset to current viewport
-      
-      // Vertical position - flame needs to move UP to touch top of text
-      // Approximate position based on layout
-      const targetY = -viewportHeight * 0.35; // Move up to align with text top
-      
-      return {
-        startX: 0,  // Start at center (no offset)
-        startY: 0,  // Start at center (no offset)
-        x: targetX,  // Move RIGHT by scaled offset to align with I
-        y: targetY,  // Move UP to touch top of text
-        scale: 65 / 180  // Scale down to ~36% to match I width
-      };
-    };
-    
-    setLogoTargetPosition(calculateTargetPosition());
-    
     // Phase 1: Show startup for 2.5 seconds
     const startupTimer = setTimeout(() => {
       log('PHASE 1 COMPLETE - Starting morph transition');
@@ -143,6 +135,38 @@ function App() {
       clearTimeout(startupTimer);
     };
   }, []);
+  
+  // Direct DOM animation to avoid React re-render jumps
+  useEffect(() => {
+    if (!logoRef.current) return;
+    
+    const logo = logoRef.current;
+    const target = calculateTargetPosition();
+    
+    // Set initial transition for smooth animation
+    logo.style.transition = 'none';
+    
+    if (startupPhase === 'startup') {
+      // Center the logo initially
+      logo.style.transform = 'translate(-50%, -50%)';
+      logo.style.opacity = '1';
+    } else if (startupPhase === 'morphing') {
+      // Enable transition and morph to target position
+      setTimeout(() => {
+        logo.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        const finalX = -90 + target.x; // -90 is half of 180px logo
+        const finalY = -90 + target.y;
+        logo.style.transform = `translate(${finalX}px, ${finalY}px) scale(${target.scale})`;
+      }, 10); // Small delay to ensure transition takes effect
+    } else if (startupPhase === 'transitioning') {
+      // Fade out
+      logo.style.transition = 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out';
+      logo.style.opacity = '0';
+    } else if (startupPhase === 'done') {
+      // Keep hidden
+      logo.style.opacity = '0';
+    }
+  }, [startupPhase]);
   
   return (
     <Router>
@@ -207,39 +231,19 @@ function App() {
             }}></div>
             
             {/* Logo container that morphs to landing position */}
-            <div className="startup-logo-container" style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              zIndex: 10,
-              // Transform handles both centering AND morphing - always use pixels for consistency
-              transform: (() => {
-                // Always use pixel values to prevent unit mismatch jumps
-                const logoSize = 180; // Original logo size
-                const centerOffsetX = -logoSize / 2; // -90px to center horizontally
-                const centerOffsetY = -logoSize / 2; // -90px to center vertically
-                
-                if (startupPhase === 'morphing' || startupPhase === 'transitioning') {
-                  // Morphing to final position
-                  const scale = logoTargetPosition?.scale || 1;
-                  const targetX = logoTargetPosition?.x || 0;
-                  const targetY = logoTargetPosition?.y || 0;
-                  
-                  // For morphing, we move from center (0,0) to target position
-                  // The scale is applied after the translation
-                  const finalX = centerOffsetX + targetX;
-                  const finalY = centerOffsetY + targetY;
-                  
-                  return `translate(${finalX}px, ${finalY}px) scale(${scale})`;
-                } else {
-                  // Initial centered position - using pixels to match morphing units
-                  return `translate(${centerOffsetX}px, ${centerOffsetY}px) scale(1)`;
-                }
-              })(),
-              // Fade out during transitioning phase to hand over to torch
-              opacity: startupPhase === 'transitioning' ? 0 : 1,
-              transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out'
-            }}>
+            <div 
+              ref={logoRef}
+              className="startup-logo-container" 
+              style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                zIndex: 10,
+                // Initial transform will be set by useEffect
+                transform: 'translate(-50%, -50%)',
+                // Transition will be controlled by useEffect
+                transition: 'none'
+              }}>
               {AnimatedFlameLogo ? (
                 <AnimatedFlameLogo size={180} animated={true} />
               ) : (
