@@ -42,72 +42,31 @@ const Analytics = () => {
       ]);
 
       setAnalyticsData({
-        burnTrends: trends.data.data || generateMockBurnTrends(),
-        weatherPatterns: weather.data.data || generateMockWeatherPatterns(),
-        conflictAnalysis: conflicts.data.data || generateMockConflictAnalysis(),
-        farmPerformance: performance.data.data || generateMockFarmPerformance(),
-        seasonalData: generateSeasonalData(),
-        smokeDispersion: generateSmokeDispersionData()
+        burnTrends: trends.data.data || [],
+        weatherPatterns: weather.data.data || [],
+        conflictAnalysis: conflicts.data.data || [],
+        farmPerformance: performance.data.data || [],
+        seasonalData: generateSeasonalData(), // Keep this as it's calculated client-side
+        smokeDispersion: generateSmokeDispersionData() // Keep this as it's calculated client-side
       });
       
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
-      // Use mock data on error
+      // Show empty state instead of mock data
       setAnalyticsData({
-        burnTrends: generateMockBurnTrends(),
-        weatherPatterns: generateMockWeatherPatterns(),
-        conflictAnalysis: generateMockConflictAnalysis(),
-        farmPerformance: generateMockFarmPerformance(),
-        seasonalData: generateSeasonalData(),
-        smokeDispersion: generateSmokeDispersionData()
+        burnTrends: [],
+        weatherPatterns: [],
+        conflictAnalysis: [],
+        farmPerformance: [],
+        seasonalData: [],
+        smokeDispersion: []
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // Mock data generators for demo
-  const generateMockBurnTrends = () => {
-    const days = 30;
-    return Array.from({ length: days }, (_, i) => ({
-      date: new Date(Date.now() - (days - i) * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      approved: Math.floor(Math.random() * 15) + 5,
-      rejected: Math.floor(Math.random() * 5),
-      completed: Math.floor(Math.random() * 12) + 3,
-      acres: Math.floor(Math.random() * 500) + 100
-    }));
-  };
-
-  const generateMockWeatherPatterns = () => {
-    return Array.from({ length: 7 }, (_, i) => ({
-      day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
-      temperature: Math.floor(Math.random() * 20) + 60,
-      humidity: Math.floor(Math.random() * 30) + 40,
-      windSpeed: Math.floor(Math.random() * 10) + 5,
-      burnScore: Math.floor(Math.random() * 40) + 60
-    }));
-  };
-
-  const generateMockConflictAnalysis = () => {
-    return [
-      { type: 'Wind Direction', count: 23, severity: 'high' },
-      { type: 'Proximity', count: 18, severity: 'medium' },
-      { type: 'Time Overlap', count: 12, severity: 'low' },
-      { type: 'Smoke Drift', count: 31, severity: 'high' },
-      { type: 'Weather Change', count: 8, severity: 'medium' }
-    ];
-  };
-
-  const generateMockFarmPerformance = () => {
-    return [
-      { name: 'Johnson Farm', requests: 45, approved: 42, efficiency: 93 },
-      { name: 'Smith Ranch', requests: 38, approved: 35, efficiency: 92 },
-      { name: 'Green Acres', requests: 52, approved: 48, efficiency: 92 },
-      { name: 'Valley Farm', requests: 29, approved: 25, efficiency: 86 },
-      { name: 'Hill Country', requests: 41, approved: 38, efficiency: 93 }
-    ];
-  };
-
+  // Client-side calculated data (not from API)
   const generateSeasonalData = () => {
     return [
       { season: 'Spring', burns: 156, avgAcres: 245 },

@@ -835,4 +835,197 @@ function generateEfficiencyRecommendations(efficiencyScores, agentPerformance) {
   return recommendations;
 }
 
+/**
+ * GET /api/analytics/burn-trends
+ * Get burn trends data for charts
+ */
+router.get('/burn-trends', asyncHandler(async (req, res) => {
+  const { range = '30d' } = req.query;
+  const days = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30;
+  
+  try {
+    const trends = await query(`
+      SELECT 
+        DATE(burn_date) as date,
+        COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
+        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+        SUM(acres) as acres
+      FROM burn_requests
+      WHERE burn_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      GROUP BY DATE(burn_date)
+      ORDER BY date DESC
+      LIMIT 30
+    `, [days]);
+    
+    res.json({ success: true, data: trends });
+  } catch (error) {
+    logger.error('Failed to fetch burn trends', { error: error.message });
+    res.json({ success: false, data: [] });
+  }
+}));
+
+/**
+ * GET /api/analytics/weather-patterns
+ * Get weather pattern analytics
+ */
+router.get('/weather-patterns', asyncHandler(async (req, res) => {
+  const { range = '30d' } = req.query;
+  const days = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30;
+  
+  try {
+    const patterns = await query(`
+      SELECT 
+        DAYNAME(timestamp) as day,
+        AVG(temperature) as temperature,
+        AVG(humidity) as humidity,
+        AVG(wind_speed) as windSpeed,
+        AVG(air_quality_index) as burnScore
+      FROM weather_data
+      WHERE timestamp >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      GROUP BY DAYOFWEEK(timestamp), DAYNAME(timestamp)
+      ORDER BY DAYOFWEEK(timestamp)
+    `, [days]);
+    
+    res.json({ success: true, data: patterns });
+  } catch (error) {
+    logger.error('Failed to fetch weather patterns', { error: error.message });
+    res.json({ success: false, data: [] });
+  }
+}));
+
+/**
+ * GET /api/analytics/conflict-analysis
+ * Get conflict analysis data
+ */
+router.get('/conflict-analysis', asyncHandler(async (req, res) => {
+  const { range = '30d' } = req.query;
+  const days = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30;
+  
+  try {
+    const conflicts = await query(`
+      SELECT 
+        conflict_type as type,
+        COUNT(*) as count,
+        severity
+      FROM conflict_analysis
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      GROUP BY conflict_type, severity
+      ORDER BY count DESC
+    `, [days]);
+    
+    res.json({ success: true, data: conflicts });
+  } catch (error) {
+    logger.error('Failed to fetch conflict analysis', { error: error.message });
+    res.json({ success: false, data: [] });
+  }
+}));
+
+/**
+ * GET /api/analytics/farm-performance
+ * Get farm performance metrics
+ */
+router.get('/farm-performance', asyncHandler(async (req, res) => {
+  const { range = '30d' } = req.query;
+  const days = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30;
+  
+  try {
+    const performance = await query(`
+      SELECT 
+        f.name,
+        COUNT(br.id) as requests,
+        COUNT(CASE WHEN br.status = 'approved' THEN 1 END) as approved,
+        ROUND(COUNT(CASE WHEN br.status = 'approved' THEN 1 END) * 100.0 / NULLIF(COUNT(br.id), 0), 2) as efficiency
+      FROM farms f
+      LEFT JOIN burn_requests br ON f.id = br.farm_id
+        AND br.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      GROUP BY f.id, f.name
+      HAVING requests > 0
+      ORDER BY efficiency DESC
+      LIMIT 10
+    `, [days]);
+    
+    res.json({ success: true, data: performance });
+  } catch (error) {
+    logger.error('Failed to fetch farm performance', { error: error.message });
+    res.json({ success: false, data: [] });
+  }
+}));
+
+/**
+ * GET /api/analytics/dashboard-stats
+ * Get dashboard statistics
+ */
+router.get('/dashboard-stats', asyncHandler(async (req, res) => {
+  try {
+    const stats = await query(`
+      SELECT 
+        (SELECT COUNT(*) FROM burn_requests WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as totalBurns,
+        (SELECT COUNT(DISTINCT farm_id) FROM burn_requests WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as activeFarms,
+        (SELECT AVG(air_quality_index) FROM weather_data WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 1 DAY)) as weatherScore,
+        (SELECT COUNT(*) FROM alerts WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) AND status = 'pending') as alerts,
+        (SELECT COUNT(*) FROM burn_requests WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as completedBurns,
+        (SELECT COUNT(*) FROM burn_requests WHERE status = 'approved' AND burn_date >= CURDATE()) as upcomingBurns
+    `);
+    
+    res.json({ 
+      success: true, 
+      data: stats[0] || {
+        totalBurns: 0,
+        activeFarms: 0,
+        weatherScore: 0,
+        alerts: 0,
+        completedBurns: 0,
+        upcomingBurns: 0
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to fetch dashboard stats', { error: error.message });
+    res.json({ 
+      success: false, 
+      data: {
+        totalBurns: 0,
+        activeFarms: 0,
+        weatherScore: 0,
+        alerts: 0,
+        completedBurns: 0,
+        upcomingBurns: 0
+      }
+    });
+  }
+}));
+
+/**
+ * GET /api/analytics/recent-activity
+ * Get recent activity feed
+ */
+router.get('/recent-activity', asyncHandler(async (req, res) => {
+  try {
+    const activity = await query(`
+      SELECT 
+        CONCAT('Burn request ', 
+          CASE 
+            WHEN br.status = 'approved' THEN 'approved'
+            WHEN br.status = 'completed' THEN 'completed'
+            WHEN br.status = 'submitted' THEN 'submitted'
+            ELSE br.status
+          END,
+          ' for ', br.field_name
+        ) as description,
+        f.name as farm,
+        DATE_FORMAT(br.created_at, '%H:%i') as time
+      FROM burn_requests br
+      JOIN farms f ON br.farm_id = f.id
+      WHERE br.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+      ORDER BY br.created_at DESC
+      LIMIT 10
+    `);
+    
+    res.json({ success: true, data: activity });
+  } catch (error) {
+    logger.error('Failed to fetch recent activity', { error: error.message });
+    res.json({ success: false, data: [] });
+  }
+}));
+
 module.exports = router;

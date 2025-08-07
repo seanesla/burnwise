@@ -171,16 +171,50 @@ class DatabaseConnection {
 
   async initializeSchema() {
     try {
-      // Just verify connection works by checking tables exist
+      // Check if tables exist
       const tables = await this.query(`SHOW TABLES`);
+      const tableNames = tables.map(row => Object.values(row)[0]);
       logger.info(`Connected to TiDB. Found ${tables.length} tables.`);
       
-      // Log the existing tables
-      const tableNames = tables.map(row => Object.values(row)[0]);
-      logger.info('Existing tables:', tableNames);
+      // If no tables exist, create schema
+      if (tables.length === 0) {
+        logger.info('No tables found. Creating database schema...');
+        
+        // Read and execute schema file
+        const fs = require('fs');
+        const path = require('path');
+        const schemaPath = path.join(__dirname, 'schema.sql');
+        
+        if (fs.existsSync(schemaPath)) {
+          const schema = fs.readFileSync(schemaPath, 'utf8');
+          const statements = schema
+            .split(';')
+            .filter(stmt => stmt.trim() && !stmt.trim().startsWith('--'))
+            .map(stmt => stmt.trim() + ';');
+          
+          for (const statement of statements) {
+            if (statement.trim()) {
+              try {
+                await this.query(statement);
+              } catch (err) {
+                // Ignore duplicate key errors for seed data
+                if (!err.message.includes('Duplicate entry')) {
+                  logger.warn('Schema statement failed:', err.message);
+                }
+              }
+            }
+          }
+          
+          logger.info('Database schema created successfully');
+        } else {
+          logger.warn('Schema file not found. Tables may need to be created manually.');
+        }
+      } else {
+        logger.info('Existing tables:', tableNames);
+      }
       
     } catch (error) {
-      logger.error('Failed to verify database connection:', error);
+      logger.error('Failed to initialize database schema:', error);
       throw error;
     }
   }

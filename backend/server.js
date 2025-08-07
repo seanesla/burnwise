@@ -31,9 +31,8 @@ const alertsRoutes = require('./api/alerts');
 console.log('✅ Alerts routes loaded');
 const farmsRoutes = require('./api/farms');
 console.log('✅ Farms routes loaded');
-// Use test analytics for now due to database issues
-const analyticsRoutes = require('./api/test-analytics');
-console.log('✅ Analytics routes loaded (test mode)');
+const analyticsRoutes = require('./api/analytics');
+console.log('✅ Analytics routes loaded');
 
 // Import agents for initialization
 console.log('Loading agents...');
