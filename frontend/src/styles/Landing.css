@@ -184,49 +184,12 @@
   margin-top: -1rem;
   letter-spacing: -0.02em;
   line-height: 0.9;
-  /* Use solid gradient color - no transparency */
-  background: linear-gradient(135deg, #ff6b35 0%, #FFB000 50%, #ff5722 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  /* IMPORTANT: Use solid color, not transparent, to prevent blur */
-  color: #ff6b35;
-  /* Use text-shadow instead of filter for cleaner rendering */
+  color: #FFFFFF;
   text-shadow: 
-    0 0 30px rgba(255, 107, 53, 0.6),
-    0 0 60px rgba(255, 87, 34, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Progressive enhancement: only apply gradient if properly supported */
-@supports (background-clip: text) or (-webkit-background-clip: text) {
-  .hero-title {
-    /* Only make text transparent if gradient clipping is supported */
-    -webkit-text-fill-color: transparent;
-  }
-}
-
-/* Fallback for browsers that don't support background-clip */
-@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
-  .hero-title {
-    background: none;
-    color: #ff6b35;
-    text-shadow: 
-      0 0 30px rgba(255, 107, 53, 0.8),
-      0 0 60px rgba(255, 87, 34, 0.6),
-      0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-}
-
-/* Ensure text is always visible */
-.hero-title-text {
-  position: relative;
-  display: inline-block;
-  /* Inherit gradient styling from parent */
-}
-
-.hero-title-i {
-  position: relative;
-  display: inline-block;
+    0 0 20px rgba(255, 107, 53, 0.8),
+    0 0 40px rgba(255, 87, 34, 0.6),
+    0 0 60px rgba(255, 176, 0, 0.4),
+    0 0 80px rgba(255, 107, 53, 0.3);
 }
 
 .hero-title.title-visible {
@@ -236,15 +199,15 @@
 @keyframes titleGlow {
   from {
     text-shadow: 
-      0 0 20px rgba(255, 107, 53, 0.5),
-      0 0 40px rgba(255, 87, 34, 0.3),
-      0 2px 4px rgba(0, 0, 0, 0.2);
+      0 0 20px rgba(255, 255, 255, 0.5),
+      0 0 40px rgba(255, 107, 53, 0.3),
+      0 0 60px rgba(255, 107, 53, 0.2);
   }
   to {
     text-shadow: 
-      0 0 30px rgba(255, 107, 53, 0.7),
-      0 0 50px rgba(255, 87, 34, 0.5),
-      0 2px 6px rgba(0, 0, 0, 0.3);
+      0 0 30px rgba(255, 255, 255, 0.7),
+      0 0 50px rgba(255, 107, 53, 0.5),
+      0 0 70px rgba(255, 107, 53, 0.3);
   }
 }
 
