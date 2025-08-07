@@ -4,24 +4,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 module.exports = override(
-  // Add babel plugins for optimization
-  addBabelPlugin([
-    'babel-plugin-transform-imports',
-    {
-      'react-icons': {
-        transform: 'react-icons/${member[0].toLowerCase()}/${member}',
-        preventFullImport: true
-      },
-      'lodash': {
-        transform: 'lodash/${member}',
-        preventFullImport: true
-      },
-      'recharts': {
-        transform: 'recharts/es6/${member}',
-        preventFullImport: true
-      }
-    }
-  ]),
+  // Remove broken babel plugin that was causing import errors
 
   // Add webpack configuration
   (config) => {
@@ -135,9 +118,7 @@ module.exports = override(
       ...config.resolve,
       alias: {
         ...config.resolve.alias,
-        // Use production builds of libraries
-        'react': 'react/cjs/react.production.min.js',
-        'react-dom': 'react-dom/cjs/react-dom.production.min.js',
+        // Remove incorrect React aliases - let webpack handle React normally
         // Alias for easier imports
         '@components': 'src/components',
         '@styles': 'src/styles',
@@ -146,28 +127,7 @@ module.exports = override(
       }
     };
 
-    // Optimize CSS
-    const cssRule = config.module.rules.find(rule => 
-      rule.oneOf && rule.oneOf.find(r => r.test && r.test.toString().includes('css'))
-    );
-    
-    if (cssRule) {
-      cssRule.oneOf.forEach(rule => {
-        if (rule.use && Array.isArray(rule.use)) {
-          rule.use.forEach(loader => {
-            if (loader.loader && loader.loader.includes('css-loader')) {
-              loader.options = {
-                ...loader.options,
-                modules: {
-                  ...loader.options.modules,
-                  localIdentName: '[hash:base64:5]'
-                }
-              };
-            }
-          });
-        }
-      });
-    }
+    // Remove broken CSS optimization that was causing loader errors
 
     // Add performance hints
     config.performance = {
