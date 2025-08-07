@@ -12,6 +12,9 @@ const Dashboard = lazy(() => import('./components/Dashboard'));
 const Map = lazy(() => import('./components/Map'));
 const Schedule = lazy(() => import('./components/Schedule'));
 const AlertsPanel = lazy(() => import('./components/AlertsPanel'));
+const ImprovedBurnRequestForm = lazy(() => import('./components/ImprovedBurnRequestForm'));
+const Analytics = lazy(() => import('./components/Analytics'));
+const Settings = lazy(() => import('./components/Settings'));
 
 // Debug system (disabled for production)
 const DEBUG = false;
@@ -110,6 +113,9 @@ function App() {
                   <Route path="/map" element={<Map />} />
                   <Route path="/schedule" element={<Schedule />} />
                   <Route path="/alerts" element={<AlertsPanel />} />
+                  <Route path="/request" element={<ImprovedBurnRequestForm />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/settings" element={<Settings />} />
                 </Routes>
               </Suspense>
             </ErrorBoundary>
