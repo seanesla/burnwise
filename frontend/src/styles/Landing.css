@@ -184,30 +184,30 @@
   margin-top: -1rem;
   letter-spacing: -0.02em;
   line-height: 0.9;
-  color: #FFFFFF;
+  /* Use solid bright orange-red color */
+  color: #ff6b35;
+  /* Crisp shadows - reduced blur for sharp text */
   text-shadow: 
-    0 0 20px rgba(255, 107, 53, 0.8),
-    0 0 40px rgba(255, 87, 34, 0.6),
-    0 0 60px rgba(255, 176, 0, 0.4),
-    0 0 80px rgba(255, 107, 53, 0.3);
+    0 0 3px rgba(255, 107, 53, 0.6),
+    0 0 6px rgba(255, 107, 53, 0.4),
+    0 2px 2px rgba(0, 0, 0, 0.3);
+  /* Ensure crisp rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  position: relative;
 }
 
 .hero-title.title-visible {
-  animation: titleGlow 3s ease-in-out infinite alternate;
+  animation: titlePulse 3s ease-in-out infinite;
 }
 
-@keyframes titleGlow {
-  from {
-    text-shadow: 
-      0 0 20px rgba(255, 255, 255, 0.5),
-      0 0 40px rgba(255, 107, 53, 0.3),
-      0 0 60px rgba(255, 107, 53, 0.2);
+@keyframes titlePulse {
+  0%, 100% {
+    opacity: 1;
   }
-  to {
-    text-shadow: 
-      0 0 30px rgba(255, 255, 255, 0.7),
-      0 0 50px rgba(255, 107, 53, 0.5),
-      0 0 70px rgba(255, 107, 53, 0.3);
+  50% {
+    opacity: 0.95;
   }
 }
 
