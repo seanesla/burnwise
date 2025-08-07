@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 const logger = require('../middleware/logger');
+const { queryCache, invalidateRelatedCaches } = require('./queryCache');
 
 class CircuitBreaker {
   constructor(threshold = 5, timeout = 60000) {
@@ -56,7 +57,7 @@ class DatabaseConnection {
 
   async initialize() {
     try {
-      // TiDB Serverless connection configuration
+      // TiDB Serverless connection configuration - OPTIMIZED
       this.pool = mysql.createPool({
         host: process.env.TIDB_HOST,
         port: parseInt(process.env.TIDB_PORT) || 4000,
@@ -67,12 +68,17 @@ class DatabaseConnection {
           rejectUnauthorized: true,
           minVersion: 'TLSv1.2'
         },
-        connectionLimit: 10,
-        connectTimeout: 60000,
+        connectionLimit: 30, // Increased from 10 for better concurrency
+        connectTimeout: 30000, // Reduced from 60000 for faster failure detection
         waitForConnections: true,
-        queueLimit: 0,
+        queueLimit: 100, // Set limit to prevent memory issues
         charset: 'utf8mb4',
-        timezone: 'Z'
+        timezone: 'Z',
+        // Performance optimizations
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
+        maxPreparedStatements: 200, // Cache prepared statements
+        flags: ['-FOUND_ROWS'] // Optimize for COUNT queries
       });
 
       // Test connection
@@ -97,13 +103,48 @@ class DatabaseConnection {
     });
   }
 
-  async query(sql, params = []) {
-    return this.circuitBreaker.execute(async () => {
+  async query(sql, params = [], options = {}) {
+    const { 
+      useCache = true, 
+      ttl = 60000, // 1 minute default
+      forceRefresh = false 
+    } = options;
+    
+    // Check if this is a SELECT query that can be cached
+    const isSelectQuery = sql.trim().toUpperCase().startsWith('SELECT');
+    const shouldCache = useCache && isSelectQuery && !forceRefresh;
+    
+    // Try to get from cache first
+    if (shouldCache) {
+      const cached = queryCache.get(sql, params);
+      if (cached !== null) {
+        return cached;
+      }
+    }
+    
+    // Execute query
+    const result = await this.circuitBreaker.execute(async () => {
       return this.executeWithRetry(async () => {
         const [rows] = await this.pool.execute(sql, params);
         return rows;
       });
     });
+    
+    // Cache the result if applicable
+    if (shouldCache && result) {
+      queryCache.set(sql, params, result, ttl);
+    }
+    
+    // Invalidate cache for write operations
+    if (!isSelectQuery) {
+      // Extract table name from query
+      const tableMatch = sql.match(/(?:INSERT INTO|UPDATE|DELETE FROM)\s+`?(\w+)`?/i);
+      if (tableMatch) {
+        invalidateRelatedCaches(tableMatch[1]);
+      }
+    }
+    
+    return result;
   }
 
   async executeWithRetry(operation, retryCount = 0) {
@@ -179,10 +220,13 @@ const dbConnection = new DatabaseConnection();
 
 module.exports = {
   initializeDatabase: () => dbConnection.initialize(),
-  query: (sql, params) => dbConnection.query(sql, params),
+  query: (sql, params, options) => dbConnection.query(sql, params, options),
   vectorSimilaritySearch: (table, vectorColumn, queryVector, limit) =>
     dbConnection.vectorSimilaritySearch(table, vectorColumn, queryVector, limit),
   spatialQuery: (table, locationColumn, centerPoint, radiusKm) =>
     dbConnection.spatialQuery(table, locationColumn, centerPoint, radiusKm),
-  close: () => dbConnection.close()
+  close: () => dbConnection.close(),
+  // Export cache utilities for monitoring
+  getCacheStats: () => queryCache.getStats(),
+  clearCache: () => queryCache.clear()
 };

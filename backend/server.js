@@ -16,6 +16,7 @@ console.log('✅ Logger initialized');
 const rateLimiter = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initializeDatabase } = require('./db/connection');
+const { smartCache, conditionalRequests } = require('./middleware/cacheHeaders');
 console.log('✅ Database module loaded');
 
 // Import API routes

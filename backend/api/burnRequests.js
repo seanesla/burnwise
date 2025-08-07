@@ -54,7 +54,7 @@ router.get('/', asyncHandler(async (req, res) => {
     const whereClause = whereConditions.length > 0 ? 
       `WHERE ${whereConditions.join(' AND ')}` : '';
     
-    // Get total count
+    // Get total count - optimized with cache
     const countQuery = `
       SELECT COUNT(*) as total
       FROM burn_requests br
@@ -62,7 +62,8 @@ router.get('/', asyncHandler(async (req, res) => {
       ${whereClause}
     `;
     
-    const [{ total }] = await query(countQuery, queryParams);
+    // Cache count queries longer as they change less frequently
+    const [{ total }] = await query(countQuery, queryParams, { ttl: 300000 }); // 5 minute cache
     
     // Calculate pagination
     const offset = (page - 1) * limit;
@@ -97,7 +98,8 @@ router.get('/', asyncHandler(async (req, res) => {
     `;
     
     queryParams.push(parseInt(limit), offset);
-    const burnRequests = await query(mainQuery, queryParams);
+    // Cache main queries for shorter duration
+    const burnRequests = await query(mainQuery, queryParams, { ttl: 60000 }); // 1 minute cache
     
     // Parse GeoJSON field boundaries
     burnRequests.forEach(request => {
