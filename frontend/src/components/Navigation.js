@@ -13,9 +13,12 @@ const Navigation = () => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard' },
+    { path: '/request', label: 'Burn Request' },
     { path: '/map', label: 'Map' },
     { path: '/schedule', label: 'Schedule' },
-    { path: '/alerts', label: 'Alerts' }
+    { path: '/alerts', label: 'Alerts' },
+    { path: '/analytics', label: 'Analytics' },
+    { path: '/settings', label: 'Settings' }
   ];
 
   return (

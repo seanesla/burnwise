@@ -308,6 +308,39 @@ router.post('/', asyncHandler(async (req, res) => {
     
     // Step 5: Alerts Agent - Send notifications
     const io = req.app.get('io');
+    
+    // Enhanced real-time broadcasts for all connected clients
+    io.emit('burn_request_created', {
+      burnRequestId,
+      farmId: req.body.farm_id,
+      fieldName: req.body.field_name,
+      status: 'processing',
+      timestamp: new Date().toISOString()
+    });
+    
+    io.emit('weather_analyzed', {
+      burnRequestId,
+      weatherScore: weatherResult.weatherScore,
+      conditions: weatherResult.currentWeather,
+      timestamp: new Date().toISOString()
+    });
+    
+    io.emit('smoke_predicted', {
+      burnRequestId,
+      maxDispersionRadius: predictionResult.maxDispersionRadius,
+      conflictsDetected: predictionResult.conflicts?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (optimizationResult) {
+      io.emit('schedule_optimized', {
+        burnRequestId,
+        scheduled: optimizationResult.schedule?.items?.length > 0,
+        optimizationScore: optimizationResult.metrics?.overallScore,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     const alertResult = await alertsAgent.processAlert({
       type: 'burn_request_submitted',
       farm_id: req.body.farm_id,

@@ -15,7 +15,7 @@ console.log('✅ Logger initialized');
 
 const rateLimiter = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
-const { initializeDatabase } = require('./db/connection');
+const { initializeDatabase, query } = require('./db/connection');
 const { smartCache, conditionalRequests } = require('./middleware/cacheHeaders');
 console.log('✅ Database module loaded');
 
@@ -117,21 +117,90 @@ console.log('📍 Setting up Socket.io...');
 io.on('connection', (socket) => {
   logger.info(`Client connected: ${socket.id}`);
   
+  // Send connection confirmation with system status
+  socket.emit('connected', {
+    message: 'Connected to BURNWISE real-time system',
+    agents: {
+      coordinator: 'active',
+      weather: 'active',
+      predictor: 'active',
+      optimizer: 'active',
+      alerts: 'active'
+    },
+    timestamp: new Date().toISOString()
+  });
+  
   socket.on('join-farm', (farmId) => {
     socket.join(`farm-${farmId}`);
     logger.info(`Client ${socket.id} joined farm-${farmId}`);
+    
+    // Notify farm room of new member
+    io.to(`farm-${farmId}`).emit('farm-member-joined', {
+      farmId,
+      socketId: socket.id,
+      timestamp: new Date().toISOString()
+    });
   });
   
   socket.on('leave-farm', (farmId) => {
     socket.leave(`farm-${farmId}`);
     logger.info(`Client ${socket.id} left farm-${farmId}`);
+    
+    // Notify farm room of member leaving
+    io.to(`farm-${farmId}`).emit('farm-member-left', {
+      farmId,
+      socketId: socket.id,
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // Subscribe to alert types
+  socket.on('subscribe-alerts', (alertTypes) => {
+    alertTypes.forEach(type => {
+      socket.join(`alert-${type}`);
+    });
+    logger.info(`Client ${socket.id} subscribed to alerts: ${alertTypes.join(', ')}`);
+  });
+  
+  // Request real-time weather update
+  socket.on('request-weather', async (location) => {
+    try {
+      const weatherData = await weatherAgent.fetchCurrentWeather(location);
+      socket.emit('weather-update', weatherData);
+    } catch (error) {
+      socket.emit('weather-error', { error: error.message });
+    }
+  });
+  
+  // Request current schedule
+  socket.on('request-schedule', async (date) => {
+    try {
+      const schedule = await query(
+        'SELECT * FROM burn_schedule WHERE scheduled_date = ? ORDER BY scheduled_start_time',
+        [date]
+      );
+      socket.emit('schedule-update', schedule);
+    } catch (error) {
+      socket.emit('schedule-error', { error: error.message });
+    }
   });
   
   socket.on('disconnect', () => {
     logger.info(`Client disconnected: ${socket.id}`);
+    
+    // Notify all rooms this socket was in
+    const rooms = Object.keys(socket.rooms);
+    rooms.forEach(room => {
+      if (room !== socket.id) {
+        io.to(room).emit('member-disconnected', {
+          socketId: socket.id,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
   });
 });
-console.log('✅ Socket.io configured');
+console.log('✅ Socket.io configured with enhanced real-time features');
 
 // Make io available to routes
 app.set('io', io);

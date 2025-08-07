@@ -1036,6 +1036,87 @@ class OptimizerAgent {
     };
   }
 
+  /**
+   * Generate 32-dimensional burn history vector for pattern analysis
+   */
+  async generateBurnHistoryVector(burnData, historicalData) {
+    try {
+      // Create 32-dimensional vector for burn history patterns
+      const vector = new Array(32).fill(0);
+      
+      // Temporal features (dimensions 0-7)
+      const month = new Date(burnData.burn_date).getMonth();
+      vector[month % 8] = 1; // One-hot encoding for season
+      
+      const dayOfWeek = new Date(burnData.burn_date).getDay();
+      vector[8 + (dayOfWeek % 7)] = 1; // Day of week encoding
+      
+      // Burn characteristics (dimensions 15-23)
+      vector[15] = Math.min(1, burnData.acres / 500); // Normalized acres
+      vector[16] = burnData.priority_score / 100; // Priority score
+      vector[17] = burnData.estimated_duration / 24; // Duration normalized to day
+      
+      // Crop type encoding (dimensions 18-22)
+      const cropTypes = ['wheat', 'corn', 'soybean', 'rice', 'grass'];
+      const cropIndex = cropTypes.findIndex(c => burnData.crop_type?.toLowerCase().includes(c));
+      if (cropIndex >= 0 && cropIndex < 5) {
+        vector[18 + cropIndex] = 1;
+      }
+      
+      // Historical success patterns (dimensions 23-31)
+      if (historicalData && historicalData.length > 0) {
+        const successRate = historicalData.filter(h => h.status === 'completed').length / historicalData.length;
+        vector[23] = successRate;
+        
+        const avgDuration = historicalData.reduce((sum, h) => sum + (h.actual_duration || 0), 0) / historicalData.length;
+        vector[24] = Math.min(1, avgDuration / 8); // Normalized to 8 hours
+        
+        const conflictRate = historicalData.filter(h => h.had_conflicts).length / historicalData.length;
+        vector[25] = 1 - conflictRate; // Inverse conflict rate
+        
+        // Weather success correlation
+        const goodWeatherBurns = historicalData.filter(h => h.weather_score > 70).length;
+        vector[26] = goodWeatherBurns / historicalData.length;
+        
+        // Time window adherence
+        const onTimeBurns = historicalData.filter(h => h.started_on_time).length;
+        vector[27] = onTimeBurns / historicalData.length;
+        
+        // Farm performance metrics
+        vector[28] = Math.min(1, historicalData.length / 100); // Experience level
+        vector[29] = historicalData.filter(h => h.no_violations).length / historicalData.length;
+        
+        // Recent trend (last 5 burns)
+        const recentBurns = historicalData.slice(-5);
+        const recentSuccess = recentBurns.filter(h => h.status === 'completed').length / recentBurns.length;
+        vector[30] = recentSuccess;
+        
+        // Seasonal success pattern
+        const sameSeason = historicalData.filter(h => {
+          const hMonth = new Date(h.burn_date).getMonth();
+          return Math.floor(hMonth / 3) === Math.floor(month / 3);
+        });
+        vector[31] = sameSeason.filter(h => h.status === 'completed').length / Math.max(1, sameSeason.length);
+      }
+      
+      // Normalize vector
+      const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+      const normalizedVector = magnitude > 0 ? vector.map(val => val / magnitude) : vector;
+      
+      logger.vector('burn_history_vector_generation', 'burn_history', 32, {
+        farmId: burnData.farm_id,
+        historicalRecords: historicalData?.length || 0,
+        magnitude: magnitude.toFixed(4)
+      });
+      
+      return normalizedVector;
+      
+    } catch (error) {
+      logger.agent(this.agentName, 'error', 'Burn history vector generation failed', { error: error.message });
+      return new Array(32).fill(0.1);
+    }
+  }
+
   // Utility methods
   parseTime(timeString) {
     const [hours, minutes] = timeString.split(':').map(Number);
