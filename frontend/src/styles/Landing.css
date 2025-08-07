@@ -169,9 +169,9 @@
 
 .torch-flame-absolute {
   position: absolute;
-  top: -55px; /* Flame positioned above the I */
+  top: -55px; /* Flame positioned above the I - matches animation */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateX(-6px); /* Match the -6px offset from animation */
   z-index: 10;
   filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
           drop-shadow(0 0 15px rgba(255, 87, 34, 0.6));
