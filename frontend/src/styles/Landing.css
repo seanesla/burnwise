@@ -164,8 +164,11 @@
 .torch-flame-i {
   position: absolute;
   top: -55px; /* Flame positioned above the I */
-  left: 50%;
-  transform: translateX(-50%) translateX(calc(0.5ch)); /* Position above the I character */
+  /* Position above the 6th character (I in BURNWISE) */
+  /* BURNWISE is 8 characters, center is at 4, I is at position 5.5 */
+  /* So I is 1.5 characters right of center */
+  left: calc(50% + 1.2ch); /* Fine-tuned position above I */
+  transform: translateX(-50%);
   z-index: 10;
   filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
           drop-shadow(0 0 15px rgba(255, 87, 34, 0.6));
