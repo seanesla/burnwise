@@ -1,0 +1,15 @@
+{
+  "performance": {
+    "queries": [],
+    "apis": [],
+    "memory": []
+  },
+  "functionality": {
+    "passed": 0,
+    "failed": 0,
+    "tests": []
+  },
+  "bottlenecks": [],
+  "overengineering": [],
+  "recommendations": []
+}

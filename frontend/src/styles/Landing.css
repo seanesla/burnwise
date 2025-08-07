@@ -161,33 +161,21 @@
   transition: opacity 0.3s ease-out;
 }
 
-.torch-flame-absolute {
+.torch-flame-i {
   position: absolute;
-  top: -55px; /* Flame tip barely touches the top of the I */
+  top: -55px; /* Flame positioned above the I */
   left: 50%;
-  transform: translateX(-50%) translateX(-6px); /* Fine-tune for "I" character centering */
+  transform: translateX(-50%) translateX(calc(0.5ch)); /* Position above the I character */
   z-index: 10;
   filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
           drop-shadow(0 0 15px rgba(255, 87, 34, 0.6));
-  width: 65px; /* Scaled up 30% to match I width */
+  width: 65px;
   height: 65px;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 1;
-}
-
-/* Ensure the I character has proper positioning context for the flame */
-.hero-title-i {
-  position: relative;
-  display: inline-block;
-  /* Inherit all font properties to match other characters */
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-  color: inherit;
-  text-shadow: inherit;
+  pointer-events: none;
 }
 
 .hero-title {

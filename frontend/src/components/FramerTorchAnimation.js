@@ -117,57 +117,63 @@ const FramerTorchAnimation = ({ onComplete }) => {
   };
 
   return (
-    <AnimatePresence mode="wait">
-      {phase !== "complete" && (
-        <motion.div
-          ref={containerRef}
-          style={{
-            position: "fixed",
-            zIndex: 999999,
-            width: 180,
-            height: 180,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-          initial="center"
-          animate={phase === "morphing" ? "morph" : "center"}
-          exit="fade"
-          variants={variants}
-          transition={{
-            duration: phase === "morphing" ? 1.6 : 0.5,
-            ease: phase === "morphing" ? [0.4, 0, 0.1, 1] : "easeOut", // Smoother easing for morph
-            exit: { duration: 0 }, // Instant disappear
-          }}
-        >
-          <AnimatedFlameLogo size={180} animated={true} />
-        </motion.div>
-      )}
+    <>
+      <AnimatePresence>
+        {phase !== "complete" && (
+          <motion.div
+            key="flame-animation"
+            ref={containerRef}
+            style={{
+              position: "fixed",
+              zIndex: 999999,
+              width: 180,
+              height: 180,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "none",
+            }}
+            initial="center"
+            animate={phase === "morphing" ? "morph" : "center"}
+            exit="fade"
+            variants={variants}
+            transition={{
+              duration: phase === "morphing" ? 1.6 : 0.5,
+              ease: phase === "morphing" ? [0.4, 0, 0.1, 1] : "easeOut", // Smoother easing for morph
+              exit: { duration: 0 }, // Instant disappear
+            }}
+          >
+            <AnimatedFlameLogo size={180} animated={true} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Black background that fades */}
-      <motion.div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "#000",
-          zIndex: 999998,
-          pointerEvents: "none",
-        }}
-        initial={{ opacity: 1 }}
-        animate={{
-          opacity: phase === "morphing" || phase === "complete" ? 0 : 1,
-        }}
-        exit={{ opacity: 0 }}
-        transition={{
-          duration: 1.8,
-          ease: "easeOut",
-        }}
-      />
-    </AnimatePresence>
+      <AnimatePresence>
+        <motion.div
+          key="black-background"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "#000",
+            zIndex: 999998,
+            pointerEvents: "none",
+          }}
+          initial={{ opacity: 1 }}
+          animate={{
+            opacity: phase === "morphing" || phase === "complete" ? 0 : 1,
+          }}
+          exit={{ opacity: 0 }}
+          transition={{
+            duration: 1.8,
+            ease: "easeOut",
+          }}
+        />
+      </AnimatePresence>
+    </>
   );
 };
 

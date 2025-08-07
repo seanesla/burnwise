@@ -122,8 +122,8 @@ const AlertsPanel = ({ farms = [] }) => {
           >
             <option value="">-- Select Farm --</option>
             {farmsData.map(farm => (
-              <option key={farm.farm_id} value={farm.farm_id}>
-                {farm.farm_name}
+              <option key={farm.id || farm.farm_id} value={farm.id || farm.farm_id}>
+                {farm.name || farm.farm_name} - {farm.owner_name}
               </option>
             ))}
           </select>

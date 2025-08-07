@@ -4,6 +4,7 @@ import { FaFire, FaMapMarkedAlt, FaCalendarAlt, FaClock, FaLeaf, FaExclamationTr
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
+import '../styles/mapbox-overrides.css';
 
 const ImprovedBurnRequestForm = () => {
   const [formData, setFormData] = useState({
@@ -78,7 +79,7 @@ const ImprovedBurnRequestForm = () => {
         zoom: 5
       });
 
-      // Add drawing controls
+      // Add drawing controls with custom fire-themed styling
       draw.current = new window.MapboxDraw({
         displayControlsDefault: false,
         controls: {
@@ -229,8 +230,9 @@ const ImprovedBurnRequestForm = () => {
     
     // Center map on selected farm
     const farm = farms.find(f => f.id === parseInt(farmId));
-    if (farm && map.current) {
-      const [lon, lat] = farm.location.coordinates;
+    if (farm && farm.lon && farm.lat && map.current) {
+      const lon = parseFloat(farm.lon);
+      const lat = parseFloat(farm.lat);
       map.current.flyTo({
         center: [lon, lat],
         zoom: 14,
@@ -349,9 +351,14 @@ const ImprovedBurnRequestForm = () => {
               )}
             </div>
             
-            <p className="text-gray-400 text-sm mt-3">
-              Click to draw points around your field. Double-click to complete the polygon.
-            </p>
+            <div className="mt-3">
+              <p className="text-gray-400 text-sm">
+                🔥 Click to draw points around your field. Double-click to complete the polygon.
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Use the field boundary tool (top left of map) to start drawing
+              </p>
+            </div>
           </motion.div>
 
           {/* Form Section */}

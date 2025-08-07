@@ -1,0 +1,113 @@
+/* BURNWISE Mapbox Draw Control Overrides - Fire Theme */
+
+/* Hide the default polygon icon that looks like a windmill */
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon {
+  position: relative;
+  background-image: none !important;
+}
+
+/* Replace with fire-themed field icon */
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon::before {
+  content: "🔥";
+  font-size: 20px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Alternative: Use text label */
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon::after {
+  content: "FIELD";
+  font-size: 9px;
+  font-weight: bold;
+  color: #ff6b35;
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* Style the trash/delete button */
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
+  background-image: none !important;
+  position: relative;
+}
+
+.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash::before {
+  content: "🗑️";
+  font-size: 18px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Style the control group with fire theme */
+.mapboxgl-ctrl-group {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 107, 53, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.2) !important;
+}
+
+/* Style individual control buttons */
+.mapboxgl-ctrl-group button {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border: none !important;
+  color: #ff6b35 !important;
+  transition: all 0.3s ease !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background: rgba(255, 107, 53, 0.2) !important;
+  box-shadow: 0 0 15px rgba(255, 107, 53, 0.4) !important;
+}
+
+.mapboxgl-ctrl-group button.active,
+.mapboxgl-ctrl-group button:active {
+  background: rgba(255, 107, 53, 0.3) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5),
+              0 0 20px rgba(255, 107, 53, 0.5) !important;
+}
+
+/* Fix button separator lines */
+.mapboxgl-ctrl-group button + button {
+  border-top: 1px solid rgba(255, 107, 53, 0.2) !important;
+}
+
+/* Tooltip styling */
+.mapbox-gl-draw_ctrl-draw-btn:hover::after {
+  background: rgba(0, 0, 0, 0.95);
+  color: #ff6b35;
+  border: 1px solid rgba(255, 107, 53, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+/* Remove the windmill-like default SVG background */
+.mapbox-gl-draw_ctrl-draw-btn {
+  background-size: 0 0 !important;
+  width: 30px;
+  height: 30px;
+}
+
+/* Active state for drawing */
+.mapbox-gl-draw_ctrl-draw-btn.active {
+  background-color: rgba(255, 107, 53, 0.3) !important;
+}
+
+/* Cursor styling */
+.mapboxgl-canvas-container.mapboxgl-interactive {
+  cursor: crosshair !important;
+}
+
+.mapboxgl-canvas-container.mapboxgl-interactive.mapboxgl-touch-drag-pan {
+  cursor: grab !important;
+}
+
+.mapboxgl-canvas-container.mapboxgl-interactive.mapboxgl-touch-drag-pan:active {
+  cursor: grabbing !important;
+}

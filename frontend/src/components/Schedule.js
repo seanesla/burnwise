@@ -4,18 +4,21 @@ import toast from 'react-hot-toast';
 const Schedule = ({ burnRequests, selectedDate, onRefresh }) => {
   const [optimizing, setOptimizing] = useState(false);
   const [schedule, setSchedule] = useState([]);
+  
+  // Use today's date if selectedDate is not provided
+  const currentDate = selectedDate || new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     fetchSchedule();
-  }, [selectedDate]);
+  }, [currentDate]);
 
   const fetchSchedule = async () => {
     try {
-      const endDate = new Date(selectedDate);
+      const endDate = new Date(currentDate);
       endDate.setDate(endDate.getDate() + 6);
       
       const response = await fetch(
-        `http://localhost:5001/api/schedule/calendar?startDate=${selectedDate}&endDate=${endDate.toISOString().split('T')[0]}`
+        `http://localhost:5001/api/schedule/calendar?startDate=${currentDate}&endDate=${endDate.toISOString().split('T')[0]}`
       );
       
       const data = await response.json();
@@ -31,14 +34,14 @@ const Schedule = ({ burnRequests, selectedDate, onRefresh }) => {
     setOptimizing(true);
     
     try {
-      const endDate = new Date(selectedDate);
+      const endDate = new Date(currentDate);
       endDate.setDate(endDate.getDate() + 3);
       
       const response = await fetch('http://localhost:5001/api/schedule/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          startDate: selectedDate,
+          startDate: currentDate,
           endDate: endDate.toISOString().split('T')[0]
         })
       });
