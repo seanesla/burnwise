@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@mapbox/mapbox-gl-draw": "^1.4.3",
+    "@react-three/drei": "^9.88.0",
+    "@react-three/fiber": "^8.15.0",
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/preset-fire": "^3.2.0",
     "@tsparticles/react": "^3.0.0",
@@ -23,16 +25,15 @@
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
     "recharts": "^2.10.3",
-    "three": "^0.179.1",
+    "three": "^0.160.0",
     "three-nebula": "^10.0.3",
     "tsparticles": "^3.9.1"
   },
   "devDependencies": {
-    "react-app-rewired": "^2.2.1",
-    "customize-cra": "^1.0.0",
     "compression-webpack-plugin": "^10.0.0",
-    "webpack-bundle-analyzer": "^4.10.1",
-    "babel-plugin-transform-imports": "^2.0.0"
+    "customize-cra": "^1.0.0",
+    "react-app-rewired": "^2.2.1",
+    "webpack-bundle-analyzer": "^4.10.1"
   },
   "scripts": {
     "start": "react-app-rewired start",
