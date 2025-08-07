@@ -1,20 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import AnimatedFlameLogo from './AnimatedFlameLogo';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import AnimatedFlameLogo from "./AnimatedFlameLogo";
 
 const FramerTorchAnimation = ({ onComplete }) => {
-  const [phase, setPhase] = useState('center'); // 'center', 'morphing', 'complete'
+  const [phase, setPhase] = useState("center"); // 'center', 'morphing', 'complete'
   const [positions, setPositions] = useState({
-    start: { x: 0, y: 0 },
-    end: { x: 0, y: 0 }
+    start: {
+      x: window.innerWidth / 2 - 90, // Center minus half of 180px width
+      y: window.innerHeight / 2 - 90, // Center minus half of 180px height
+    },
+    end: { x: 0, y: 0 },
   });
   const containerRef = useRef(null);
-  
+
   useEffect(() => {
     // Measure the exact position of "I" in BURNWISE
     const measureTarget = () => {
       // Create a hidden element matching Landing.js structure
-      const testEl = document.createElement('div');
+      const testEl = document.createElement("div");
       testEl.style.cssText = `
         position: fixed;
         top: 50%;
@@ -28,7 +31,7 @@ const FramerTorchAnimation = ({ onComplete }) => {
         pointer-events: none;
         white-space: nowrap;
       `;
-      
+
       // Match Landing.js structure: BURNW[I]SE
       testEl.innerHTML = `
         <span style="position: relative; display: inline-block;">
@@ -36,58 +39,62 @@ const FramerTorchAnimation = ({ onComplete }) => {
         </span>
       `;
       document.body.appendChild(testEl);
-      
+
       // Get the I span
-      const iSpan = testEl.querySelector('span span');
+      const iSpan = testEl.querySelector("span span");
       const iRect = iSpan.getBoundingClientRect();
-      
+
       // Calculate offset from viewport center
       const viewportCenterX = window.innerWidth / 2;
       const viewportCenterY = window.innerHeight / 2;
-      
+
       // The flame center should align with I center
       const iCenterX = iRect.left + iRect.width / 2;
       const iTop = iRect.top;
-      
+
       document.body.removeChild(testEl);
-      
+
       // Return absolute positions
-      // When scaled to 0.36, the 180px element becomes 64.8px
-      // So we need to position it so its center aligns with I
-      const scaledSize = 180 * 0.36;
+      // When scaled to 0.36, the 180px element becomes 64.8px (≈ 65px)
+      // The Landing.js flame is 65px size positioned 65px above the "I"
+      const scaledSize = 65;
       const halfScaledSize = scaledSize / 2;
-      
+
       return {
         start: {
           x: viewportCenterX - 90, // Center minus half of 180px width
-          y: viewportCenterY - 90  // Center minus half of 180px height
+          y: viewportCenterY - 90, // Center minus half of 180px height
         },
         end: {
-          // Position so scaled element's center aligns with I center
-          // Since Framer Motion scales from center, we need to account for that
-          x: iCenterX - 90, // Keep original offset, scaling will handle the rest
-          y: iTop - 65 - 90 // 65px above text, accounting for original size
-        }
+          // Position for 180px element that when scaled to 0.36 will match Landing flame
+          // Scaled size: 180 * 0.36 = 64.8px ≈ 65px
+          // Landing flame is positioned -55px from top of I (top edge of flame)
+          // Scaled flame top at: iTop - 55, so center at: iTop - 55 + 32.5 = iTop - 22.5
+          // Unscaled element needs same center position
+          // Unscaled top = center - 90 = iTop - 22.5 - 90
+          x: iCenterX - 90 - 6, // Center the unscaled element on I with offset
+          y: iTop - 140, // Fine-tuned position to match Landing flame
+        },
       };
     };
-    
+
     // Wait for fonts to load
     document.fonts.ready.then(() => {
       const positions = measureTarget();
       setPositions(positions);
-      
+
       // Start animation sequence
       setTimeout(() => {
-        setPhase('morphing');
+        setPhase("morphing");
       }, 2500); // Hold at center for 2.5s
-      
+
       setTimeout(() => {
-        setPhase('complete');
+        setPhase("complete");
         if (onComplete) onComplete();
-      }, 4000); // Complete morph at 4s
+      }, 4095); // Complete just before Landing flame appears
     });
   }, [onComplete]);
-  
+
   const variants = {
     center: {
       left: positions.start.x,
@@ -106,59 +113,60 @@ const FramerTorchAnimation = ({ onComplete }) => {
       top: positions.end.y,
       scale: 0.36,
       opacity: 0,
-    }
+    },
   };
-  
+
   return (
-    <AnimatePresence>
-      {phase !== 'complete' && (
+    <AnimatePresence mode="wait">
+      {phase !== "complete" && (
         <motion.div
           ref={containerRef}
           style={{
-            position: 'fixed',
+            position: "fixed",
             zIndex: 999999,
             width: 180,
             height: 180,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
           }}
           initial="center"
-          animate={phase === 'morphing' ? 'morph' : 'center'}
+          animate={phase === "morphing" ? "morph" : "center"}
           exit="fade"
           variants={variants}
           transition={{
-            duration: 1.5,
-            ease: [0.4, 0, 0.2, 1] // Cubic bezier for smooth morph
+            duration: phase === "morphing" ? 1.6 : 0.5,
+            ease: phase === "morphing" ? [0.4, 0, 0.1, 1] : "easeOut", // Smoother easing for morph
+            exit: { duration: 0 }, // Instant disappear
           }}
         >
           <AnimatedFlameLogo size={180} animated={true} />
         </motion.div>
       )}
-      
+
       {/* Black background that fades */}
-      {phase !== 'complete' && (
-        <motion.div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: '#000',
-            zIndex: 999998
-          }}
-          initial={{ opacity: 1 }}
-          animate={{ 
-            opacity: phase === 'morphing' ? 0 : 1 
-          }}
-          exit={{ opacity: 0 }}
-          transition={{
-            duration: 1.8,
-            ease: 'easeOut'
-          }}
-        />
-      )}
+      <motion.div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "#000",
+          zIndex: 999998,
+          pointerEvents: "none",
+        }}
+        initial={{ opacity: 1 }}
+        animate={{
+          opacity: phase === "morphing" || phase === "complete" ? 0 : 1,
+        }}
+        exit={{ opacity: 0 }}
+        transition={{
+          duration: 1.8,
+          ease: "easeOut",
+        }}
+      />
     </AnimatePresence>
   );
 };

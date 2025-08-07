@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Landing from './components/Landing';
-import Dashboard from './components/Dashboard';
-import Map from './components/Map';
-import Schedule from './components/Schedule';
-import AlertsPanel from './components/AlertsPanel';
 import Navigation from './components/Navigation';
 import FramerTorchAnimation from './components/FramerTorchAnimation';
+import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 import './styles/App.css';
+
+// Lazy load route components
+const Landing = lazy(() => import('./components/Landing'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Map = lazy(() => import('./components/Map'));
+const Schedule = lazy(() => import('./components/Schedule'));
+const AlertsPanel = lazy(() => import('./components/AlertsPanel'));
 
 // Debug system (disabled for production)
 const DEBUG = false;
@@ -16,12 +20,43 @@ const LOG_PREFIX = '🔥 BURNWISE:';
 function App() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [animationComplete, setAnimationComplete] = useState(false);
+  const renderCountRef = useRef(0);
+  const mountTimeRef = useRef(Date.now());
+  
+  useEffect(() => {
+    renderCountRef.current++;
+  });
   
   const handleAnimationComplete = () => {
     setShowAnimation(false);
     setAnimationComplete(true);
     console.log(LOG_PREFIX, 'Torch animation complete');
+    // Re-enable scrolling and reset body position
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.top = '';
   };
+  
+  // Lock scrolling during startup animation
+  useEffect(() => {
+    if (showAnimation) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = '0';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+    };
+  }, [showAnimation]);
   
   return (
     <Router>
@@ -49,7 +84,7 @@ function App() {
             <div>Time: {Date.now() - mountTimeRef.current}ms</div>
             <div style={{ marginTop: '5px', fontSize: '10px' }}>
               Animation visible: {showAnimation ? 'YES' : 'NO'} | 
-              Logo exists: {AnimatedFlameLogo ? 'YES' : 'NO'}
+              Animation Complete: {animationComplete ? 'YES' : 'NO'}
             </div>
           </div>
         )}
@@ -60,16 +95,24 @@ function App() {
         )}
         
         {/* Main App - Always visible, animation overlays on top */}
-        <div className="app-main">
+        <div className="app-main" style={{
+          opacity: 1,
+          position: 'relative',
+          zIndex: 1
+        }}>
           <Navigation />
           <div className="app-content">
-            <Routes>
-              <Route path="/" element={<Landing fromStartup={animationComplete} hideLogoInitially={showAnimation} animationPhase={showAnimation ? 'animating' : 'done'} />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/map" element={<Map />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/alerts" element={<AlertsPanel />} />
-            </Routes>
+            <ErrorBoundary>
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
+                <Routes>
+                  <Route path="/" element={<Landing fromStartup={animationComplete} hideLogoInitially={showAnimation} animationPhase={showAnimation ? 'animating' : 'done'} />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/map" element={<Map />} />
+                  <Route path="/schedule" element={<Schedule />} />
+                  <Route path="/alerts" element={<AlertsPanel />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </div>

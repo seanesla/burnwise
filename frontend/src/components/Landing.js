@@ -22,15 +22,15 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   // Show logo and enable videos synchronized with startup animation
   useEffect(() => {
     if (hideLogoInitially) {
-      // Show torch flame after animation completes
+      // Show torch flame exactly when startup animation disappears
       const timer = setTimeout(() => {
         setLogoVisible(true);
-      }, 4100); // Show flame right after morph completes
+      }, 4095); // Show flame exactly when startup animation completes
       
-      // Enable videos after flame has docked
+      // Enable videos with a slight delay for smooth transition
       const videoTimer = setTimeout(() => {
         setVideosEnabled(true);
-      }, 4200);
+      }, 4500);
       
       return () => {
         clearTimeout(timer);
@@ -75,7 +75,7 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
       <div className="video-background" style={{ 
         opacity: videosEnabled ? videoOpacity : 0,
         transform: videoTransform,
-        transition: 'opacity 1s ease-out'
+        transition: 'opacity 1.5s ease-out'
       }}>
         {videosEnabled && videos.map((videoSrc, index) => (
           <video
@@ -101,27 +101,15 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
       <div className="landing-content">
         {/* Hero Section - Stable layout with content opacity animation */}
         <section className="hero-section">
-          <h1 className={`hero-title ${logoVisible ? 'title-visible' : 'title-hidden'}`} style={{ 
-            position: 'relative',
-            opacity: animationPhase === 'startup' ? 0 : 
-                     (animationPhase === 'morphing' ? 0 : 
-                     (animationPhase === 'transitioning' ? 0.5 : 1)),
-            transition: 'opacity 0.8s ease-out'
+          <h1 className="hero-title title-visible" style={{ 
+            position: 'relative'
           }}>
             <span style={{ position: 'relative', display: 'inline-block' }}>
               {'BURNW'}
               <span style={{ position: 'relative', display: 'inline-block' }}>
                 {'I'}
                 {logoVisible && (
-                  <div className="torch-flame-absolute" style={{
-                    position: 'absolute',
-                    top: '-65px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    zIndex: 10,
-                    width: '65px',
-                    height: '65px'
-                  }}>
+                  <div className="torch-flame-absolute">
                     <AnimatedFlameLogo size={65} animated={true} />
                   </div>
                 )}
@@ -129,28 +117,13 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
               {'SE'}
             </span>
           </h1>
-          <p className="hero-subtitle" style={{
-            opacity: animationPhase === 'startup' ? 0 : 
-                     (animationPhase === 'morphing' ? 0 : 
-                     (animationPhase === 'transitioning' ? 0.5 : 1)),
-            transition: 'opacity 0.8s ease-out 0.1s'
-          }}>Multi-Farm Agricultural Burn Coordinator</p>
-          <p className="hero-description" style={{
-            opacity: animationPhase === 'startup' ? 0 : 
-                     (animationPhase === 'morphing' ? 0 : 
-                     (animationPhase === 'transitioning' ? 0.5 : 1)),
-            transition: 'opacity 0.8s ease-out 0.2s'
-          }}>
+          <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
+          <p className="hero-description">
             Intelligent coordination system preventing dangerous smoke overlap between farms using 
             multi-agent AI, real-time weather analysis, and TiDB vector search technology.
           </p>
           
-          <div className="cta-buttons" style={{
-            opacity: animationPhase === 'startup' ? 0 : 
-                     (animationPhase === 'morphing' ? 0 : 
-                     (animationPhase === 'transitioning' ? 0.5 : 1)),
-            transition: 'opacity 0.8s ease-out 0.3s'
-          }}>
+          <div className="cta-buttons">
             <button className="cta-primary" onClick={() => navigate('/dashboard')}>
               Get Started
             </button>
