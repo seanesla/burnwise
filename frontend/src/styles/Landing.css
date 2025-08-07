@@ -177,6 +177,12 @@
   opacity: 1;
 }
 
+/* Ensure the I character has proper positioning context for the flame */
+.hero-title-i {
+  position: relative;
+  display: inline-block;
+}
+
 .hero-title {
   font-size: clamp(3rem, 8vw, 6rem);
   font-weight: 900;
