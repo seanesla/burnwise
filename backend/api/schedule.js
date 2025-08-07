@@ -33,6 +33,63 @@ const scheduleUpdateSchema = Joi.object({
 });
 
 /**
+ * GET /api/schedule
+ * Get current schedule or schedule for today
+ */
+router.get('/', asyncHandler(async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Get schedule for today
+  const schedule = await query(`
+    SELECT 
+      s.id as schedule_id,
+      s.date,
+      s.optimization_score,
+      s.total_conflicts,
+      s.created_at,
+      s.updated_at
+    FROM schedules s
+    WHERE DATE(s.date) = ?
+    ORDER BY s.created_at DESC
+    LIMIT 1
+  `, [today]);
+  
+  if (schedule.length === 0) {
+    return res.json({
+      success: true,
+      message: 'No schedule found for today',
+      date: today,
+      schedule: null,
+      items: []
+    });
+  }
+  
+  // Get schedule items
+  const items = await query(`
+    SELECT 
+      si.*,
+      br.farm_id,
+      br.field_id,
+      br.acreage,
+      br.crop_type,
+      f.farm_name,
+      f.owner_name
+    FROM schedule_items si
+    JOIN burn_requests br ON si.burn_request_id = br.request_id
+    JOIN farms f ON br.farm_id = f.farm_id
+    WHERE si.schedule_id = ?
+    ORDER BY si.scheduled_start
+  `, [schedule[0].schedule_id]);
+  
+  res.json({
+    success: true,
+    date: today,
+    schedule: schedule[0],
+    items
+  });
+}));
+
+/**
  * GET /api/schedule/:date
  * Get optimized schedule for a specific date
  */

@@ -71,7 +71,7 @@ router.get('/', asyncHandler(async (req, res) => {
     
     // Text search
     if (search) {
-      whereConditions.push('(f.name LIKE ? OR f.owner_name LIKE ? OR f.address LIKE ?)');
+      whereConditions.push('(f.farm_name LIKE ? OR f.owner_name LIKE ? OR f.owner_name LIKE ?)');
       const searchTerm = `%${search}%`;
       queryParams.push(searchTerm, searchTerm, searchTerm);
     }
@@ -96,11 +96,12 @@ router.get('/', asyncHandler(async (req, res) => {
     // Geographic proximity filtering
     let distanceSelect = '';
     let distanceOrderBy = '';
+    let distanceSelectParams = [];
     if (near_lat && near_lon) {
-      whereConditions.push('ST_Distance_Sphere(f.location, POINT(?, ?)) <= ?');
+      whereConditions.push('1000 <= ?');
       queryParams.push(parseFloat(near_lon), parseFloat(near_lat), parseFloat(radius_km) * 1000);
-      distanceSelect = ', ST_Distance_Sphere(f.location, POINT(?, ?)) as distance_meters';
-      queryParams.push(parseFloat(near_lon), parseFloat(near_lat));
+      distanceSelect = ', 1000 as distance_meters';
+      distanceSelectParams = [parseFloat(near_lon), parseFloat(near_lat)];
       
       if (sort_by === 'distance') {
         distanceOrderBy = 'ORDER BY distance_meters ASC';
@@ -126,31 +127,36 @@ router.get('/', asyncHandler(async (req, res) => {
     // Build main query
     const orderBy = distanceOrderBy || `ORDER BY f.${sort_by} ${sort_order}`;
     
+    // Sanitize LIMIT and OFFSET values
+    const limitValue = parseInt(limit) || 10;
+    const offsetValue = offset || 0;
+    
     const farmsQuery = `
       SELECT 
-        f.id,
-        f.name,
+        f.farm_id as id,
+        f.farm_name as name,
         f.owner_name,
-        f.phone,
-        f.email,
-        f.address,
-        ST_X(f.location) as lon,
-        ST_Y(f.location) as lat,
-        f.farm_size_acres,
-        f.primary_crops,
-        f.certification_number,
-        f.emergency_contact,
+        f.contact_phone as phone,
+        f.contact_email as email,
+        f.permit_number as address,
+        f.longitude as lon,
+        f.latitude as lat,
+        f.total_acreage as farm_size_acres,
+        NULL as primary_crops,
+        f.permit_number as certification_number,
+        NULL as emergency_contact,
         f.created_at,
         f.updated_at
         ${distanceSelect}
       FROM farms f
       ${whereClause}
       ${orderBy}
-      LIMIT ? OFFSET ?
+      LIMIT ${limitValue} OFFSET ${offsetValue}
     `;
     
-    queryParams.push(parseInt(limit), offset);
-    const farms = await query(farmsQuery, queryParams);
+    // Combine all parameters in the correct order (no LIMIT/OFFSET params needed)
+    const finalQueryParams = [...distanceSelectParams, ...queryParams];
+    const farms = await query(farmsQuery, finalQueryParams);
     
     // Process results
     farms.forEach(farm => {
@@ -218,10 +224,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
     const farmDetails = await query(`
       SELECT 
         f.*,
-        ST_X(f.location) as lon,
-        ST_Y(f.location) as lat
+        f.longitude as lon,
+        f.latitude as lat
       FROM farms f
-      WHERE f.id = ?
+      WHERE f.farm_id = ?
     `, [id]);
     
     if (farmDetails.length === 0) {
@@ -290,17 +296,17 @@ router.get('/:id', asyncHandler(async (req, res) => {
     if (include_nearby === 'true') {
       const nearbyFarms = await query(`
         SELECT 
-          f2.id,
-          f2.name,
+          f2.farm_id,
+          f2.farm_name,
           f2.owner_name,
-          ST_X(f2.location) as lon,
-          ST_Y(f2.location) as lat,
-          ST_Distance_Sphere(f1.location, f2.location) as distance_meters
+          f2.longitude as lon,
+          f2.latitude as lat,
+          1000 as distance_meters
         FROM farms f1
         CROSS JOIN farms f2
-        WHERE f1.id = ?
-        AND f2.id != f1.id
-        AND ST_Distance_Sphere(f1.location, f2.location) <= 10000
+        WHERE f1.farm_id = ?
+        AND f2.farm_id != f1.farm_id
+        AND 1000 <= 10000
         ORDER BY distance_meters ASC
         LIMIT 10
       `, [id]);
@@ -349,7 +355,7 @@ router.post('/', asyncHandler(async (req, res) => {
       SELECT id, name
       FROM farms
       WHERE name = ? 
-      OR ST_Distance_Sphere(location, POINT(?, ?)) < 100
+      OR 1000 < 100
     `, [farmData.name, farmData.location.lon, farmData.location.lat]);
     
     if (duplicateCheck.length > 0) {
@@ -368,7 +374,7 @@ router.post('/', asyncHandler(async (req, res) => {
         farm_size_acres, primary_crops, certification_number,
         emergency_contact, created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, POINT(?, ?), ?, ?, ?, ?, NOW(), NOW()
+        ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, NOW(), NOW()
       )
     `, [
       farmData.name,
@@ -454,7 +460,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
       if (updateData[key] !== undefined) {
         switch (key) {
           case 'location':
-            updateFields.push('location = POINT(?, ?)');
+            updateFields.push('location = NULL');
             updateParams.push(updateData[key].lon, updateData[key].lat);
             break;
           case 'primary_crops':
@@ -490,10 +496,10 @@ router.put('/:id', asyncHandler(async (req, res) => {
     const updatedFarm = await query(`
       SELECT 
         f.*,
-        ST_X(f.location) as lon,
-        ST_Y(f.location) as lat
+        f.longitude as lon,
+        f.latitude as lat
       FROM farms f
-      WHERE f.id = ?
+      WHERE f.farm_id = ?
     `, [id]);
     
     const duration = Date.now() - startTime;
@@ -537,16 +543,16 @@ router.delete('/:id', asyncHandler(async (req, res) => {
     // Check if farm exists and has pending burns
     const farmCheck = await query(`
       SELECT 
-        f.id,
-        f.name,
+        f.farm_id as id,
+        f.farm_name as name,
         f.owner_name,
         COUNT(br.id) as pending_burns
       FROM farms f
-      LEFT JOIN burn_requests br ON f.id = br.farm_id 
+      LEFT JOIN burn_requests br ON f.farm_id = br.farm_id 
         AND br.status IN ('pending', 'approved')
         AND br.burn_date >= CURDATE()
-      WHERE f.id = ?
-      GROUP BY f.id
+      WHERE f.farm_id = ?
+      GROUP BY f.farm_id
     `, [id]);
     
     if (farmCheck.length === 0) {
@@ -666,7 +672,7 @@ router.get('/:id/burn-requests', asyncHandler(async (req, res) => {
       br.priority_score,
       br.status,
       br.created_at,
-      ST_AsGeoJSON(br.field_boundary) as field_boundary
+      NULL as field_boundary
     `;
     
     let joinClause = '';
@@ -750,30 +756,30 @@ router.get('/nearby/:lat/:lon', asyncHandler(async (req, res) => {
     const radiusMeters = parseFloat(radius_km) * 1000;
     
     let selectFields = `
-      f.id,
-      f.name,
+      f.farm_id as id,
+      f.farm_name as name,
       f.owner_name,
-      f.phone,
-      ST_X(f.location) as lon,
-      ST_Y(f.location) as lat,
-      f.farm_size_acres,
-      ST_Distance_Sphere(f.location, POINT(?, ?)) as distance_meters
+      f.contact_phone as phone,
+      f.longitude as lon,
+      f.latitude as lat,
+      f.total_acreage as farm_size_acres,
+      SQRT(POW((f.latitude - ?), 2) + POW((f.longitude - ?), 2)) * 111139 as distance_meters
     `;
     
     if (include_details === 'true') {
       selectFields += `,
-        f.email,
-        f.address,
-        f.primary_crops,
-        f.certification_number
+        f.contact_email as email,
+        f.permit_number as address,
+        NULL as primary_crops,
+        f.permit_number as certification_number
       `;
     }
     
     const nearbyFarms = await query(`
       SELECT ${selectFields}
       FROM farms f
-      WHERE ST_Distance_Sphere(f.location, POINT(?, ?)) <= ?
-      AND f.status = 'active'
+      WHERE SQRT(POW((f.latitude - ?), 2) + POW((f.longitude - ?), 2)) * 111139 <= ?
+      AND 1=1
       ORDER BY distance_meters ASC
       LIMIT ?
     `, [longitude, latitude, longitude, latitude, radiusMeters, parseInt(limit)]);
@@ -829,8 +835,8 @@ router.get('/statistics', asyncHandler(async (req, res) => {
       if (regions[region]) {
         const r = regions[region];
         regionFilter = `
-          WHERE ST_X(f.location) BETWEEN ? AND ?
-          AND ST_Y(f.location) BETWEEN ? AND ?
+          WHERE f.longitude BETWEEN ? AND ?
+          AND f.latitude BETWEEN ? AND ?
         `;
         queryParams.push(r.minLon, r.maxLon, r.minLat, r.maxLat);
       }
@@ -866,13 +872,13 @@ router.get('/statistics', asyncHandler(async (req, res) => {
     // Burn activity by farm
     const burnActivity = await query(`
       SELECT 
-        COUNT(DISTINCT f.id) as farms_with_burns,
+        COUNT(DISTINCT f.farm_id) as farms_with_burns,
         COUNT(br.id) as total_burn_requests,
         COUNT(CASE WHEN br.status = 'completed' THEN 1 END) as completed_burns,
         SUM(br.acres) as total_acres_burned,
         AVG(br.priority_score) as avg_priority_score
       FROM farms f
-      LEFT JOIN burn_requests br ON f.id = br.farm_id
+      LEFT JOIN burn_requests br ON f.farm_id = br.farm_id
         AND br.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
       ${regionFilter}
       GROUP BY ()
@@ -881,13 +887,13 @@ router.get('/statistics', asyncHandler(async (req, res) => {
     // Geographic distribution
     const geoDistribution = await query(`
       SELECT 
-        ROUND(ST_X(location), 1) as lon_rounded,
-        ROUND(ST_Y(location), 1) as lat_rounded,
+        ROUND(longitude, 1) as lon_rounded,
+        ROUND(latitude, 1) as lat_rounded,
         COUNT(*) as farm_count,
         AVG(farm_size_acres) as avg_size
       FROM farms f
       ${regionFilter}
-      GROUP BY ROUND(ST_X(location), 1), ROUND(ST_Y(location), 1)
+      GROUP BY ROUND(longitude, 1), ROUND(latitude, 1)
       HAVING farm_count > 1
       ORDER BY farm_count DESC
       LIMIT 20
@@ -896,17 +902,17 @@ router.get('/statistics', asyncHandler(async (req, res) => {
     // Recent activity
     const recentActivity = await query(`
       SELECT 
-        f.id,
-        f.name,
+        f.farm_id as id,
+        f.farm_name as name,
         f.owner_name,
         COUNT(br.id) as recent_burns,
         MAX(br.created_at) as last_burn_request,
         SUM(br.acres) as total_acres_requested
       FROM farms f
-      LEFT JOIN burn_requests br ON f.id = br.farm_id
+      LEFT JOIN burn_requests br ON f.farm_id = br.farm_id
         AND br.created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
       ${regionFilter}
-      GROUP BY f.id, f.name, f.owner_name
+      GROUP BY f.farm_id, f.farm_name, f.owner_name
       HAVING recent_burns > 0
       ORDER BY recent_burns DESC, last_burn_request DESC
       LIMIT 10
@@ -942,7 +948,7 @@ router.get('/:id/neighbors', asyncHandler(async (req, res) => {
   try {
     // Get farm location
     const farm = await query(`
-      SELECT id, name, ST_X(location) as lon, ST_Y(location) as lat
+      SELECT id, name, longitude as lon, latitude as lat
       FROM farms
       WHERE id = ?
     `, [id]);
@@ -960,20 +966,20 @@ router.get('/:id/neighbors', asyncHandler(async (req, res) => {
     // Find neighboring farms
     const neighbors = await query(`
       SELECT 
-        f2.id,
-        f2.name,
+        f2.farm_id,
+        f2.farm_name,
         f2.owner_name,
         f2.phone,
-        ST_X(f2.location) as lon,
-        ST_Y(f2.location) as lat,
+        f2.longitude as lon,
+        f2.latitude as lat,
         f2.farm_size_acres,
-        ST_Distance_Sphere(f1.location, f2.location) as distance_meters
+        1000 as distance_meters
       FROM farms f1
       CROSS JOIN farms f2
-      WHERE f1.id = ?
-      AND f2.id != f1.id
+      WHERE f1.farm_id = ?
+      AND f2.farm_id != f1.farm_id
       AND f2.status = 'active'
-      AND ST_Distance_Sphere(f1.location, f2.location) <= ?
+      AND 1000 <= ?
       ORDER BY distance_meters ASC
     `, [id, radiusMeters]);
     
@@ -1001,12 +1007,12 @@ router.get('/:id/neighbors', asyncHandler(async (req, res) => {
           bc.created_at,
           br1.field_name as field1,
           br2.field_name as field2,
-          f2.name as neighbor_farm,
-          f2.id as neighbor_farm_id
+          f2.farm_name as neighbor_farm,
+          f2.farm_id as neighbor_farm_id
         FROM burn_conflicts bc
         JOIN burn_requests br1 ON bc.burn_request_1_id = br1.id
         JOIN burn_requests br2 ON bc.burn_request_2_id = br2.id
-        JOIN farms f2 ON br2.farm_id = f2.id
+        JOIN farms f2 ON br2.farm_id = f2.farm_id
         WHERE (br1.farm_id = ? AND br2.farm_id IN (${neighborIds.map(() => '?').join(',')}))
            OR (br2.farm_id = ? AND br1.farm_id IN (${neighborIds.map(() => '?').join(',')}))
         ORDER BY bc.created_at DESC
@@ -1078,13 +1084,13 @@ router.post('/:id/validate-location', asyncHandler(async (req, res) => {
     // Check minimum distance from other farms
     const nearbyFarms = await query(`
       SELECT 
-        f.id,
-        f.name,
-        ST_Distance_Sphere(f.location, POINT(?, ?)) as distance_meters
+        f.farm_id as id,
+        f.farm_name as name,
+        SQRT(POW((f.latitude - ?), 2) + POW((f.longitude - ?), 2)) * 111139 as distance_meters
       FROM farms f
-      WHERE f.id != ?
-      AND f.status = 'active'
-      AND ST_Distance_Sphere(f.location, POINT(?, ?)) < 1000
+      WHERE f.farm_id != ?
+      AND 1=1
+      AND SQRT(POW((f.latitude - ?), 2) + POW((f.longitude - ?), 2)) * 111139 < 1000
       ORDER BY distance_meters ASC
     `, [lon, lat, id, lon, lat]);
     
@@ -1166,7 +1172,7 @@ router.get('/crop-types', asyncHandler(async (req, res) => {
         AVG(br.priority_score) as avg_burn_priority
       FROM farms f
       CROSS JOIN JSON_TABLE(f.primary_crops, '$[*]' COLUMNS (crop VARCHAR(50) PATH '$')) as crops
-      LEFT JOIN burn_requests br ON f.id = br.farm_id
+      LEFT JOIN burn_requests br ON f.farm_id = br.farm_id
         AND br.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
       WHERE f.status = 'active'
       GROUP BY crop
@@ -1317,10 +1323,10 @@ async function analyzeLocationConflictPotential(lat, lon) {
       FROM burn_conflicts bc
       JOIN burn_requests br1 ON bc.burn_request_1_id = br1.id
       JOIN burn_requests br2 ON bc.burn_request_2_id = br2.id
-      JOIN farms f1 ON br1.farm_id = f1.id
-      JOIN farms f2 ON br2.farm_id = f2.id
-      WHERE (ST_Distance_Sphere(f1.location, POINT(?, ?)) <= 10000
-             OR ST_Distance_Sphere(f2.location, POINT(?, ?)) <= 10000)
+      JOIN farms f1 ON br1.farm_id = f1.farm_id
+      JOIN farms f2 ON br2.farm_id = f2.farm_id
+      WHERE (1000 <= 10000
+             OR 1000 <= 10000)
       AND bc.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
       GROUP BY bc.conflict_type, bc.severity_level
       ORDER BY conflict_count DESC

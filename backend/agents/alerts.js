@@ -1,6 +1,6 @@
 const logger = require('../middleware/logger');
 const { query } = require('../db/connection');
-const { AgentError, ExternalServiceError } = require('../middleware/errorHandler');
+const { AgentError, ExternalServiceError, ValidationError } = require('../middleware/errorHandler');
 const twilio = require('twilio');
 const nodeCron = require('node-cron');
 
@@ -144,12 +144,12 @@ class AlertsAgent {
         SELECT 
           type,
           status,
-          sent_via,
+          delivery_method as sent_via,
           COUNT(*) as count,
-          AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) as avg_delivery_time
+          AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(delivered_at, created_at))) as avg_delivery_time
         FROM alerts
         WHERE created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
-        GROUP BY type, status, sent_via
+        GROUP BY type, status, delivery_method
       `);
       
       // Process delivery statistics
@@ -742,7 +742,7 @@ class AlertsAgent {
       const result = await query(`
         INSERT INTO alerts (
           type, farm_id, burn_request_id, title, message,
-          severity, status, sent_via, created_at
+          severity, status, delivery_method, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `, [
         alertData.type,

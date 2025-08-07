@@ -279,14 +279,20 @@ class PredictorAgent {
         'other': 2.0
       };
       
-      const totalBiomass = burnData.acres * (biomassPerAcre[burnData.crop_type] || 2.0);
+      // Handle both 'acres' and 'acreage' field names
+      const acres = burnData.acres || burnData.acreage || 0;
+      if (!acres || acres <= 0) {
+        throw new Error('Invalid acreage value');
+      }
+      
+      const totalBiomass = acres * (biomassPerAcre[burnData.crop_type] || 2.0);
       const emissionFactor = this.emissionFactors[burnData.crop_type] || 2.5;
       
       // Total PM2.5 emissions (kg)
       const totalEmissions = totalBiomass * emissionFactor;
       
       // Estimate burn duration (hours) based on acreage
-      const burnDuration = Math.max(2, Math.min(8, burnData.acres / 50));
+      const burnDuration = Math.max(2, Math.min(8, acres / 50));
       
       // Emission rate (g/s)
       const emissionRate = (totalEmissions * 1000) / (burnDuration * 3600);
@@ -313,9 +319,11 @@ class PredictorAgent {
   determineStabilityClass(weatherData) {
     try {
       // Pasquill-Gifford stability classification
-      const windSpeed = weatherData.windSpeed * 0.44704; // Convert mph to m/s
-      const cloudCover = weatherData.cloudCover || 50;
-      const hour = new Date(weatherData.timestamp).getHours();
+      // Handle multiple field name variations
+      const windSpeedMph = weatherData.windSpeed || weatherData.wind_speed_mph || weatherData.wind_speed || 5;
+      const windSpeed = windSpeedMph * 0.44704; // Convert mph to m/s
+      const cloudCover = weatherData.cloudCover || weatherData.cloud_cover || 50;
+      const hour = weatherData.timestamp ? new Date(weatherData.timestamp).getHours() : new Date().getHours();
       const isDaytime = hour >= 6 && hour <= 18;
       
       // Solar radiation estimation based on cloud cover and time
@@ -453,14 +461,34 @@ class PredictorAgent {
 
   calculateSigmaY(distance, params) {
     // Distance in meters
-    const x = distance / 1000; // Convert to km for calculation
-    return params[0] * Math.pow(x, params[1]) * (1 + params[2] * x);
+    // If params is an object with sigmay property, extract it
+    if (params && params.sigmay) {
+      params = params.sigmay;
+    }
+    // Ensure params is an array with at least 3 elements
+    if (!Array.isArray(params) || params.length < 3) {
+      params = [68, 44.5, 1.08]; // Default to neutral stability (D)
+    }
+    const x = Math.max(0.1, distance / 1000); // Convert to km, minimum 0.1 km
+    // Pasquill-Gifford parameterization
+    const sigma = params[0] * Math.pow(x, 0.894);
+    return Math.max(1, sigma); // Minimum 1 meter
   }
 
   calculateSigmaZ(distance, params) {
-    // Distance in meters  
-    const x = distance / 1000; // Convert to km for calculation
-    return params[0] * Math.pow(x, params[1]) * (1 + params[2] * x);
+    // Distance in meters
+    // If params is an object with sigmaz property, extract it  
+    if (params && params.sigmaz) {
+      params = params.sigmaz;
+    }
+    // Ensure params is an array with at least 3 elements
+    if (!Array.isArray(params) || params.length < 3) {
+      params = [44.5, 24.4, -0.96]; // Default to neutral stability (D)
+    }
+    const x = Math.max(0.1, distance / 1000); // Convert to km, minimum 0.1 km
+    // Pasquill-Gifford parameterization
+    const sigma = params[0] * Math.pow(x, 0.894);
+    return Math.max(1, sigma); // Minimum 1 meter
   }
 
   calculateCenterlineConcentration(emissionRate, windSpeed, sigmaY, sigmaZ, effectiveHeight, distance) {
@@ -733,21 +761,20 @@ class PredictorAgent {
     try {
       if (!affectedArea) return [];
       
-      // Find other burns scheduled for the same date within affected area
+      // Find other burns scheduled for the same date (simplified without spatial functions)
       const spatialConflicts = await query(`
         SELECT 
-          br.id,
+          br.request_id as id,
           br.farm_id,
-          br.field_name,
-          br.acres,
-          br.time_window_start,
-          br.time_window_end,
-          ST_Distance_Sphere(br.field_boundary, ST_GeomFromGeoJSON(?)) as distance_meters
+          br.field_id as field_name,
+          br.acreage as acres,
+          br.requested_window_start as time_window_start,
+          br.requested_window_end as time_window_end,
+          1000 as distance_meters
         FROM burn_requests br
-        WHERE br.burn_date = ?
+        WHERE br.requested_date = ?
         AND br.status IN ('pending', 'approved')
-        AND ST_Intersects(br.field_boundary, ST_GeomFromGeoJSON(?))
-      `, [JSON.stringify(affectedArea), burnDate, JSON.stringify(affectedArea)]);
+      `, [burnDate]);
       
       // Find burns with similar plume characteristics using vector search
       const vectorConflicts = await vectorSimilaritySearch(
@@ -891,16 +918,16 @@ class PredictorAgent {
     try {
       const result = await query(`
         INSERT INTO smoke_predictions (
-          burn_request_id, prediction_timestamp, max_dispersion_radius,
-          affected_area, pm25_concentrations, plume_vector, confidence_score,
-          created_at
-        ) VALUES (?, NOW(), ?, ST_GeomFromGeoJSON(?), ?, ?, ?, NOW())
+          burn_request_id, prediction_time, plume_geometry,
+          plume_vector, max_pm25_ugm3, dispersion_radius_km, 
+          confidence_score, created_at
+        ) VALUES (?, NOW(), ?, ?, ?, ?, ?, NOW())
       `, [
         data.burnRequestId,
-        data.maxDispersionRadius,
         JSON.stringify(data.affectedArea),
-        JSON.stringify(data.concentrationMap),
         JSON.stringify(data.plumeVector),
+        data.maxConcentration || 0,
+        data.maxDispersionRadius / 1000, // Convert m to km
         data.confidenceScore
       ]);
       

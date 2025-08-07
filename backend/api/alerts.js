@@ -88,7 +88,7 @@ router.get('/', asyncHandler(async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM alerts a
-      LEFT JOIN farms f ON a.farm_id = f.id
+      LEFT JOIN farms f ON a.farm_id = f.farm_id
       ${whereClause}
     `;
     
@@ -101,23 +101,23 @@ router.get('/', asyncHandler(async (req, res) => {
     // Main query
     const alertsQuery = `
       SELECT 
-        a.id,
+        a.alert_id,
         a.type,
         a.farm_id,
         a.burn_request_id,
-        a.title,
+        a.message as title,
         a.message,
         a.severity,
         a.status,
-        a.sent_via,
+        a.delivery_method as sent_via,
         a.created_at,
-        a.updated_at,
+        -- a.updated_at, -- column doesn't exist
         f.name as farm_name,
         f.owner_name,
         br.field_name
       FROM alerts a
-      LEFT JOIN farms f ON a.farm_id = f.id
-      LEFT JOIN burn_requests br ON a.burn_request_id = br.id
+      LEFT JOIN farms f ON a.farm_id = f.farm_id
+      LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
       ${whereClause}
       ORDER BY 
         CASE a.severity 
@@ -190,9 +190,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
         br.field_name,
         br.burn_date
       FROM alerts a
-      LEFT JOIN farms f ON a.farm_id = f.id
-      LEFT JOIN burn_requests br ON a.burn_request_id = br.id
-      WHERE a.id = ?
+      LEFT JOIN farms f ON a.farm_id = f.farm_id
+      LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
+      WHERE a.alert_id = ?
     `, [id]);
     
     if (alertDetails.length === 0) {
@@ -536,16 +536,16 @@ router.get('/statistics', asyncHandler(async (req, res) => {
     // Farm-specific alert summary
     const farmAlertSummary = await query(`
       SELECT 
-        f.id,
+        f.farm_id,
         f.name,
         f.owner_name,
-        COUNT(a.id) as total_alerts,
+        COUNT(a.alert_id) as total_alerts,
         COUNT(CASE WHEN a.severity IN ('critical', 'high') THEN 1 END) as urgent_alerts,
         MAX(a.created_at) as last_alert_time
       FROM farms f
-      LEFT JOIN alerts a ON f.id = a.farm_id
-      WHERE a.created_at > DATE_SUB(NOW(), INTERVAL ? DAY) OR a.id IS NULL
-      GROUP BY f.id, f.name, f.owner_name
+      LEFT JOIN alerts a ON f.farm_id = a.farm_id
+      WHERE a.created_at > DATE_SUB(NOW(), INTERVAL ? DAY) OR a.alert_id IS NULL
+      GROUP BY f.farm_id, f.name, f.owner_name
       HAVING total_alerts > 0
       ORDER BY urgent_alerts DESC, total_alerts DESC
       LIMIT 20
@@ -598,9 +598,9 @@ router.get('/active', asyncHandler(async (req, res) => {
     
     const activeAlerts = await query(`
       SELECT 
-        a.id,
+        a.alert_id,
         a.type,
-        a.title,
+        a.message as title,
         a.message,
         a.severity,
         a.status,
@@ -611,8 +611,8 @@ router.get('/active', asyncHandler(async (req, res) => {
         br.burn_date,
         TIMESTAMPDIFF(MINUTE, a.created_at, NOW()) as age_minutes
       FROM alerts a
-      LEFT JOIN farms f ON a.farm_id = f.id
-      LEFT JOIN burn_requests br ON a.burn_request_id = br.id
+      LEFT JOIN farms f ON a.farm_id = f.farm_id
+      LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
       WHERE a.status IN ('pending', 'sent')
       AND a.severity IN (${allowedSeverities.map(() => '?').join(',')})
       AND a.created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
@@ -788,11 +788,11 @@ router.post('/bulk-resolve', asyncHandler(async (req, res) => {
         resolution_notes = ?,
         updated_at = NOW()
       WHERE id IN (${existingAlerts.map(() => '?').join(',')})
-    `, [resolution_notes || `Bulk resolved by ${resolved_by || 'system'}`, ...existingAlerts.map(a => a.id)]);
+    `, [resolution_notes || `Bulk resolved by ${resolved_by || 'system'}`, ...existingAlerts.map(a => a.alert_id)]);
     
     // Log bulk resolution
     logger.info('Bulk alert resolution', {
-      alertIds: existingAlerts.map(a => a.id),
+      alertIds: existingAlerts.map(a => a.alert_id),
       count: existingAlerts.length,
       resolvedBy: resolved_by,
       notes: resolution_notes
@@ -804,7 +804,7 @@ router.post('/bulk-resolve', asyncHandler(async (req, res) => {
       const farmIds = [...new Set(existingAlerts.map(a => a.farm_id).filter(id => id))];
       farmIds.forEach(farmId => {
         io.to(`farm-${farmId}`).emit('alerts_bulk_resolved', {
-          alert_ids: existingAlerts.filter(a => a.farm_id === farmId).map(a => a.id),
+          alert_ids: existingAlerts.filter(a => a.farm_id === farmId).map(a => a.alert_id),
           resolved_by,
           resolution_notes,
           timestamp: new Date()

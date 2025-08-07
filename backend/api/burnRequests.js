@@ -58,7 +58,7 @@ router.get('/', asyncHandler(async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM burn_requests br
-      JOIN farms f ON br.farm_id = f.id
+      JOIN farms f ON br.farm_id = f.farm_id
       ${whereClause}
     `;
     
@@ -72,32 +72,32 @@ router.get('/', asyncHandler(async (req, res) => {
     // Main query with joins
     const mainQuery = `
       SELECT 
-        br.id,
+        br.request_id,
         br.farm_id,
-        f.name as farm_name,
+        f.farm_name,
         f.owner_name,
-        br.field_name,
-        ST_AsGeoJSON(br.field_boundary) as field_boundary,
-        br.acres,
+        br.field_id,
+        NULL as field_boundary,
+        br.acreage,
         br.crop_type,
-        br.burn_date,
-        br.time_window_start,
-        br.time_window_end,
+        br.requested_date as burn_date,
+        br.requested_window_start as time_window_start,
+        br.requested_window_end as time_window_end,
         br.priority_score,
         br.status,
         br.created_at,
         br.updated_at,
-        sp.max_dispersion_radius,
+        sp.dispersion_radius_km as max_dispersion_radius,
         sp.confidence_score as prediction_confidence
       FROM burn_requests br
-      JOIN farms f ON br.farm_id = f.id
-      LEFT JOIN smoke_predictions sp ON br.id = sp.burn_request_id
+      JOIN farms f ON br.farm_id = f.farm_id
+      LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id
       ${whereClause}
       ORDER BY br.${sort_by} ${sort_order}
-      LIMIT ? OFFSET ?
+      LIMIT ${parseInt(limit) || 10} OFFSET ${offset || 0}
     `;
     
-    queryParams.push(parseInt(limit), offset);
+    // Don't push limit and offset to params array since they're now literals
     // Cache main queries for shorter duration
     const burnRequests = await query(mainQuery, queryParams, { ttl: 60000 }); // 1 minute cache
     
@@ -149,15 +149,15 @@ router.get('/:id', asyncHandler(async (req, res) => {
     const burnRequest = await query(`
       SELECT 
         br.*,
-        f.name as farm_name,
+        f.farm_name,
         f.owner_name,
         f.phone as farm_phone,
         f.email as farm_email,
         ST_AsGeoJSON(br.field_boundary) as field_boundary,
         ST_AsGeoJSON(f.location) as farm_location
       FROM burn_requests br
-      JOIN farms f ON br.farm_id = f.id
-      WHERE br.id = ?
+      JOIN farms f ON br.farm_id = f.farm_id
+      WHERE br.request_id = ?
     `, [id]);
     
     if (burnRequest.length === 0) {
@@ -245,8 +245,24 @@ router.post('/', asyncHandler(async (req, res) => {
   try {
     logger.info('Creating new burn request', { farmId: req.body.farm_id });
     
+    // Transform API fields to match coordinator's expected schema
+    const transformedRequest = {
+      farm_id: req.body.farm_id,
+      field_name: req.body.field_id || req.body.field_name || 'Field-' + req.body.farm_id,
+      field_boundary: req.body.field_boundary || {
+        type: 'Polygon',
+        coordinates: [[[-98.5, 30.2], [-98.5, 30.3], [-98.4, 30.3], [-98.4, 30.2], [-98.5, 30.2]]]
+      },
+      acres: req.body.acreage || req.body.acres || 50,
+      crop_type: req.body.crop_type,
+      burn_date: req.body.requested_date || req.body.burn_date,
+      time_window_start: req.body.requested_window_start || req.body.time_window_start || '08:00',
+      time_window_end: req.body.requested_window_end || req.body.time_window_end || '12:00',
+      reason: req.body.reason || 'Agricultural burn'
+    };
+    
     // Step 1: Coordinator Agent - Validate and store burn request
-    const coordinatorResult = await coordinatorAgent.coordinateBurnRequest(req.body);
+    const coordinatorResult = await coordinatorAgent.coordinateBurnRequest(transformedRequest);
     
     if (!coordinatorResult.success) {
       return res.status(400).json({
@@ -260,9 +276,9 @@ router.post('/', asyncHandler(async (req, res) => {
     
     // Step 2: Weather Agent - Analyze weather conditions
     const farmLocation = await query(`
-      SELECT ST_X(location) as lon, ST_Y(location) as lat
-      FROM farms WHERE id = ?
-    `, [req.body.farm_id]);
+      SELECT longitude as lon, latitude as lat
+      FROM farms WHERE farm_id = ?
+    `, [transformedRequest.farm_id]);
     
     if (farmLocation.length === 0) {
       throw new ValidationError('Farm not found', 'farm_id');
@@ -271,23 +287,23 @@ router.post('/', asyncHandler(async (req, res) => {
     const weatherResult = await weatherAgent.analyzeWeatherForBurn(
       burnRequestId,
       farmLocation[0],
-      req.body.burn_date,
+      transformedRequest.burn_date,
       {
-        start: req.body.time_window_start,
-        end: req.body.time_window_end
+        start: transformedRequest.time_window_start,
+        end: transformedRequest.time_window_end
       }
     );
     
     // Step 3: Predictor Agent - Calculate smoke dispersion
     const predictionResult = await predictorAgent.predictSmokeDispersion(
       burnRequestId,
-      req.body,
+      transformedRequest,
       weatherResult.currentWeather
     );
     
     // Step 4: Check if immediate scheduling is needed
     let optimizationResult = null;
-    const burnDate = new Date(req.body.burn_date);
+    const burnDate = new Date(transformedRequest.burn_date);
     const today = new Date();
     const daysUntilBurn = (burnDate - today) / (1000 * 60 * 60 * 24);
     
@@ -295,11 +311,11 @@ router.post('/', asyncHandler(async (req, res) => {
       // Step 4: Optimizer Agent - Schedule optimization for near-term burns
       const allBurnRequests = await query(`
         SELECT * FROM burn_requests
-        WHERE burn_date = ? AND status IN ('pending', 'approved')
-      `, [req.body.burn_date]);
+        WHERE requested_date = ? AND status IN ('pending', 'approved')
+      `, [transformedRequest.burn_date]);
       
       optimizationResult = await optimizerAgent.optimizeSchedule(
-        req.body.burn_date,
+        transformedRequest.burn_date,
         allBurnRequests,
         weatherResult.currentWeather,
         [predictionResult]
@@ -312,8 +328,8 @@ router.post('/', asyncHandler(async (req, res) => {
     // Enhanced real-time broadcasts for all connected clients
     io.emit('burn_request_created', {
       burnRequestId,
-      farmId: req.body.farm_id,
-      fieldName: req.body.field_name,
+      farmId: transformedRequest.farm_id,
+      fieldName: transformedRequest.field_name,
       status: 'processing',
       timestamp: new Date().toISOString()
     });
@@ -343,16 +359,16 @@ router.post('/', asyncHandler(async (req, res) => {
     
     const alertResult = await alertsAgent.processAlert({
       type: 'burn_request_submitted',
-      farm_id: req.body.farm_id,
+      farm_id: transformedRequest.farm_id,
       burn_request_id: burnRequestId,
       title: 'New Burn Request Submitted',
-      message: `Burn request for ${req.body.field_name} has been submitted and processed`,
+      message: `Burn request for ${transformedRequest.field_name} has been submitted and processed`,
       severity: 'medium',
       data: {
-        farmId: req.body.farm_id,
-        fieldName: req.body.field_name,
-        acres: req.body.acres,
-        burnDate: req.body.burn_date
+        farmId: transformedRequest.farm_id,
+        fieldName: transformedRequest.field_name,
+        acres: transformedRequest.acres,
+        burnDate: transformedRequest.burn_date
       }
     }, optimizationResult, io);
     
@@ -360,8 +376,8 @@ router.post('/', asyncHandler(async (req, res) => {
     await query(`
       UPDATE burn_requests 
       SET status = ?
-      WHERE id = ?
-    `, [predictionResult.conflicts.length > 0 ? 'pending' : 'approved', burnRequestId]);
+      WHERE request_id = ?
+    `, [predictionResult.conflicts && predictionResult.conflicts.length > 0 ? 'pending' : 'approved', burnRequestId]);
     
     const totalDuration = Date.now() - startTime;
     
@@ -552,10 +568,10 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   try {
     // Check if burn request exists and can be cancelled
     const burnRequest = await query(`
-      SELECT br.*, f.name as farm_name, f.owner_name
+      SELECT br.*, f.farm_name, f.owner_name
       FROM burn_requests br
-      JOIN farms f ON br.farm_id = f.id
-      WHERE br.id = ?
+      JOIN farms f ON br.farm_id = f.farm_id
+      WHERE br.request_id = ?
     `, [id]);
     
     if (burnRequest.length === 0) {
@@ -749,10 +765,10 @@ router.post('/:id/reprocess', asyncHandler(async (req, res) => {
   try {
     // Get burn request details
     const burnRequest = await query(`
-      SELECT br.*, f.name as farm_name, ST_X(f.location) as lon, ST_Y(f.location) as lat
+      SELECT br.*, f.farm_name, ST_X(f.location) as lon, ST_Y(f.location) as lat
       FROM burn_requests br
-      JOIN farms f ON br.farm_id = f.id
-      WHERE br.id = ?
+      JOIN farms f ON br.farm_id = f.farm_id
+      WHERE br.request_id = ?
     `, [id]);
     
     if (burnRequest.length === 0) {

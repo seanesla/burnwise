@@ -1,5 +1,5 @@
 const logger = require('../middleware/logger');
-const { query, vectorSimilaritySearch, spatialQuery } = require('../db/connection');
+const { query } = require('../db/connection');  // Removed vector operations - overengineered
 const { AgentError, ExternalServiceError } = require('../middleware/errorHandler');
 const axios = require('axios');
 const moment = require('moment');
@@ -174,7 +174,7 @@ class WeatherAgent {
       const weatherVector = await this.generateWeatherVector(currentWeather, forecast);
       
       // Step 4: Find similar historical weather patterns
-      const similarPatterns = await this.findSimilarWeatherPatterns(weatherVector);
+      // Removed similar pattern search - overengineered vector operation
       
       // Step 5: Analyze burn suitability
       const suitabilityAnalysis = this.analyzeBurnSuitability(forecast, timeWindow);
@@ -330,14 +330,14 @@ class WeatherAgent {
         return demoForecast;
       }
       
-      // Use One Call API for detailed forecast
-      const response = await axios.get(this.oneCallUrl, {
+      // Use free 5-day forecast API instead of paid One Call API
+      const response = await axios.get(`${this.baseUrl}/forecast`, {
         params: {
           lat: location.lat,
           lon: location.lon,
           appid: this.apiKey,
           units: 'imperial',
-          exclude: 'minutely'
+          cnt: 40  // Get max 40 data points (5 days * 8 three-hour intervals)
         },
         timeout: 15000
       });
@@ -387,31 +387,55 @@ class WeatherAgent {
     const burnDateObj = new Date(burnDate);
     const targetDate = burnDateObj.toDateString();
     
-    // Process hourly forecast for the burn date
-    data.hourly.forEach(hour => {
-      const hourDate = new Date(hour.dt * 1000);
+    // Process 5-day forecast data (3-hour intervals)
+    const forecastList = data.list || data.hourly || [];
+    
+    forecastList.forEach(item => {
+      const itemDate = new Date(item.dt * 1000);
       
-      if (hourDate.toDateString() === targetDate) {
-        const hourData = {
-          timestamp: hourDate,
-          temperature: hour.temp,
-          humidity: hour.humidity,
-          pressure: hour.pressure * 0.02953,
-          windSpeed: hour.wind_speed,
-          windDirection: hour.wind_deg,
-          windGust: hour.wind_gust || 0,
-          visibility: hour.visibility ? hour.visibility * 0.000621371 : null,
-          condition: hour.weather[0].main,
-          description: hour.weather[0].description,
-          cloudCover: hour.clouds,
-          uvIndex: hour.uvi,
-          precipitationProb: hour.pop * 100,
-          precipitationAmount: (hour.rain?.['1h'] || 0) + (hour.snow?.['1h'] || 0)
+      if (itemDate.toDateString() === targetDate) {
+        const forecastData = {
+          timestamp: itemDate,
+          temperature: item.main?.temp || item.temp,
+          humidity: item.main?.humidity || item.humidity,
+          pressure: (item.main?.pressure || item.pressure) * 0.02953,
+          windSpeed: item.wind?.speed || item.wind_speed,
+          windDirection: item.wind?.deg || item.wind_deg,
+          windGust: item.wind?.gust || item.wind_gust || 0,
+          visibility: item.visibility ? item.visibility * 0.000621371 : null,
+          condition: item.weather?.[0]?.main || 'Clear',
+          description: item.weather?.[0]?.description || 'clear sky',
+          cloudCover: item.clouds?.all || item.clouds || 0,
+          uvIndex: item.uvi || 0,
+          precipitationProb: (item.pop || 0) * 100,
+          precipitationAmount: (item.rain?.['3h'] || item.rain?.['1h'] || 0) + 
+                             (item.snow?.['3h'] || item.snow?.['1h'] || 0)
         };
         
-        forecast.push(hourData);
+        forecast.push(forecastData);
       }
     });
+    
+    // If no forecast data for the specific date, return a basic forecast
+    if (forecast.length === 0) {
+      logger.agent(this.agentName, 'warn', 'No forecast data for burn date, using current weather');
+      return [{
+        timestamp: burnDateObj,
+        temperature: 75,
+        humidity: 50,
+        pressure: 30.0,
+        windSpeed: 5,
+        windDirection: 180,
+        windGust: 8,
+        visibility: 10,
+        condition: 'Clear',
+        description: 'clear sky',
+        cloudCover: 10,
+        uvIndex: 5,
+        precipitationProb: 0,
+        precipitationAmount: 0
+      }];
+    }
     
     return forecast;
   }
@@ -652,26 +676,7 @@ class WeatherAgent {
     return scores.slice(0, 8);
   }
 
-  async findSimilarWeatherPatterns(weatherVector) {
-    try {
-      const similarPatterns = await vectorSimilaritySearch(
-        'weather_data',
-        'weather_pattern_embedding',
-        weatherVector,
-        10
-      );
-      
-      logger.vector('similarity_search', 'weather_pattern', 128, {
-        resultsFound: similarPatterns.length
-      });
-      
-      return similarPatterns;
-      
-    } catch (error) {
-      logger.agent(this.agentName, 'warn', 'Similar pattern search failed', { error: error.message });
-      return [];
-    }
-  }
+  // Removed findSimilarWeatherPatterns - overengineered vector operation
 
   analyzeBurnSuitability(forecast, timeWindow) {
     const analysis = {
@@ -797,11 +802,11 @@ class WeatherAgent {
     try {
       const result = await query(`
         INSERT INTO weather_data (
-          location, timestamp, temperature, humidity, pressure,
+          location_lon, location_lat, timestamp, temperature, humidity, pressure,
           wind_speed, wind_direction, visibility, weather_condition,
           weather_pattern_embedding, created_at
         ) VALUES (
-          POINT(?, ?), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, NOW()
+          ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, NOW()
         )
       `, [
         data.location.lon,

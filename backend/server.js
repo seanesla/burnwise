@@ -17,10 +17,13 @@ const rateLimiter = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initializeDatabase, query } = require('./db/connection');
 const { smartCache, conditionalRequests } = require('./middleware/cacheHeaders');
+const { authenticateToken, optionalAuth } = require('./middleware/auth');
 console.log('✅ Database module loaded');
 
 // Import API routes
 console.log('Loading API routes...');
+const authRoutes = require('./api/auth');
+console.log('✅ Auth routes loaded');
 const burnRequestsRoutes = require('./api/burnRequests');
 console.log('✅ Burn requests routes loaded');
 const weatherRoutes = require('./api/weather');
@@ -80,8 +83,9 @@ console.log('📍 Setting up body parsing...');
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
+// Rate limiting - properly apply array of middlewares
 console.log('📍 Setting up rate limiter...');
+// Apply simplified rate limiter
 app.use(rateLimiter);
 console.log('✅ Rate limiter configured');
 
@@ -104,12 +108,17 @@ app.get('/health', (req, res) => {
 
 // API routes
 console.log('📍 Setting up API routes...');
-app.use('/api/burn-requests', burnRequestsRoutes);
-app.use('/api/weather', weatherRoutes);
-app.use('/api/schedule', scheduleRoutes);
-app.use('/api/alerts', alertsRoutes);
-app.use('/api/farms', farmsRoutes);
-app.use('/api/analytics', analyticsRoutes);
+
+// Public auth routes (no authentication required)
+app.use('/api/auth', authRoutes);
+
+// Protected API routes (authentication required)
+app.use('/api/burn-requests', authenticateToken, burnRequestsRoutes);
+app.use('/api/weather', optionalAuth, weatherRoutes); // Weather can be public
+app.use('/api/schedule', authenticateToken, scheduleRoutes);
+app.use('/api/alerts', authenticateToken, alertsRoutes);
+app.use('/api/farms', authenticateToken, farmsRoutes);
+app.use('/api/analytics', optionalAuth, analyticsRoutes); // Analytics can be public
 
 // Socket.io setup for real-time updates
 console.log('📍 Setting up Socket.io...');

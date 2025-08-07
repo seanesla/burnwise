@@ -122,6 +122,11 @@ class DatabaseConnection {
       }
     }
     
+    // Check if pool is initialized
+    if (!this.pool) {
+      throw new Error('Database pool not initialized. Call initializeDatabase() first.');
+    }
+    
     // Execute query
     const result = await this.circuitBreaker.execute(async () => {
       return this.executeWithRetry(async () => {
@@ -219,28 +224,7 @@ class DatabaseConnection {
     }
   }
 
-  // Vector search methods
-  async vectorSimilaritySearch(table, vectorColumn, queryVector, limit = 10) {
-    const sql = `
-      SELECT *, VEC_COSINE_DISTANCE(${vectorColumn}, ?) as similarity
-      FROM ${table}
-      WHERE ${vectorColumn} IS NOT NULL
-      ORDER BY similarity ASC
-      LIMIT ?
-    `;
-    return this.query(sql, [JSON.stringify(queryVector), limit]);
-  }
-
-  async spatialQuery(table, locationColumn, centerPoint, radiusKm) {
-    const sql = `
-      SELECT *, ST_DISTANCE_SPHERE(${locationColumn}, ST_GeomFromText(?)) as distance_meters
-      FROM ${table}
-      WHERE ST_DISTANCE_SPHERE(${locationColumn}, ST_GeomFromText(?)) <= ?
-      ORDER BY distance_meters ASC
-    `;
-    const radiusMeters = radiusKm * 1000;
-    return this.query(sql, [centerPoint, centerPoint, radiusMeters]);
-  }
+  // Removed vector search and spatial methods - overengineered and unused
 
   async close() {
     if (this.pool) {
@@ -255,10 +239,6 @@ const dbConnection = new DatabaseConnection();
 module.exports = {
   initializeDatabase: () => dbConnection.initialize(),
   query: (sql, params, options) => dbConnection.query(sql, params, options),
-  vectorSimilaritySearch: (table, vectorColumn, queryVector, limit) =>
-    dbConnection.vectorSimilaritySearch(table, vectorColumn, queryVector, limit),
-  spatialQuery: (table, locationColumn, centerPoint, radiusKm) =>
-    dbConnection.spatialQuery(table, locationColumn, centerPoint, radiusKm),
   close: () => dbConnection.close(),
   // Export cache utilities for monitoring
   getCacheStats: () => queryCache.getStats(),
