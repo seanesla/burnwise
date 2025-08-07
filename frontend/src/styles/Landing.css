@@ -181,6 +181,13 @@
 .hero-title-i {
   position: relative;
   display: inline-block;
+  /* Inherit all font properties to match other characters */
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-shadow: inherit;
 }
 
 .hero-title {
@@ -192,17 +199,20 @@
   line-height: 0.9;
   /* Use solid bright orange-red color */
   color: #ff6b35;
-  /* Crisp shadows - reduced blur for sharp text */
+  /* Layered glow effect for all characters */
   text-shadow: 
-    0 0 3px rgba(255, 107, 53, 0.6),
-    0 0 6px rgba(255, 107, 53, 0.4),
-    0 2px 2px rgba(0, 0, 0, 0.3);
+    0 0 10px rgba(255, 107, 53, 0.8),
+    0 0 20px rgba(255, 107, 53, 0.6),
+    0 0 30px rgba(255, 87, 34, 0.4),
+    0 0 40px rgba(255, 176, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.4);
   /* Ensure crisp rendering */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   position: relative;
 }
+
 
 .hero-title.title-visible {
   animation: titlePulse 3s ease-in-out infinite;
