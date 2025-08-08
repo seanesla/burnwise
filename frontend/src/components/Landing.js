@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedFlameLogo from './AnimatedFlameLogo';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
-import TestICharacter from './TestICharacter';
 import '../styles/Landing.css';
 
-const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
+const Landing = ({ isInitialLoad = true }) => {
   const navigate = useNavigate();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [scrollY, setScrollY] = useState(0);
-  const [logoVisible, setLogoVisible] = useState(!hideLogoInitially);
-  const [videosEnabled, setVideosEnabled] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState(isInitialLoad ? 'startup' : 'complete');
+  const titleRef = useRef(null);
+  const [flameTarget, setFlameTarget] = useState({ x: 0, y: 0 });
+  
+  console.log('Landing render - isInitialLoad:', isInitialLoad, 'animationPhase:', animationPhase);
 
   // Fire-themed video URLs for cinematic slideshow
   const videos = [
@@ -20,29 +23,86 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
     '/gentle-field-fire.mp4'
   ];
 
-  // Show logo and enable videos synchronized with startup animation
+  // Calculate flame target position when title is available
   useEffect(() => {
-    if (hideLogoInitially) {
-      // Show torch flame exactly when startup animation disappears
-      const timer = setTimeout(() => {
-        setLogoVisible(true);
-      }, 4095); // Show flame exactly when startup animation completes
+    const calculateFlameTarget = () => {
+      const title = document.getElementById('burnwise-title');
+      if (!title) {
+        // Try again if title not found
+        requestAnimationFrame(calculateFlameTarget);
+        return;
+      }
       
-      // Enable videos with a slight delay for smooth transition
-      const videoTimer = setTimeout(() => {
-        setVideosEnabled(true);
-      }, 4500);
+      const titleRect = title.getBoundingClientRect();
+      
+      // The "I" in BURNWISE is approximately at 69% of the word width
+      // This is based on the proportions of the letters in the Inter font
+      // B-U-R-N-W are wider letters, I is narrow, S-E follow
+      const iPositionRatio = 0.69; // 69% from the left edge
+      
+      // Calculate the I position directly
+      const iCenterX = titleRect.left + (titleRect.width * iPositionRatio);
+      const iTop = titleRect.top - 45; // Position flame above the text
+      
+      console.log('Title rect:', {
+        left: titleRect.left,
+        width: titleRect.width,
+        top: titleRect.top
+      });
+      console.log('I position calculation:', {
+        iPositionRatio,
+        iCenterX,
+        iTop
+      });
+      setFlameTarget({ x: iCenterX, y: iTop });
+    };
+    
+    // Calculate immediately and when phase changes to revealing
+    if (animationPhase === 'revealing' || animationPhase === 'complete') {
+      calculateFlameTarget();
+    } else {
+      // For startup phases, calculate after a brief delay
+      const timer = setTimeout(calculateFlameTarget, 500);
+      return () => clearTimeout(timer);
+    }
+    
+    window.addEventListener('resize', calculateFlameTarget);
+    return () => window.removeEventListener('resize', calculateFlameTarget);
+  }, [animationPhase]);
+
+  // Animation timeline for unified experience
+  useEffect(() => {
+    console.log('Setting up animation timeline, isInitialLoad:', isInitialLoad);
+    if (isInitialLoad) {
+      // Lock scrolling
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      
+      // Phase transitions
+      const phase2Timer = setTimeout(() => {
+        console.log('Moving to transitioning phase');
+        setAnimationPhase('transitioning');
+      }, 2500);
+      const phase3Timer = setTimeout(() => {
+        console.log('Moving to revealing phase');
+        setAnimationPhase('revealing');
+      }, 4000);
+      const completeTimer = setTimeout(() => {
+        console.log('Animation complete');
+        setAnimationPhase('complete');
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+      }, 5500);
       
       return () => {
-        clearTimeout(timer);
-        clearTimeout(videoTimer);
+        clearTimeout(phase2Timer);
+        clearTimeout(phase3Timer);
+        clearTimeout(completeTimer);
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
       };
-    } else {
-      // When hideLogoInitially becomes false, show the logo immediately
-      setLogoVisible(true);
-      setVideosEnabled(true);
     }
-  }, [hideLogoInitially]);
+  }, [isInitialLoad]); // Only depend on isInitialLoad, not animationPhase
 
   // Video slideshow effect with cinematic timing
   useEffect(() => {
@@ -69,17 +129,142 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
   const videoOpacity = Math.max(0, 1 - Math.pow(scrollY / 1000, 1.5));
   const videoTransform = `translateY(${scrollY * 0.5}px) scale(${1.05 + scrollY * 0.0001})`;
   const overlayOpacity = Math.min(1, scrollY / 600);
+  
+  // Animation variants for unified experience
+  const backgroundVariants = {
+    startup: {
+      opacity: 1,
+    },
+    transitioning: {
+      opacity: 1,
+    },
+    revealing: {
+      opacity: 0,
+      transition: { duration: 1.5, ease: 'easeInOut' }
+    },
+    complete: {
+      opacity: 0,
+    }
+  };
+  
+  
+  // Log animation phase changes
+  useEffect(() => {
+    console.log('Animation phase changed to:', animationPhase);
+  }, [animationPhase]);
+  
+  // Calculate center position for viewport
+  const viewportCenterX = typeof window !== 'undefined' ? window.innerWidth / 2 - 90 : 0;
+  const viewportCenterY = typeof window !== 'undefined' ? window.innerHeight / 2 - 90 : 0;
+  
+  const flameVariants = {
+    startup: {
+      x: viewportCenterX,
+      y: viewportCenterY,
+      scale: 1,
+      opacity: 1,
+    },
+    transitioning: {
+      x: viewportCenterX,
+      y: viewportCenterY,
+      scale: 0.361,
+      opacity: 1,
+      transition: { duration: 1.5, ease: [0.4, 0, 0.1, 1] }
+    },
+    revealing: {
+      x: flameTarget.x > 0 ? flameTarget.x - 32.5 : viewportCenterX,
+      y: flameTarget.y > 0 ? flameTarget.y : viewportCenterY,
+      scale: 0.361,
+      opacity: 1,
+      transition: { duration: 1.5, ease: [0.4, 0, 0.2, 1] }
+    },
+    complete: {
+      x: flameTarget.x > 0 ? flameTarget.x - 32.5 : viewportCenterX,
+      y: flameTarget.y > 0 ? flameTarget.y : viewportCenterY,
+      scale: 0.361,
+      opacity: 1,
+    }
+  };
+  
+  const contentVariants = {
+    startup: { opacity: 0 },
+    transitioning: { opacity: 0 },
+    revealing: { 
+      opacity: 1,
+      transition: { duration: 1.5, ease: 'easeOut' }
+    },
+    complete: { opacity: 1 }
+  };
+  
+  const videoVariants = {
+    startup: { opacity: 0 },
+    transitioning: { opacity: 0 },
+    revealing: { 
+      opacity: videoOpacity,
+      transition: { duration: 2, ease: 'easeOut', delay: 0.5 }
+    },
+    complete: { opacity: videoOpacity }
+  };
 
   return (
     <div className="landing-container visible">
-      <TestICharacter />
-      {/* Video Background - Only show after startup */}
-      <div className="video-background" style={{ 
-        opacity: videosEnabled ? videoOpacity : 0,
-        transform: videoTransform,
-        transition: 'opacity 1.5s ease-out'
-      }}>
-        {videosEnabled && videos.map((videoSrc, index) => (
+      {/* Black background overlay */}
+      {(animationPhase === 'startup' || animationPhase === 'transitioning' || animationPhase === 'revealing') && (
+        <motion.div
+          variants={backgroundVariants}
+          initial="startup"
+          animate={animationPhase}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: '#000',
+            zIndex: 999998,
+            pointerEvents: 'none'
+          }}
+        />
+      )}
+      
+      {/* Single flame instance that animates from center to I */}
+      <motion.div 
+        key="unified-flame"
+        className="unified-flame"
+        variants={flameVariants}
+        initial="startup"
+        animate={animationPhase}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 180,
+          height: 180,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          filter: 'drop-shadow(0 0 25px rgba(255, 107, 53, 0.8)) drop-shadow(0 0 15px rgba(255, 87, 34, 0.6))',
+          zIndex: 999999,
+          pointerEvents: 'none',
+        }}
+        onAnimationComplete={() => {
+          console.log('Flame animation complete for phase:', animationPhase);
+        }}
+      >
+        <AnimatedFlameLogo size={180} animated={true} />
+      </motion.div>
+      
+      {/* Layered background system */}
+      <motion.div 
+        className="video-background"
+        variants={videoVariants}
+        initial="startup"
+        animate={animationPhase}
+        style={{ 
+          transform: videoTransform,
+        }}
+      >
+        {videos.map((videoSrc, index) => (
           <video
             key={index}
             className={`background-video ${index === currentVideoIndex ? 'active' : ''}`}
@@ -98,14 +283,22 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
             linear-gradient(180deg, rgba(0, 0, 0, ${0.3 + overlayOpacity * 0.4}) 0%, rgba(0, 0, 0, ${0.6 + overlayOpacity * 0.3}) 70%, rgba(0, 0, 0, ${0.9 + overlayOpacity * 0.1}) 100%)
           `
         }}></div>
-      </div>
+      </motion.div>
 
-      <div className="landing-content">
-        {/* Hero Section - Stable layout with content opacity animation */}
+      {/* Content layer */}
+      <motion.div 
+        className="landing-content"
+        variants={contentVariants}
+        initial="startup"
+        animate={animationPhase}
+      >
+        {/* Hero Section - Always rendered but animated */}
         <section className="hero-section">
-          <h1 className="hero-title title-visible" id="burnwise-title">
-            BURNWISE
-          </h1>
+          <div className="hero-title-container" style={{ position: 'relative', display: 'inline-block' }}>
+            <h1 className="hero-title title-visible" id="burnwise-title" ref={titleRef}>
+              BURNWISE
+            </h1>
+          </div>
           <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
           <p className="hero-description">
             Intelligent coordination system preventing dangerous smoke overlap between farms using 
@@ -331,7 +524,7 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
             </a>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
