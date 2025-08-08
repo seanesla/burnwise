@@ -161,20 +161,17 @@
   transition: opacity 0.3s ease-out;
 }
 
-/* Span wrapper for I - must match parent text exactly */
+/* Span wrapper for I - reduce glow for thin letter */
 .i-char {
-  display: inline-block;
   position: relative;
-  /* Inherit exact same styling as parent */
-  color: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  text-shadow: inherit;
-  -webkit-font-smoothing: inherit;
-  -moz-osx-font-smoothing: inherit;
-  text-rendering: inherit;
+  display: inline-block;
+  /* Keep same color but reduce glow effect for readability */
+  color: #ff6b35;
+  text-shadow: 
+    0 0 5px rgba(255, 107, 53, 0.6),
+    0 0 10px rgba(255, 107, 53, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+  -webkit-text-fill-color: currentColor;
 }
 
 /* Flame positioned above I */

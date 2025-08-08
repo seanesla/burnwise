@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './AnimatedFlameLogo';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
+import TestICharacter from './TestICharacter';
 import '../styles/Landing.css';
 
 const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
@@ -71,6 +72,7 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
 
   return (
     <div className="landing-container visible">
+      <TestICharacter />
       {/* Video Background - Only show after startup */}
       <div className="video-background" style={{ 
         opacity: videosEnabled ? videoOpacity : 0,
