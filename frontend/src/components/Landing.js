@@ -11,7 +11,7 @@ const Landing = ({ isInitialLoad = true }) => {
   const [scrollY, setScrollY] = useState(0);
   const [animationPhase, setAnimationPhase] = useState(isInitialLoad ? 'startup' : 'complete');
   const titleRef = useRef(null);
-  const [flameTarget, setFlameTarget] = useState({ x: 0, y: 0 });
+  const [flameTarget, setFlameTarget] = useState({ x: 0, yViewport: 0, yPage: 0 });
   
   console.log('Landing render - isInitialLoad:', isInitialLoad, 'animationPhase:', animationPhase);
 
@@ -34,38 +34,56 @@ const Landing = ({ isInitialLoad = true }) => {
       }
       
       const titleRect = title.getBoundingClientRect();
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
       
       // The "I" in BURNWISE is approximately at 61% of the word width
       // This is based on the proportions of the letters in the Inter font
       // B-U-R-N-W are wider letters, I is narrow, S-E follow
       const iPositionRatio = 0.61; // 61% from the left edge
       
-      // Calculate the I position directly
+      // Calculate the I position
       const iCenterX = titleRect.left + (titleRect.width * iPositionRatio);
-      const iTop = titleRect.top - 120; // Position flame well above the text, not overlapping
+      
+      // For fixed positioning (during animation), use viewport coordinates
+      // For absolute positioning (after animation), we need page coordinates
+      const iTopViewport = titleRect.top - 160; // Viewport coordinates for fixed positioning - increased offset
+      const iTopPage = titleRect.top + scrollTop - 160; // Page coordinates for absolute positioning
       
       console.log('Title rect:', {
         left: titleRect.left,
         width: titleRect.width,
-        top: titleRect.top
+        top: titleRect.top,
+        scrollTop
       });
       console.log('I position calculation:', {
         iPositionRatio,
         iCenterX,
-        iTop
+        iTopViewport,
+        iTopPage
       });
-      setFlameTarget({ x: iCenterX, y: iTop });
+      
+      // Store both viewport and page coordinates
+      setFlameTarget({ 
+        x: iCenterX, 
+        yViewport: iTopViewport,  // For fixed positioning
+        yPage: iTopPage  // For absolute positioning
+      });
     };
     
-    // Calculate once on mount and keep stable
+    // Calculate on mount and when animation phase changes
     const initTimer = setTimeout(calculateFlameTarget, 100);
     
+    // Recalculate on resize and when animation completes
     window.addEventListener('resize', calculateFlameTarget);
+    if (animationPhase === 'complete') {
+      calculateFlameTarget();
+    }
+    
     return () => {
       clearTimeout(initTimer);
       window.removeEventListener('resize', calculateFlameTarget);
     };
-  }, []); // Empty dependency - calculate once and keep stable
+  }, [animationPhase]); // Recalculate when animation phase changes
 
   // Animation timeline for unified experience
   useEffect(() => {
@@ -157,7 +175,10 @@ const Landing = ({ isInitialLoad = true }) => {
   // Calculate final flame position (accounting for scaled size)
   // Scaled flame is 180 * 0.361 = 65px, so we need to offset by half (32.5px) to center it
   const finalFlameX = flameTarget.x > 0 ? flameTarget.x - 32.5 : viewportCenterX;
-  const finalFlameY = flameTarget.y > 0 ? flameTarget.y : viewportCenterY;
+  
+  // Use viewport coordinates for fixed positioning, page coordinates for absolute
+  const finalFlameYFixed = flameTarget.yViewport !== undefined ? flameTarget.yViewport : viewportCenterY;
+  const finalFlameYAbsolute = flameTarget.yPage !== undefined ? flameTarget.yPage : viewportCenterY;
   
   const flameVariants = {
     startup: {
@@ -178,7 +199,7 @@ const Landing = ({ isInitialLoad = true }) => {
     },
     revealing: {
       x: finalFlameX,
-      y: finalFlameY,
+      y: finalFlameYFixed,  // Use viewport coordinates
       scale: 0.361,
       opacity: 1,
       transition: { 
@@ -197,7 +218,7 @@ const Landing = ({ isInitialLoad = true }) => {
           times: [0, 0.4, 1],
           // Move up first, then settle to final height
           type: "keyframes",
-          values: [viewportCenterY, viewportCenterY - 150, finalFlameY]
+          values: [viewportCenterY, viewportCenterY - 150, finalFlameYFixed]
         },
         scale: { duration: 0.1 }, // Keep scale constant
         opacity: { duration: 0.1 } // Keep opacity constant
@@ -205,7 +226,7 @@ const Landing = ({ isInitialLoad = true }) => {
     },
     complete: {
       x: finalFlameX,
-      y: finalFlameY,
+      y: finalFlameYFixed,  // Keep using viewport coordinates since position is fixed
       scale: 0.361,
       opacity: 1,
     }
@@ -260,7 +281,7 @@ const Landing = ({ isInitialLoad = true }) => {
         initial="startup"
         animate={animationPhase}
         style={{
-          position: 'fixed',
+          position: 'fixed',  // Always use fixed positioning
           top: 0,
           left: 0,
           width: 180,
