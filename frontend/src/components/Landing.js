@@ -23,26 +23,26 @@ const Landing = ({ isInitialLoad = true }) => {
     '/gentle-field-fire.mp4'
   ];
 
-  // Calculate flame target position when title is available
+  // Calculate flame target position early and keep it stable
   useEffect(() => {
     const calculateFlameTarget = () => {
       const title = document.getElementById('burnwise-title');
       if (!title) {
-        // Try again if title not found
-        requestAnimationFrame(calculateFlameTarget);
-        return;
+        // Keep trying until title is available
+        const retryTimer = setTimeout(calculateFlameTarget, 50);
+        return () => clearTimeout(retryTimer);
       }
       
       const titleRect = title.getBoundingClientRect();
       
-      // The "I" in BURNWISE is approximately at 69% of the word width
+      // The "I" in BURNWISE is approximately at 61% of the word width
       // This is based on the proportions of the letters in the Inter font
       // B-U-R-N-W are wider letters, I is narrow, S-E follow
-      const iPositionRatio = 0.69; // 69% from the left edge
+      const iPositionRatio = 0.61; // 61% from the left edge
       
       // Calculate the I position directly
       const iCenterX = titleRect.left + (titleRect.width * iPositionRatio);
-      const iTop = titleRect.top - 45; // Position flame above the text
+      const iTop = titleRect.top - 60; // Position flame above the text with proper spacing
       
       console.log('Title rect:', {
         left: titleRect.left,
@@ -57,18 +57,15 @@ const Landing = ({ isInitialLoad = true }) => {
       setFlameTarget({ x: iCenterX, y: iTop });
     };
     
-    // Calculate immediately and when phase changes to revealing
-    if (animationPhase === 'revealing' || animationPhase === 'complete') {
-      calculateFlameTarget();
-    } else {
-      // For startup phases, calculate after a brief delay
-      const timer = setTimeout(calculateFlameTarget, 500);
-      return () => clearTimeout(timer);
-    }
+    // Calculate once on mount and keep stable
+    const initTimer = setTimeout(calculateFlameTarget, 100);
     
     window.addEventListener('resize', calculateFlameTarget);
-    return () => window.removeEventListener('resize', calculateFlameTarget);
-  }, [animationPhase]);
+    return () => {
+      clearTimeout(initTimer);
+      window.removeEventListener('resize', calculateFlameTarget);
+    };
+  }, []); // Empty dependency - calculate once and keep stable
 
   // Animation timeline for unified experience
   useEffect(() => {
@@ -157,6 +154,11 @@ const Landing = ({ isInitialLoad = true }) => {
   const viewportCenterX = typeof window !== 'undefined' ? window.innerWidth / 2 - 90 : 0;
   const viewportCenterY = typeof window !== 'undefined' ? window.innerHeight / 2 - 90 : 0;
   
+  // Calculate final flame position (accounting for scaled size)
+  // Scaled flame is 180 * 0.361 = 65px, so we need to offset by half (32.5px) to center it
+  const finalFlameX = flameTarget.x > 0 ? flameTarget.x - 32.5 : viewportCenterX;
+  const finalFlameY = flameTarget.y > 0 ? flameTarget.y : viewportCenterY;
+  
   const flameVariants = {
     startup: {
       x: viewportCenterX,
@@ -169,18 +171,41 @@ const Landing = ({ isInitialLoad = true }) => {
       y: viewportCenterY,
       scale: 0.361,
       opacity: 1,
-      transition: { duration: 1.5, ease: [0.4, 0, 0.1, 1] }
+      transition: { 
+        duration: 1.5, 
+        ease: [0.43, 0.13, 0.23, 0.96] // Custom ease for smooth scaling
+      }
     },
     revealing: {
-      x: flameTarget.x > 0 ? flameTarget.x - 32.5 : viewportCenterX,
-      y: flameTarget.y > 0 ? flameTarget.y : viewportCenterY,
+      x: finalFlameX,
+      y: finalFlameY,
       scale: 0.361,
       opacity: 1,
-      transition: { duration: 1.5, ease: [0.4, 0, 0.2, 1] }
+      transition: { 
+        // Create arc trajectory using keyframes
+        x: { 
+          duration: 2, 
+          ease: [0.43, 0.13, 0.23, 0.96],
+          times: [0, 0.6, 1],
+          // Arc to the right first, then to final position
+          type: "keyframes",
+          values: [viewportCenterX, viewportCenterX + 100, finalFlameX]
+        },
+        y: { 
+          duration: 2, 
+          ease: [0.25, 0.46, 0.45, 0.94],
+          times: [0, 0.4, 1],
+          // Move up first, then settle to final height
+          type: "keyframes",
+          values: [viewportCenterY, viewportCenterY - 150, finalFlameY]
+        },
+        scale: { duration: 0.1 }, // Keep scale constant
+        opacity: { duration: 0.1 } // Keep opacity constant
+      }
     },
     complete: {
-      x: flameTarget.x > 0 ? flameTarget.x - 32.5 : viewportCenterX,
-      y: flameTarget.y > 0 ? flameTarget.y : viewportCenterY,
+      x: finalFlameX,
+      y: finalFlameY,
       scale: 0.361,
       opacity: 1,
     }
