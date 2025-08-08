@@ -161,17 +161,25 @@
   transition: opacity 0.3s ease-out;
 }
 
-/* Span wrapper for I - ZERO styling impact */
+/* Span wrapper for I - explicitly inherit all text styles */
 .i-char {
   position: relative;
-  display: inline;
-  /* No other styles - inherits everything from parent */
+  display: inline-block;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-shadow: inherit;
+  -webkit-font-smoothing: inherit;
+  -moz-osx-font-smoothing: inherit;
+  text-rendering: inherit;
 }
 
 /* Flame positioned above I */
 .flame-above-i {
   position: absolute;
-  top: -82.5px; /* PRECISELY CALCULATED: Animation ends at iTop - 82.5px */
+  top: -62px; /* Fine-tuned to exactly match animation endpoint */
   left: 50%;
   transform: translateX(-50%) translateX(-6px);
   z-index: 10;
