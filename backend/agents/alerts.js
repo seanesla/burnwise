@@ -458,9 +458,9 @@ class AlertsAgent {
       // Get farm-specific recipients
       if (alertData.farm_id) {
         const farmContacts = await query(`
-          SELECT phone, email, name, owner_name
+          SELECT contact_phone as phone, contact_email as email, farm_name as name, owner_name
           FROM farms
-          WHERE id = ?
+          WHERE farm_id = ?
         `, [alertData.farm_id]);
         
         if (farmContacts.length > 0) {
@@ -525,8 +525,8 @@ class AlertsAgent {
           ST_Distance_Sphere(f1.location, f2.location) as distance
         FROM farms f1
         CROSS JOIN farms f2
-        WHERE f1.id = ?
-        AND f2.id != f1.id
+        WHERE f1.farm_id = ?
+        AND f2.farm_id != f1.farm_id
         AND ST_Distance_Sphere(f1.location, f2.location) <= ?
         ORDER BY distance ASC
         LIMIT 10
@@ -774,7 +774,7 @@ class AlertsAgent {
         SET 
           status = ?,
           updated_at = NOW()
-        WHERE id = ?
+        WHERE alert_id = ?
       `, [status, alertId]);
       
       // Could also store detailed delivery tracking in a separate table
@@ -923,7 +923,7 @@ class AlertsAgent {
     
     // Mark as failed if too old (over 1 hour)
     if (Date.now() - new Date(alert.created_at).getTime() > 60 * 60 * 1000) {
-      await query('UPDATE alerts SET status = ? WHERE id = ?', ['failed', alert.id]);
+      await query('UPDATE alerts SET status = ? WHERE alert_id = ?', ['failed', alert.id]);
     }
   }
 

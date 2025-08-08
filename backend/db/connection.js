@@ -236,11 +236,19 @@ class DatabaseConnection {
 
 const dbConnection = new DatabaseConnection();
 
+// Stub for vector similarity search to prevent errors
+async function vectorSimilaritySearch(tableName, vectorColumn, searchVector, limit = 10, filters = {}) {
+  logger.warn('Vector similarity search called but returning empty results - vector search not fully implemented');
+  return [];
+}
+
 module.exports = {
   initializeDatabase: () => dbConnection.initialize(),
   query: (sql, params, options) => dbConnection.query(sql, params, options),
   close: () => dbConnection.close(),
   // Export cache utilities for monitoring
   getCacheStats: () => queryCache.getStats(),
-  clearCache: () => queryCache.clear()
+  clearCache: () => queryCache.clear(),
+  // Export vector operations with stub for compatibility
+  vectorSimilaritySearch
 };
