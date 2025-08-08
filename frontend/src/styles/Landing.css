@@ -161,14 +161,18 @@
   transition: opacity 0.3s ease-out;
 }
 
-/* Positioned flame without wrapping any text */
-.torch-flame-positioned {
+/* Span wrapper for I - ZERO styling impact */
+.i-char {
+  position: relative;
+  display: inline;
+  /* No other styles - inherits everything from parent */
+}
+
+/* Flame positioned above I */
+.flame-above-i {
   position: absolute;
-  /* Position above the I (6th character in BURNWISE) */
-  /* Approximate position of I character when text is centered */
-  left: calc(50% + 2.5ch); /* Offset from center to I position */
-  /* Calculated position where animation ends */
-  top: -82.5px;
+  top: -58px; /* Position above the I */
+  left: 50%;
   transform: translateX(-50%) translateX(-6px);
   z-index: 10;
   filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
