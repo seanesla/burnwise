@@ -161,28 +161,15 @@
   transition: opacity 0.3s ease-out;
 }
 
-/* Wrapper for I character - ONLY for positioning, NO text styling */
-.hero-i-wrapper {
-  position: relative;
-  display: inline;
-  /* Force inheritance of ALL text properties */
-  font: inherit;
-  color: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  text-shadow: inherit;
-  -webkit-font-smoothing: inherit;
-  -moz-osx-font-smoothing: inherit;
-  text-rendering: inherit;
-  vertical-align: baseline;
-}
-
-.torch-flame-absolute {
+/* Positioned flame without wrapping any text */
+.torch-flame-positioned {
   position: absolute;
-  /* Fine-tuned to match animation end position */
-  top: -58px; /* Exact position where animation flame settles */
-  left: 50%;
-  transform: translateX(-50%) translateX(-6px); /* Match the -6px offset from animation */
+  /* Position above the I (6th character in BURNWISE) */
+  /* Approximate position of I character when text is centered */
+  left: calc(50% + 2.5ch); /* Offset from center to I position */
+  /* Calculated position where animation ends */
+  top: -82.5px;
+  transform: translateX(-50%) translateX(-6px);
   z-index: 10;
   filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
           drop-shadow(0 0 15px rgba(255, 87, 34, 0.6));
@@ -216,6 +203,7 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   position: relative;
+  display: inline-block; /* Needed for proper flame positioning */
 }
 
 
