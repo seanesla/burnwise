@@ -161,10 +161,11 @@
   transition: opacity 0.3s ease-out;
 }
 
-/* Span wrapper for I - explicitly inherit all text styles */
+/* Span wrapper for I - must match parent text exactly */
 .i-char {
-  position: relative;
   display: inline-block;
+  position: relative;
+  /* Inherit exact same styling as parent */
   color: inherit;
   font-size: inherit;
   font-weight: inherit;
@@ -179,7 +180,7 @@
 /* Flame positioned above I */
 .flame-above-i {
   position: absolute;
-  top: -62px; /* Fine-tuned to exactly match animation endpoint */
+  top: -60px; /* Adjusted downward to prevent upward jump */
   left: 50%;
   transform: translateX(-50%) translateX(-6px);
   z-index: 10;

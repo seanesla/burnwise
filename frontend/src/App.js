@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
-import FramerTorchAnimation from './components/FramerTorchAnimation';
+import PersistentFlame from './components/PersistentFlame';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import './styles/App.css';
@@ -92,9 +92,23 @@ function App() {
           </div>
         )}
         
-        {/* Startup Animation using Framer Motion */}
+        {/* Persistent Flame - stays throughout the entire experience */}
+        <PersistentFlame onAnimationPhaseComplete={handleAnimationComplete} />
+        
+        {/* Black background during animation */}
         {showAnimation && (
-          <FramerTorchAnimation onComplete={handleAnimationComplete} />
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: '#000',
+            zIndex: 999998,
+            pointerEvents: 'none',
+            opacity: showAnimation ? 1 : 0,
+            transition: 'opacity 1.8s ease-out'
+          }} />
         )}
         
         {/* Main App - Always visible, animation overlays on top */}

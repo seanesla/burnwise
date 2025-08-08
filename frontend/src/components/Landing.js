@@ -102,11 +102,7 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
         {/* Hero Section - Stable layout with content opacity animation */}
         <section className="hero-section">
           <h1 className="hero-title title-visible">
-            BURNW<span className="i-char">I{logoVisible && (
-              <div className="flame-above-i">
-                <AnimatedFlameLogo size={65} animated={true} />
-              </div>
-            )}</span>SE
+            BURNW<span className="i-char">I</span>SE
           </h1>
           <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
           <p className="hero-description">
