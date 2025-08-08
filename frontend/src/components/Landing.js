@@ -42,7 +42,7 @@ const Landing = ({ isInitialLoad = true }) => {
       
       // Calculate the I position directly
       const iCenterX = titleRect.left + (titleRect.width * iPositionRatio);
-      const iTop = titleRect.top - 60; // Position flame above the text with proper spacing
+      const iTop = titleRect.top - 120; // Position flame well above the text, not overlapping
       
       console.log('Title rect:', {
         left: titleRect.left,
