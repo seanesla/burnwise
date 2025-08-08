@@ -29,8 +29,14 @@ class AlertsAgent {
       phoneNumber: process.env.TWILIO_PHONE_NUMBER
     };
     
-    // Alert types and their configurations
+    // Alert types and their configurations (matching database enum)
     this.alertTypes = {
+      'burn_scheduled': {
+        priority: 'medium',
+        channels: ['sms', 'socket'],
+        template: 'Burn scheduled for {farmName} - {fieldName} on {date} at {time}.',
+        advance_notice: 60 // minutes
+      },
       'burn_starting': {
         priority: 'high',
         channels: ['sms', 'socket'],
@@ -43,7 +49,7 @@ class AlertsAgent {
         template: 'SMOKE WARNING: High PM2.5 levels detected near {location}. Take precautions if sensitive to air quality.',
         advance_notice: 0
       },
-      'weather_change': {
+      'weather_alert': {
         priority: 'medium',
         channels: ['socket'],
         template: 'Weather conditions changing for scheduled burn at {farmName}. New conditions: {conditions}',
@@ -55,7 +61,7 @@ class AlertsAgent {
         template: 'Burn conflict detected between {farm1} and {farm2}. Coordination required.',
         advance_notice: 0
       },
-      'schedule_update': {
+      'schedule_change': {
         priority: 'medium',
         channels: ['sms', 'socket'],
         template: 'Your burn request has been rescheduled to {newTime}. Reason: {reason}',
@@ -309,7 +315,7 @@ class AlertsAgent {
   }
 
   async validateAlertData(alertData) {
-    const requiredFields = ['type', 'title', 'message'];
+    const requiredFields = ['type', 'message'];
     
     for (const field of requiredFields) {
       if (!alertData[field]) {
@@ -325,7 +331,7 @@ class AlertsAgent {
       type: alertData.type,
       farm_id: alertData.farm_id || null,
       burn_request_id: alertData.burn_request_id || null,
-      title: alertData.title,
+      title: alertData.title || 'Alert Notification',
       message: alertData.message,
       severity: alertData.severity || this.alertTypes[alertData.type].priority,
       data: alertData.data || {},
@@ -392,13 +398,13 @@ class AlertsAgent {
     
     return {
       content,
-      subject: alertData.title,
+      subject: alertData.title || 'Alert Notification',
       timestamp,
       type: alertData.type,
       severity: alertData.severity,
       formatted: {
         sms: this.formatForSMS(content, alertData),
-        email: this.formatForEmail(alertData.title, content, alertData),
+        email: this.formatForEmail(alertData.title || 'Alert Notification', content, alertData),
         socket: this.formatForSocket(alertData, content)
       }
     };
@@ -436,7 +442,7 @@ class AlertsAgent {
       id: require('crypto').randomBytes(8).toString('hex'),
       type: alertData.type,
       severity: alertData.severity,
-      title: alertData.title,
+      title: alertData.title || 'Alert Notification',
       message: content,
       farm_id: alertData.farm_id,
       burn_request_id: alertData.burn_request_id,
@@ -741,15 +747,14 @@ class AlertsAgent {
       
       const result = await query(`
         INSERT INTO alerts (
-          type, farm_id, burn_request_id, title, message,
+          alert_type, farm_id, burn_request_id, message,
           severity, status, delivery_method, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
       `, [
         alertData.type,
         alertData.farm_id,
         alertData.burn_request_id,
-        alertData.title,
-        alertMessage.content,
+        `${alertData.title || 'Alert'}: ${alertMessage.content}`,
         alertData.severity,
         'pending',
         JSON.stringify(deliveryChannels)
@@ -888,7 +893,7 @@ class AlertsAgent {
   async processPendingAlerts() {
     try {
       const pendingAlerts = await query(`
-        SELECT id, type, farm_id, title, message, severity, created_at
+        SELECT alert_id as id, alert_type as type, farm_id, message, severity, created_at
         FROM alerts
         WHERE status = 'pending'
         AND created_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)
