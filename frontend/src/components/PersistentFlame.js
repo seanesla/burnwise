@@ -12,48 +12,36 @@ const PersistentFlame = ({ onAnimationPhaseComplete }) => {
   const [iCharElement, setICharElement] = useState(null);
   
   useEffect(() => {
-    // Calculate initial target position based on where I will be
+    // Calculate position of I character in BURNWISE text
     const calculateInitialTarget = () => {
-      // Create test element to measure where I will be
-      const testEl = document.createElement("div");
-      testEl.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: clamp(3rem, 8vw, 6rem);
-        font-weight: 900;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        letter-spacing: -0.02em;
-        line-height: 0.9;
-        visibility: hidden;
-        white-space: nowrap;
-      `;
+      const burnwiseTitle = document.getElementById('burnwise-title');
+      if (!burnwiseTitle) {
+        // Fallback if element not found yet
+        setTimeout(calculateInitialTarget, 100);
+        return;
+      }
       
-      testEl.innerHTML = `BURNW<span style="position: relative; display: inline-block;">I</span>SE`;
-      document.body.appendChild(testEl);
+      const titleRect = burnwiseTitle.getBoundingClientRect();
+      const titleStyles = window.getComputedStyle(burnwiseTitle);
       
-      const iSpan = testEl.querySelector("span");
-      const iRect = iSpan.getBoundingClientRect();
-      const iCenterX = iRect.left + iRect.width / 2;
-      const iTop = iRect.top;
+      // Create canvas to measure text width up to "I"
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = `${titleStyles.fontWeight} ${titleStyles.fontSize} ${titleStyles.fontFamily}`;
       
-      document.body.removeChild(testEl);
+      // Measure width of "BURNW" to find where "I" starts
+      const beforeIWidth = ctx.measureText('BURNW').width;
+      const iWidth = ctx.measureText('I').width;
       
-      // For 180px element that scales to 0.361 (65px)
-      // We need to position the unscaled element such that when scaled,
-      // it appears 60px above the I
-      const scaledHeight = 65;
-      const targetTop = iTop - 60; // Where we want the flame top to be
+      // Calculate I position
+      const iCenterX = titleRect.left + beforeIWidth + (iWidth / 2);
+      const iTop = titleRect.top;
       
-      // When scaling from center, the scaled element's top will be at:
-      // center - (scaledHeight / 2)
-      // So we need: center - 32.5 = targetTop
-      // Therefore: center = targetTop + 32.5
-      // And unscaled top = center - 90 = targetTop + 32.5 - 90 = targetTop - 57.5
+      // Position flame 60px above the I
+      const targetTop = iTop - 60;
       
       setTargetPosition({
-        x: iCenterX - 90 - 6, // Center the unscaled element on I with offset
+        x: iCenterX - 90 - 6, // Center the unscaled flame on I with offset
         y: targetTop - 57.5 // Position for correct scaled location
       });
     };

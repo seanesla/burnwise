@@ -161,18 +161,7 @@
   transition: opacity 0.3s ease-out;
 }
 
-/* Span wrapper for I - reduce glow for thin letter */
-.i-char {
-  position: relative;
-  display: inline-block;
-  /* Keep same color but reduce glow effect for readability */
-  color: #ff6b35;
-  text-shadow: 
-    0 0 5px rgba(255, 107, 53, 0.6),
-    0 0 10px rgba(255, 107, 53, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.4);
-  -webkit-text-fill-color: currentColor;
-}
+/* No span wrapper needed - using canvas text measurement for flame positioning */
 
 /* Flame positioned above I */
 .flame-above-i {
@@ -199,9 +188,9 @@
   margin-top: -1rem;
   letter-spacing: -0.02em;
   line-height: 0.9;
-  /* Use solid bright orange-red color */
-  color: #ff6b35;
-  /* Layered glow effect for all characters */
+  /* WHITE text with orange GLOW */
+  color: #ffffff;
+  /* Orange glow effect overlapping the white text */
   text-shadow: 
     0 0 10px rgba(255, 107, 53, 0.8),
     0 0 20px rgba(255, 107, 53, 0.6),

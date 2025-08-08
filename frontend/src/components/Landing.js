@@ -103,8 +103,8 @@ const Landing = ({ fromStartup, hideLogoInitially, animationPhase }) => {
       <div className="landing-content">
         {/* Hero Section - Stable layout with content opacity animation */}
         <section className="hero-section">
-          <h1 className="hero-title title-visible">
-            BURNW<span className="i-char">I</span>SE
+          <h1 className="hero-title title-visible" id="burnwise-title">
+            BURNWISE
           </h1>
           <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
           <p className="hero-description">
