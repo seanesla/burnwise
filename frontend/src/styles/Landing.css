@@ -165,11 +165,22 @@
 .hero-i-wrapper {
   position: relative;
   display: inline;
+  /* Force inheritance of ALL text properties */
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-shadow: inherit;
+  -webkit-font-smoothing: inherit;
+  -moz-osx-font-smoothing: inherit;
+  text-rendering: inherit;
+  vertical-align: baseline;
 }
 
 .torch-flame-absolute {
   position: absolute;
-  top: -48px; /* Adjusted to exactly match animation end position */
+  /* Fine-tuned to match animation end position */
+  top: -58px; /* Exact position where animation flame settles */
   left: 50%;
   transform: translateX(-50%) translateX(-6px); /* Match the -6px offset from animation */
   z-index: 10;
