@@ -175,6 +175,7 @@ class WeatherAgent {
       
       // Step 4: Find similar historical weather patterns
       // Removed similar pattern search - overengineered vector operation
+      const similarPatterns = []; // Empty array for now to prevent undefined errors
       
       // Step 5: Analyze burn suitability
       const suitabilityAnalysis = this.analyzeBurnSuitability(forecast, timeWindow);

@@ -358,7 +358,7 @@ router.post('/', asyncHandler(async (req, res) => {
     }
     
     const alertResult = await alertsAgent.processAlert({
-      type: 'burn_request_submitted',
+      type: 'schedule_update',
       farm_id: transformedRequest.farm_id,
       burn_request_id: burnRequestId,
       title: 'New Burn Request Submitted',
