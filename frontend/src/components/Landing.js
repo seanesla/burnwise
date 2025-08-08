@@ -46,8 +46,8 @@ const Landing = ({ isInitialLoad = true }) => {
       
       // For fixed positioning (during animation), use viewport coordinates
       // For absolute positioning (after animation), we need page coordinates
-      const iTopViewport = titleRect.top - 160; // Viewport coordinates for fixed positioning - increased offset
-      const iTopPage = titleRect.top + scrollTop - 160; // Page coordinates for absolute positioning
+      const iTopViewport = titleRect.top - 105; // Viewport coordinates for fixed positioning - proper spacing
+      const iTopPage = titleRect.top + scrollTop - 105; // Page coordinates for absolute positioning
       
       console.log('Title rect:', {
         left: titleRect.left,
