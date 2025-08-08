@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
-import PersistentFlame from './components/PersistentFlame';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import './styles/App.css';
@@ -20,122 +19,46 @@ const Settings = lazy(() => import('./components/Settings'));
 const DEBUG = false;
 const LOG_PREFIX = '🔥 BURNWISE:';
 
-function App() {
-  const [showAnimation, setShowAnimation] = useState(true);
-  const [animationComplete, setAnimationComplete] = useState(false);
-  const renderCountRef = useRef(0);
-  const mountTimeRef = useRef(Date.now());
+function AppContent() {
+  const location = useLocation();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   useEffect(() => {
-    renderCountRef.current++;
-  });
-  
-  const handleAnimationComplete = () => {
-    setShowAnimation(false);
-    setAnimationComplete(true);
-    console.log(LOG_PREFIX, 'Torch animation complete');
-    // Re-enable scrolling and reset body position
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.top = '';
-  };
-  
-  // Lock scrolling during startup animation
-  useEffect(() => {
-    if (showAnimation) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.top = '0';
-    }
+    // Mark as not initial load after animation completes
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 6000); // After animation completes
     
-    return () => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
-    };
-  }, [showAnimation]);
+    return () => clearTimeout(timer);
+  }, []);
   
   return (
-    <Router>
-      <div className="App">
-        {/* DEBUG OVERLAY - SHOWS EVERYTHING */}
-        {DEBUG && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            background: 'rgba(255, 0, 0, 0.9)',
-            color: 'white',
-            padding: '10px',
-            zIndex: 10000000,
-            fontSize: '11px',
-            fontFamily: 'monospace',
-            maxHeight: '200px',
-            overflow: 'auto'
-          }}>
-            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-              🔥 BRUTE FORCE DEBUG MODE 🔥
-            </div>
-            <div>Animation: {showAnimation ? 'RUNNING' : 'DONE'} | Renders: {renderCountRef.current}</div>
-            <div>Time: {Date.now() - mountTimeRef.current}ms</div>
-            <div style={{ marginTop: '5px', fontSize: '10px' }}>
-              Animation visible: {showAnimation ? 'YES' : 'NO'} | 
-              Animation Complete: {animationComplete ? 'YES' : 'NO'}
-            </div>
-          </div>
-        )}
-        
-        {/* Persistent Flame - stays throughout the entire experience */}
-        <PersistentFlame onAnimationPhaseComplete={handleAnimationComplete} />
-        
-        {/* Black background during animation */}
-        {showAnimation && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: '#000',
-            zIndex: 999998,
-            pointerEvents: 'none',
-            opacity: showAnimation ? 1 : 0,
-            transition: 'opacity 1.8s ease-out'
-          }} />
-        )}
-        
-        {/* Main App - Always visible, animation overlays on top */}
-        <div className="app-main" style={{
-          opacity: 1,
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <Navigation />
-          <div className="app-content">
-            <ErrorBoundary>
-              <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
-                <Routes>
-                  <Route path="/" element={<Landing fromStartup={animationComplete} hideLogoInitially={showAnimation} animationPhase={showAnimation ? 'animating' : 'done'} />} />
-                  <Route path="/dashboard" element={<CinematicDashboard />} />
-                  <Route path="/map" element={<Map />} />
-                  <Route path="/schedule" element={<Schedule />} />
-                  <Route path="/alerts" element={<AlertsPanel />} />
-                  <Route path="/request" element={<ImprovedBurnRequestForm />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Routes>
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        </div>
+    <div className="App">
+      <Navigation />
+      <div className="app-content">
+        <ErrorBoundary>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
+            <Routes>
+              <Route path="/" element={<Landing isInitialLoad={location.pathname === '/' && isInitialLoad} />} />
+              <Route path="/dashboard" element={<CinematicDashboard />} />
+              <Route path="/map" element={<Map />} />
+              <Route path="/schedule" element={<Schedule />} />
+              <Route path="/alerts" element={<AlertsPanel />} />
+              <Route path="/request" element={<ImprovedBurnRequestForm />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

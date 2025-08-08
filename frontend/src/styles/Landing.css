@@ -166,9 +166,8 @@
 /* Flame positioned above I */
 .flame-above-i {
   position: absolute;
-  top: -60px; /* Adjusted downward to prevent upward jump */
-  left: 50%;
-  transform: translateX(-50%) translateX(-6px);
+  /* Position set dynamically via JavaScript */
+  transform: translateX(-50%);
   z-index: 10;
   filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8))
           drop-shadow(0 0 15px rgba(255, 87, 34, 0.6));
