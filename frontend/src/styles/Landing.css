@@ -169,7 +169,7 @@
 
 .torch-flame-absolute {
   position: absolute;
-  top: -55px; /* Flame positioned above the I - matches animation */
+  top: -48px; /* Adjusted to exactly match animation end position */
   left: 50%;
   transform: translateX(-50%) translateX(-6px); /* Match the -6px offset from animation */
   z-index: 10;
