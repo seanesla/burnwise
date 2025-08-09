@@ -20,7 +20,7 @@ class WeatherAgent {
     this.agentName = 'weather';
     this.version = '1.0.0';
     this.initialized = false;
-    this.demoMode = false;
+    // No demo mode - real API only
     this.apiKey = process.env.OPENWEATHERMAP_API_KEY;
     this.baseUrl = 'https://api.openweathermap.org/data/2.5';
     this.oneCallUrl = 'https://api.openweathermap.org/data/3.0/onecall';
@@ -66,11 +66,9 @@ class WeatherAgent {
 
   async testWeatherAPI() {
     try {
-      // Skip API test if using mock key
-      if (this.apiKey === 'mock_api_key' || !this.apiKey || this.apiKey.length < 10) {
-        logger.agent(this.agentName, 'warn', 'Using mock weather API key - operating in demo mode');
-        this.demoMode = true;
-        return;
+      // Require real API key - no mocks or demo mode allowed
+      if (!this.apiKey || this.apiKey.length < 10) {
+        throw new Error('Valid OpenWeatherMap API key required - no mock/demo mode allowed');
       }
       
       const testResponse = await axios.get(`${this.baseUrl}/weather`, {
@@ -84,13 +82,11 @@ class WeatherAgent {
       
       if (testResponse.status === 200) {
         logger.agent(this.agentName, 'debug', 'OpenWeatherMap API connection verified');
-        this.demoMode = false;
       }
       
     } catch (error) {
       if (error.response?.status === 401) {
-        logger.agent(this.agentName, 'warn', 'OpenWeatherMap API key is invalid - operating in demo mode');
-        this.demoMode = true;
+        throw new Error('Invalid OpenWeatherMap API key - real API key required');
       } else if (error.response?.status === 429) {
         throw new Error('OpenWeatherMap API rate limit exceeded');
       } else {
@@ -237,27 +233,7 @@ class WeatherAgent {
         return cached.data;
       }
       
-      // Return demo data if in demo mode
-      if (this.demoMode) {
-        const demoData = {
-          temperature: 72,
-          humidity: 45,
-          windSpeed: 8,
-          windDirection: 180,
-          condition: 'Clear',
-          visibility: 10,
-          pressure: 30.15,
-          cloudCover: 10
-        };
-        
-        this.weatherCache.set(cacheKey, {
-          data: demoData,
-          timestamp: Date.now()
-        });
-        
-        logger.agent(this.agentName, 'debug', 'Using demo weather data');
-        return demoData;
-      }
+      // Always use real weather data - no demo/mock mode
       
       const response = await axios.get(`${this.baseUrl}/weather`, {
         params: {
@@ -307,29 +283,7 @@ class WeatherAgent {
         return cached.data;
       }
       
-      // Return demo forecast data if in demo mode
-      if (this.demoMode) {
-        const demoForecast = {
-          temperature: { min: 65, max: 78, avg: 71 },
-          humidity: { min: 35, max: 55, avg: 45 },
-          windSpeed: { min: 5, max: 12, avg: 8 },
-          windDirection: 180,
-          precipitation: 0,
-          cloudCover: 15,
-          stabilityClass: 'D', // Neutral stability
-          mixingHeight: 1500,
-          ventilationFactor: 12000,
-          burnWindowQuality: 0.85
-        };
-        
-        this.weatherCache.set(cacheKey, {
-          data: demoForecast,
-          timestamp: Date.now()
-        });
-        
-        logger.agent(this.agentName, 'debug', 'Using demo forecast data');
-        return demoForecast;
-      }
+      // Always use real forecast data - no demo/mock mode
       
       // Use free 5-day forecast API instead of paid One Call API
       const response = await axios.get(`${this.baseUrl}/forecast`, {
