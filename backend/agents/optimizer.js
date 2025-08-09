@@ -402,6 +402,13 @@ class OptimizerAgent {
   }
 
   calculateCentroid(boundary) {
+    // Handle missing or invalid boundary data
+    if (!boundary || !boundary.coordinates || !boundary.coordinates[0]) {
+      logger.agent(this.agentName, 'warn', 'Invalid boundary data, using default location', { boundary });
+      // Return a default location (center of Kansas)
+      return { lat: 38.5, lon: -98.0 };
+    }
+    
     const coordinates = boundary.coordinates[0];
     let lat = 0, lon = 0;
     
@@ -1126,15 +1133,24 @@ class OptimizerAgent {
 
   // Utility methods
   extractTimeString(timeValue) {
-    if (!timeValue) return '00:00';
+    if (!timeValue || timeValue === undefined || timeValue === null) {
+      logger.agent(this.agentName, 'debug', 'No time value provided, using default', { timeValue });
+      return '08:00';
+    }
     
     // If it's already a time string (HH:MM format)
     if (typeof timeValue === 'string' && /^\d{1,2}:\d{2}$/.test(timeValue)) {
       return timeValue;
     }
     
-    // If it's a datetime string or Date object
-    const dateStr = timeValue.toString();
+    // Safely convert to string
+    let dateStr;
+    try {
+      dateStr = String(timeValue);
+    } catch (e) {
+      logger.agent(this.agentName, 'warn', 'Failed to convert time value to string', { timeValue, error: e.message });
+      return '08:00';
+    }
     
     // Handle MySQL datetime format (YYYY-MM-DD HH:MM:SS)
     if (dateStr.includes(' ')) {
