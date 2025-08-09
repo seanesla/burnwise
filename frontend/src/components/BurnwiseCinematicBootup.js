@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import AnimatedFlameLogo from './AnimatedFlameLogo';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 
 const BurnwiseCinematicBootup = ({ onComplete }) => {
   const [currentPhase, setCurrentPhase] = useState(0);
