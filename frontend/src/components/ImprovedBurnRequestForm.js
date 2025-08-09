@@ -77,7 +77,9 @@ const ImprovedBurnRequestForm = () => {
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/satellite-v9',
         center: [-98.5795, 39.8283], // Center of USA
-        zoom: 5
+        zoom: 5,
+        preserveDrawingBuffer: true, // Helps with WebGL context recovery
+        failIfMajorPerformanceCaveat: false // Don't fail on performance issues
       });
 
       // Add drawing controls with custom fire-themed styling
@@ -156,12 +158,56 @@ const ImprovedBurnRequestForm = () => {
         setMapLoaded(true);
       });
 
+      // Handle WebGL context lost
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        if (e.error && e.error.message && e.error.message.includes('WebGL')) {
+          toast.error('Graphics context lost. Please refresh the page if the map stops working.');
+          
+          // Attempt to recover
+          setTimeout(() => {
+            if (map.current) {
+              try {
+                map.current.triggerRepaint();
+              } catch (repaintError) {
+                console.error('Failed to repaint map:', repaintError);
+              }
+            }
+          }, 1000);
+        }
+      });
+
+      // Handle WebGL context restored  
+      const canvas = mapContainer.current?.querySelector('canvas');
+      if (canvas) {
+        canvas.addEventListener('webglcontextlost', (event) => {
+          event.preventDefault();
+          console.warn('WebGL context lost in burn request form');
+          toast.warning('Map graphics temporarily lost. Attempting recovery...');
+        });
+        
+        canvas.addEventListener('webglcontextrestored', () => {
+          console.log('WebGL context restored in burn request form');
+          toast.success('Map graphics restored');
+          if (map.current) {
+            map.current.triggerRepaint();
+          }
+        });
+      }
+
     } catch (err) {
       console.error('Map initialization error:', err);
       toast.error('Failed to initialize map');
     }
 
     return () => {
+      // Clean up WebGL event listeners
+      const canvas = mapContainer.current?.querySelector('canvas');
+      if (canvas) {
+        canvas.removeEventListener('webglcontextlost', () => {});
+        canvas.removeEventListener('webglcontextrestored', () => {});
+      }
+      
       if (map.current) {
         map.current.remove();
         map.current = null;
