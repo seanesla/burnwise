@@ -267,9 +267,16 @@ class OptimizerAgent {
     
     for (const request of burnRequests) {
       try {
-        // Validate time windows
-        const startTime = this.parseTime(request.time_window_start);
-        const endTime = this.parseTime(request.time_window_end);
+        // Validate time windows - handle both column naming conventions
+        const timeWindowStart = request.time_window_start || request.requested_window_start || request.requested_start_time;
+        const timeWindowEnd = request.time_window_end || request.requested_window_end || request.requested_end_time;
+        
+        // Extract time portion if datetime format
+        const startTimeStr = this.extractTimeString(timeWindowStart);
+        const endTimeStr = this.extractTimeString(timeWindowEnd);
+        
+        const startTime = this.parseTime(startTimeStr);
+        const endTime = this.parseTime(endTimeStr);
         
         if (endTime - startTime < this.constraints.minTimeSlot) {
           logger.agent(this.agentName, 'warn', 'Burn request time window too small', {
@@ -1118,8 +1125,57 @@ class OptimizerAgent {
   }
 
   // Utility methods
+  extractTimeString(timeValue) {
+    if (!timeValue) return '00:00';
+    
+    // If it's already a time string (HH:MM format)
+    if (typeof timeValue === 'string' && /^\d{1,2}:\d{2}$/.test(timeValue)) {
+      return timeValue;
+    }
+    
+    // If it's a datetime string or Date object
+    const dateStr = timeValue.toString();
+    
+    // Handle MySQL datetime format (YYYY-MM-DD HH:MM:SS)
+    if (dateStr.includes(' ')) {
+      const timePart = dateStr.split(' ')[1];
+      if (timePart) {
+        return timePart.substring(0, 5); // Get HH:MM portion
+      }
+    }
+    
+    // Handle ISO datetime format (YYYY-MM-DDTHH:MM:SS)
+    if (dateStr.includes('T')) {
+      const timePart = dateStr.split('T')[1];
+      if (timePart) {
+        return timePart.substring(0, 5); // Get HH:MM portion
+      }
+    }
+    
+    // Handle MySQL TIME format (HH:MM:SS)
+    if (/^\d{2}:\d{2}:\d{2}$/.test(dateStr)) {
+      return dateStr.substring(0, 5); // Get HH:MM portion
+    }
+    
+    // Default fallback
+    return '08:00';
+  }
+  
   parseTime(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
+    if (!timeString || typeof timeString !== 'string') {
+      logger.agent(this.agentName, 'warn', 'Invalid time string provided to parseTime', { timeString });
+      return 8; // Default to 8 AM
+    }
+    
+    const parts = timeString.split(':');
+    if (parts.length < 2) {
+      logger.agent(this.agentName, 'warn', 'Invalid time format', { timeString });
+      return 8; // Default to 8 AM
+    }
+    
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    
     return hours + minutes / 60;
   }
 
