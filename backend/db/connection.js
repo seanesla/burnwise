@@ -236,10 +236,54 @@ class DatabaseConnection {
 
 const dbConnection = new DatabaseConnection();
 
-// Stub for vector similarity search to prevent errors
+// Vector similarity search using TiDB's native vector functions
 async function vectorSimilaritySearch(tableName, vectorColumn, searchVector, limit = 10, filters = {}) {
-  logger.warn('Vector similarity search called but returning empty results - vector search not fully implemented');
-  return [];
+  try {
+    // Convert array to TiDB vector format
+    const vectorString = `[${searchVector.join(',')}]`;
+    
+    // Build WHERE clause from filters
+    let whereConditions = [];
+    let params = [vectorString];
+    
+    if (filters && Object.keys(filters).length > 0) {
+      for (const [key, value] of Object.entries(filters)) {
+        whereConditions.push(`${key} = ?`);
+        params.push(value);
+      }
+    }
+    
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    
+    // Use VEC_COSINE_DISTANCE for similarity calculation
+    const sql = `
+      SELECT *, 
+             1 - VEC_COSINE_DISTANCE(${vectorColumn}, ?) as similarity
+      FROM ${tableName}
+      ${whereClause}
+      ORDER BY similarity DESC
+      LIMIT ?
+    `;
+    
+    params.push(limit);
+    
+    const results = await dbConnection.query(sql, params);
+    
+    logger.debug('Vector similarity search completed', {
+      table: tableName,
+      column: vectorColumn,
+      resultsFound: results.length
+    });
+    
+    return results;
+  } catch (error) {
+    logger.error('Vector similarity search failed', { 
+      error: error.message,
+      table: tableName,
+      column: vectorColumn 
+    });
+    return [];
+  }
 }
 
 module.exports = {
