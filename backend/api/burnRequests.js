@@ -151,10 +151,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
         br.*,
         f.farm_name,
         f.owner_name,
-        f.phone as farm_phone,
-        f.email as farm_email,
-        ST_AsGeoJSON(br.field_boundary) as field_boundary,
-        ST_AsGeoJSON(f.location) as farm_location
+        f.contact_phone as farm_phone,
+        f.contact_email as farm_email,
+        f.latitude as farm_lat,
+        f.longitude as farm_lon
       FROM burn_requests br
       JOIN farms f ON br.farm_id = f.farm_id
       WHERE br.request_id = ?
@@ -169,27 +169,20 @@ router.get('/:id', asyncHandler(async (req, res) => {
     
     const request = burnRequest[0];
     
-    // Parse GeoJSON data
-    try {
-      request.field_boundary = JSON.parse(request.field_boundary);
-      request.farm_location = JSON.parse(request.farm_location);
-    } catch (e) {
-      logger.warn('Failed to parse GeoJSON data', { burnRequestId: id });
-    }
+    // Get associated weather data (handle different column names)
+    const burnDate = request.burn_date || request.requested_date;
+    const startTime = request.time_window_start || request.requested_window_start || '08:00';
     
-    // Get associated weather data
-    const weatherData = await query(`
+    const weatherData = burnDate ? await query(`
       SELECT * FROM weather_data
       WHERE DATE(timestamp) = DATE(?)
       ORDER BY ABS(TIMESTAMPDIFF(SECOND, timestamp, CONCAT(?, ' ', ?)))
       LIMIT 1
-    `, [request.burn_date, request.burn_date, request.time_window_start]);
+    `, [burnDate, burnDate, startTime]) : [];
     
-    // Get smoke predictions
+    // Get smoke predictions  
     const smokePredictions = await query(`
-      SELECT 
-        *,
-        ST_AsGeoJSON(affected_area) as affected_area
+      SELECT *
       FROM smoke_predictions
       WHERE burn_request_id = ?
       ORDER BY created_at DESC
@@ -211,7 +204,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     
     // Get related alerts
     const alerts = await query(`
-      SELECT type, title, message, severity, status, created_at
+      SELECT alert_type as type, message, severity, status, created_at
       FROM alerts
       WHERE burn_request_id = ?
       ORDER BY created_at DESC
