@@ -75,7 +75,8 @@ test.describe('BURNWISE Comprehensive Test Suite', () => {
       });
       
       expect(styles.backgroundClip).toContain('text');
-      expect(styles.textFillColor).toBe('transparent');
+      // Both 'transparent' and 'rgba(0, 0, 0, 0)' mean transparent
+      expect(['transparent', 'rgba(0, 0, 0, 0)']).toContain(styles.textFillColor);
       expect(styles.background).toContain('gradient');
     });
 
@@ -93,7 +94,7 @@ test.describe('BURNWISE Comprehensive Test Suite', () => {
       const video = page.locator('video');
       if (await video.count() > 0) {
         await expect(video.first()).toBeVisible();
-        const isPlaying = await video.evaluate(v => !v.paused);
+        const isPlaying = await video.first().evaluate(v => !v.paused);
         expect(isPlaying).toBeTruthy();
       }
     });
@@ -108,10 +109,10 @@ test.describe('BURNWISE Comprehensive Test Suite', () => {
 
     test('All landing page sections are visible', async ({ page }) => {
       const sections = [
-        'Real-time burn coordination',
-        'Multi-farm optimization',
-        'Weather integration',
-        'Smoke prediction'
+        'Multi-Farm Agricultural Burn Coordinator',
+        '5-Agent AI Coordination System',
+        'Advanced Technology Stack',
+        'Measurable Impact'
       ];
 
       for (const section of sections) {
