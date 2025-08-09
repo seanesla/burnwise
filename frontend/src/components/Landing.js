@@ -46,8 +46,9 @@ const Landing = ({ isInitialLoad = true }) => {
       
       // For fixed positioning (during animation), use viewport coordinates
       // For absolute positioning (after animation), we need page coordinates
-      const iTopViewport = titleRect.top - 105; // Viewport coordinates for fixed positioning - proper spacing
-      const iTopPage = titleRect.top + scrollTop - 105; // Page coordinates for absolute positioning
+      // Adjust Y position to place flame above the "I" - increase offset from 105 to 145
+      const iTopViewport = titleRect.top - 145; // Viewport coordinates for fixed positioning - flame above I
+      const iTopPage = titleRect.top + scrollTop - 145; // Page coordinates for absolute positioning
       
       console.log('Title rect:', {
         left: titleRect.left,
@@ -199,7 +200,7 @@ const Landing = ({ isInitialLoad = true }) => {
     },
     revealing: {
       x: finalFlameX,
-      y: finalFlameYFixed,  // Use viewport coordinates
+      y: finalFlameYAbsolute,  // Use page coordinates for absolute positioning
       scale: 0.361,
       opacity: 1,
       transition: { 
@@ -218,7 +219,7 @@ const Landing = ({ isInitialLoad = true }) => {
           times: [0, 0.4, 1],
           // Move up first, then settle to final height
           type: "keyframes",
-          values: [viewportCenterY, viewportCenterY - 150, finalFlameYFixed]
+          values: [viewportCenterY, viewportCenterY - 150, finalFlameYAbsolute]
         },
         scale: { duration: 0.1 }, // Keep scale constant
         opacity: { duration: 0.1 } // Keep opacity constant
@@ -226,7 +227,7 @@ const Landing = ({ isInitialLoad = true }) => {
     },
     complete: {
       x: finalFlameX,
-      y: finalFlameYFixed,  // Keep using viewport coordinates since position is fixed
+      y: finalFlameYAbsolute,  // Use page coordinates for absolute positioning
       scale: 0.361,
       opacity: 1,
     }
@@ -281,7 +282,7 @@ const Landing = ({ isInitialLoad = true }) => {
         initial="startup"
         animate={animationPhase}
         style={{
-          position: 'fixed',  // Always use fixed positioning
+          position: 'absolute',  // Use absolute positioning to scroll with page
           top: 0,
           left: 0,
           width: 180,
