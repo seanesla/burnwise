@@ -148,14 +148,14 @@ class AlertsAgent {
     try {
       const deliveryHistory = await query(`
         SELECT 
-          type,
-          status,
+          alert_type as type,
+          delivery_status as status,
           delivery_method as sent_via,
           COUNT(*) as count,
           AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(delivered_at, created_at))) as avg_delivery_time
         FROM alerts
         WHERE created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
-        GROUP BY type, status, delivery_method
+        GROUP BY alert_type, delivery_status, delivery_method
       `);
       
       // Process delivery statistics
@@ -732,32 +732,31 @@ class AlertsAgent {
 
   async storeAlert(alertData, alertMessage, recipients) {
     try {
-      const deliveryChannels = recipients.reduce((channels, recipient) => {
-        recipient.channels.forEach(channel => {
-          if (!channels[channel]) channels[channel] = [];
-          channels[channel].push({
-            name: recipient.name,
-            phone: recipient.phone,
-            email: recipient.email,
-            type: recipient.type
-          });
-        });
-        return channels;
-      }, {});
+      // Determine primary delivery method (first available)
+      const primaryMethod = alertData.channels.includes('sms') ? 'sms' : 
+                           alertData.channels.includes('email') ? 'email' :
+                           alertData.channels.includes('push') ? 'push' : 'in_app';
+      
+      // Get first recipient contact
+      const primaryRecipient = recipients.length > 0 ? 
+        (recipients[0].phone || recipients[0].email || null) : null;
       
       const result = await query(`
         INSERT INTO alerts (
           alert_type, farm_id, burn_request_id, message,
-          severity, status, delivery_method, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+          severity, status, delivery_method, recipient_contact, 
+          delivery_status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `, [
         alertData.type,
         alertData.farm_id,
         alertData.burn_request_id,
         `${alertData.title || 'Alert'}: ${alertMessage.content}`,
-        alertData.severity,
-        'pending',
-        JSON.stringify(deliveryChannels)
+        alertData.severity || 'info',
+        'pending',  // For 'status' column
+        primaryMethod,  // Single enum value for delivery_method
+        primaryRecipient,
+        'pending'  // For 'delivery_status' column
       ]);
       
       return result.insertId;
@@ -769,13 +768,19 @@ class AlertsAgent {
 
   async updateAlertDeliveryStatus(alertId, channel, recipient, status, externalId = null, errorMessage = null) {
     try {
+      // Map status to appropriate delivery_status value
+      const deliveryStatus = status === 'sent' ? 'sent' : 
+                           status === 'delivered' ? 'delivered' :
+                           status === 'failed' ? 'failed' : 'pending';
+      
       await query(`
         UPDATE alerts 
         SET 
-          status = ?,
-          updated_at = NOW()
+          delivery_status = ?,
+          delivered_at = CASE WHEN ? = 'delivered' THEN NOW() ELSE delivered_at END,
+          delivery_attempts = delivery_attempts + 1
         WHERE alert_id = ?
-      `, [status, alertId]);
+      `, [deliveryStatus, deliveryStatus, alertId]);
       
       // Could also store detailed delivery tracking in a separate table
       
@@ -848,7 +853,7 @@ class AlertsAgent {
       const result = await query(`
         DELETE FROM alerts
         WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
-        AND status IN ('sent', 'resolved')
+        AND (delivery_status IN ('sent', 'delivered') OR status IN ('completed', 'cancelled'))
       `);
       
       logger.agent(this.agentName, 'info', `Cleaned up ${result.affectedRows} old alerts`);
@@ -862,12 +867,12 @@ class AlertsAgent {
     try {
       const stats = await query(`
         SELECT 
-          type,
-          status,
+          alert_type as type,
+          delivery_status as status,
           COUNT(*) as count
         FROM alerts
         WHERE created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
-        GROUP BY type, status
+        GROUP BY alert_type, delivery_status
       `);
       
       // Update hourly statistics
@@ -923,7 +928,8 @@ class AlertsAgent {
     
     // Mark as failed if too old (over 1 hour)
     if (Date.now() - new Date(alert.created_at).getTime() > 60 * 60 * 1000) {
-      await query('UPDATE alerts SET status = ? WHERE alert_id = ?', ['failed', alert.id]);
+      // Use 'cancelled' for status and 'failed' for delivery_status
+      await query('UPDATE alerts SET status = ?, delivery_status = ? WHERE alert_id = ?', ['cancelled', 'failed', alert.id]);
     }
   }
 
@@ -942,9 +948,9 @@ class AlertsAgent {
       const alertStats = await query(`
         SELECT 
           COUNT(*) as total_alerts,
-          COUNT(CASE WHEN status = 'sent' THEN 1 END) as sent_alerts,
-          COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_alerts,
-          COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_alerts
+          COUNT(CASE WHEN delivery_status = 'sent' THEN 1 END) as sent_alerts,
+          COUNT(CASE WHEN delivery_status = 'pending' THEN 1 END) as pending_alerts,
+          COUNT(CASE WHEN delivery_status = 'failed' THEN 1 END) as failed_alerts
         FROM alerts
         WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
       `);
