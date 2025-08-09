@@ -299,7 +299,7 @@ class OptimizerAgent {
         
       } catch (error) {
         logger.agent(this.agentName, 'warn', 'Burn request validation failed', {
-          burnRequestId: request.id,
+          burnRequestId: request.id || request.request_id || 'unknown',
           error: error.message
         });
       }
@@ -367,15 +367,17 @@ class OptimizerAgent {
     const matrix = {};
     
     for (let i = 0; i < requests.length; i++) {
-      matrix[requests[i].id] = {};
+      const id1 = requests[i].id || requests[i].request_id;
+      matrix[id1] = {};
       
       for (let j = 0; j < requests.length; j++) {
         if (i !== j) {
+          const id2 = requests[j].id || requests[j].request_id;
           const distance = this.calculateDistance(
             requests[i].field_boundary,
             requests[j].field_boundary
           );
-          matrix[requests[i].id][requests[j].id] = distance;
+          matrix[id1][id2] = distance;
         }
       }
     }
@@ -428,10 +430,12 @@ class OptimizerAgent {
     
     // Initialize conflict matrix
     requests.forEach(req1 => {
-      conflicts[req1.id] = {};
+      const id1 = req1.id || req1.request_id;
+      conflicts[id1] = {};
       requests.forEach(req2 => {
-        if (req1.id !== req2.id) {
-          conflicts[req1.id][req2.id] = 0; // Default no conflict
+        const id2 = req2.id || req2.request_id;
+        if (id1 !== id2) {
+          conflicts[id1][id2] = 0; // Default no conflict
         }
       });
     });
