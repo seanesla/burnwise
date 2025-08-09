@@ -995,31 +995,33 @@ class OptimizerAgent {
       // Store main schedule record
       const scheduleResult = await query(`
         INSERT INTO schedules (
-          date, optimization_score, total_conflicts,
-          algorithm_version, created_at
-        ) VALUES (?, ?, ?, ?, NOW())
+          date, optimization_score, total_conflicts, created_at
+        ) VALUES (?, ?, ?, NOW())
       `, [
         schedule.date,
         metrics.overallScore,
-        metrics.totalConflicts,
-        `${this.agentName}_v${this.version}`
+        metrics.totalConflicts
       ]);
       
       const scheduleId = scheduleResult.insertId;
       
       // Store individual schedule items
       for (const item of schedule.items) {
+        // Convert decimal time to datetime string for the date
+        const scheduleDate = schedule.date;
+        const startDateTime = `${scheduleDate} ${this.decimalToTimeString(item.assignedTimeStart)}:00`;
+        const endDateTime = `${scheduleDate} ${this.decimalToTimeString(item.assignedTimeEnd)}:00`;
+        
         await query(`
           INSERT INTO schedule_items (
-            schedule_id, burn_request_id, assigned_time_start,
-            assigned_time_end, conflict_score, created_at
-          ) VALUES (?, ?, ?, ?, ?, NOW())
+            schedule_id, burn_request_id, scheduled_start,
+            scheduled_end, created_at
+          ) VALUES (?, ?, ?, ?, NOW())
         `, [
           scheduleId,
           item.burnRequestId,
-          item.assignedTimeStart,
-          item.assignedTimeEnd,
-          item.conflictScore
+          startDateTime,
+          endDateTime
         ]);
       }
       
