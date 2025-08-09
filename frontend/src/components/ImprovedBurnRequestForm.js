@@ -299,14 +299,18 @@ const ImprovedBurnRequestForm = () => {
     }
   };
 
+  // Crop types must match backend validation schema
   const cropTypes = [
-    'Wheat Stubble',
-    'Corn Residue',
-    'Soybean Stubble',
-    'Rice Straw',
-    'Sugarcane',
-    'Grass Pasture',
-    'Other'
+    { value: 'wheat', label: 'Wheat' },
+    { value: 'corn', label: 'Corn' },
+    { value: 'rice', label: 'Rice' },
+    { value: 'barley', label: 'Barley' },
+    { value: 'oats', label: 'Oats' },
+    { value: 'sorghum', label: 'Sorghum' },
+    { value: 'cotton', label: 'Cotton' },
+    { value: 'soybeans', label: 'Soybeans' },
+    { value: 'sunflower', label: 'Sunflower' },
+    { value: 'other', label: 'Other' }
   ];
 
   return (
@@ -426,7 +430,7 @@ const ImprovedBurnRequestForm = () => {
                 >
                   <option value="">Select crop type...</option>
                   {cropTypes.map(crop => (
-                    <option key={crop} value={crop}>{crop}</option>
+                    <option key={crop.value} value={crop.value}>{crop.label}</option>
                   ))}
                 </select>
               </div>
