@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import LoadingSpinner from './LoadingSpinner';
+import MapboxWebGLHandler from './MapboxWebGLHandler';
 
 const MapOptimized = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -27,12 +28,47 @@ const MapOptimized = () => {
     loadMapbox();
   }, []);
 
+  // Cleanup function for map
+  const cleanupMap = useCallback(() => {
+    if (map.current) {
+      try {
+        // Remove all sources and layers
+        if (map.current.getStyle()) {
+          const style = map.current.getStyle();
+          if (style.layers) {
+            style.layers.forEach(layer => {
+              if (layer.id.includes('burn-')) {
+                map.current.removeLayer(layer.id);
+              }
+            });
+          }
+          if (style.sources) {
+            Object.keys(style.sources).forEach(source => {
+              if (source.includes('burn-')) {
+                map.current.removeSource(source);
+              }
+            });
+          }
+        }
+        
+        // Remove the map
+        map.current.remove();
+        map.current = null;
+      } catch (err) {
+        console.error('Error cleaning up map:', err);
+      }
+    }
+  }, []);
+
   // Initialize map after Mapbox is loaded
   useEffect(() => {
     if (!mapboxgl || !mapContainer.current || map.current) return;
 
     try {
       mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
+      
+      // Enable WebGL context preservation
+      mapboxgl.prewarm();
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -41,7 +77,9 @@ const MapOptimized = () => {
         zoom: 4,
         pitch: 0,
         bearing: 0,
-        attributionControl: false
+        attributionControl: false,
+        preserveDrawingBuffer: true, // Helps with context recovery
+        failIfMajorPerformanceCaveat: false // Don't fail on performance issues
       });
 
       // Add navigation controls
@@ -71,19 +109,24 @@ const MapOptimized = () => {
         fetchBurnRequests();
       });
 
-      // Cleanup
-      return () => {
-        if (map.current) {
-          map.current.remove();
-          map.current = null;
+      // Handle errors
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        if (e.error && e.error.message && e.error.message.includes('WebGL')) {
+          setError('WebGL error detected. The map may need to be reloaded.');
         }
+      });
+      
+      // Cleanup on unmount
+      return () => {
+        cleanupMap();
       };
     } catch (err) {
       console.error('Map initialization error:', err);
       setError('Failed to initialize map');
       setLoading(false);
     }
-  }, [mapboxgl]);
+  }, [mapboxgl, cleanupMap]);
 
   const fetchBurnRequests = async () => {
     try {
@@ -205,9 +248,30 @@ const MapOptimized = () => {
     );
   }
 
+  // Handle WebGL context issues
+  const handleContextLost = useCallback(() => {
+    console.log('WebGL context lost in MapOptimized');
+    cleanupMap();
+    setMapLoaded(false);
+    setLoading(true);
+  }, [cleanupMap]);
+
+  const handleContextRestored = useCallback(() => {
+    console.log('WebGL context restored in MapOptimized');
+    // Map will be re-initialized by the effect hook
+    setMapboxgl(null);
+    setTimeout(() => {
+      window.location.reload(); // Simplest way to restore
+    }, 500);
+  }, []);
+
   return (
-    <div className="relative h-screen w-full bg-gradient-dark">
-      {loading && (
+    <MapboxWebGLHandler 
+      onContextLost={handleContextLost}
+      onContextRestored={handleContextRestored}
+    >
+      <div className="relative h-screen w-full bg-gradient-dark">
+        {loading && (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -263,7 +327,8 @@ const MapOptimized = () => {
           </div>
         </motion.div>
       )}
-    </div>
+      </div>
+    </MapboxWebGLHandler>
   );
 };
 
