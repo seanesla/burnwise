@@ -1007,10 +1007,10 @@ class OptimizerAgent {
       
       // Store individual schedule items
       for (const item of schedule.items) {
-        // Convert decimal time to datetime string for the date
+        // Create datetime strings from the already-formatted time strings
         const scheduleDate = schedule.date;
-        const startDateTime = `${scheduleDate} ${this.decimalToTimeString(item.assignedTimeStart)}:00`;
-        const endDateTime = `${scheduleDate} ${this.decimalToTimeString(item.assignedTimeEnd)}:00`;
+        const startDateTime = `${scheduleDate} ${item.assignedTimeStart}:00`;
+        const endDateTime = `${scheduleDate} ${item.assignedTimeEnd}:00`;
         
         await query(`
           INSERT INTO schedule_items (
