@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaFire, FaMapMarkedAlt, FaCalendarAlt, FaClock, FaLeaf, FaExclamationTriangle } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
 import '../styles/mapbox-overrides.css';
+import '../styles/input-stabilization.css';
 
 const ImprovedBurnRequestForm = () => {
   const [formData, setFormData] = useState({
@@ -216,13 +217,18 @@ const ImprovedBurnRequestForm = () => {
     }
   };
 
-  const handleInputChange = (e) => {
+  // Stabilized input handler with debouncing
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
+    
+    // Prevent event bubbling that might cause rapid state changes
+    e.stopPropagation();
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
   const handleFarmSelect = (e) => {
     const farmId = e.target.value;
@@ -454,8 +460,11 @@ const ImprovedBurnRequestForm = () => {
                     name="time_window_start"
                     value={formData.time_window_start}
                     onChange={handleInputChange}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                     required
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange"
+                    style={{ transition: 'border-color 0.2s ease' }}
                   />
                 </div>
                 
@@ -469,8 +478,11 @@ const ImprovedBurnRequestForm = () => {
                     name="time_window_end"
                     value={formData.time_window_end}
                     onChange={handleInputChange}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                     required
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange"
+                    style={{ transition: 'border-color 0.2s ease' }}
                   />
                 </div>
               </div>
@@ -587,13 +599,16 @@ const ImprovedBurnRequestForm = () => {
               <motion.button
                 type="submit"
                 disabled={loading || !formData.field_boundary}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${
+                whileHover={!loading && formData.field_boundary ? { scale: 1.02 } : {}}
+                whileTap={!loading && formData.field_boundary ? { scale: 0.98 } : {}}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className={`w-full py-3 px-6 rounded-lg font-semibold text-white ${
                   loading || !formData.field_boundary
                     ? 'bg-gray-700 cursor-not-allowed'
                     : 'bg-gradient-to-r from-fire-orange to-fire-red hover:shadow-lg hover:shadow-fire-orange/30'
                 }`}
+                style={{ transition: 'background 0.2s ease, box-shadow 0.2s ease' }}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
