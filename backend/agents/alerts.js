@@ -741,6 +741,16 @@ class AlertsAgent {
       const primaryRecipient = recipients.length > 0 ? 
         (recipients[0].phone || recipients[0].email || null) : null;
       
+      // Map severity to valid enum values
+      let dbSeverity = 'info';
+      if (alertData.severity === 'critical' || alertData.severity === 'high') {
+        dbSeverity = 'critical';
+      } else if (alertData.severity === 'warning' || alertData.severity === 'medium') {
+        dbSeverity = 'warning';
+      } else {
+        dbSeverity = 'info';
+      }
+      
       const result = await query(`
         INSERT INTO alerts (
           alert_type, farm_id, burn_request_id, message,
@@ -752,7 +762,7 @@ class AlertsAgent {
         alertData.farm_id,
         alertData.burn_request_id,
         `${alertData.title || 'Alert'}: ${alertMessage.content}`,
-        alertData.severity || 'info',
+        dbSeverity,
         'pending',  // For 'status' column
         primaryMethod,  // Single enum value for delivery_method
         primaryRecipient,
