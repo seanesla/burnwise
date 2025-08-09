@@ -266,7 +266,15 @@ class OptimizerAgent {
     const validatedRequests = [];
     
     for (const request of burnRequests) {
+      // Ensure request has an ID
+      const requestId = request.id || request.request_id;
+      if (!requestId) {
+        logger.agent(this.agentName, 'warn', 'Burn request missing ID', { request });
+        continue;
+      }
+      
       try {
+        
         // Validate time windows - handle both column naming conventions
         const timeWindowStart = request.time_window_start || request.requested_window_start || request.requested_start_time;
         const timeWindowEnd = request.time_window_end || request.requested_window_end || request.requested_end_time;
@@ -280,7 +288,7 @@ class OptimizerAgent {
         
         if (endTime - startTime < this.constraints.minTimeSlot) {
           logger.agent(this.agentName, 'warn', 'Burn request time window too small', {
-            burnRequestId: request.id,
+            burnRequestId: requestId,
             timeWindow: `${request.time_window_start}-${request.time_window_end}`
           });
           continue;
@@ -291,6 +299,7 @@ class OptimizerAgent {
         
         validatedRequests.push({
           ...request,
+          id: requestId,  // Ensure consistent id field
           startTime,
           endTime,
           duration: endTime - startTime,
@@ -299,7 +308,7 @@ class OptimizerAgent {
         
       } catch (error) {
         logger.agent(this.agentName, 'warn', 'Burn request validation failed', {
-          burnRequestId: request.id || request.request_id || 'unknown',
+          burnRequestId: requestId || 'unknown',
           error: error.message
         });
       }
