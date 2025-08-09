@@ -90,6 +90,189 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /api/schedule/calendar
+ * Get schedule data for calendar view with date range
+ */
+router.get('/calendar', asyncHandler(async (req, res) => {
+  const { startDate, endDate } = req.query;
+  
+  try {
+    // Validate date range
+    if (!startDate || !endDate) {
+      throw new ValidationError('Start date and end date are required', 'query');
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new ValidationError('Invalid date format. Use YYYY-MM-DD', 'date');
+    }
+    
+    if (start > end) {
+      throw new ValidationError('Start date must be before end date', 'date_range');
+    }
+    
+    // Get all schedules and burn requests in date range
+    const scheduleData = await query(`
+      SELECT 
+        s.id as schedule_id,
+        s.date as schedule_date,
+        s.optimization_score,
+        s.total_conflicts,
+        si.burn_request_id,
+        si.scheduled_start_time,
+        si.scheduled_end_time,
+        br.farm_id,
+        br.field_id,
+        br.acreage,
+        br.crop_type,
+        br.status,
+        br.priority_score,
+        f.farm_name,
+        f.owner_name
+      FROM schedules s
+      LEFT JOIN schedule_items si ON s.id = si.schedule_id
+      LEFT JOIN burn_requests br ON si.burn_request_id = br.request_id
+      LEFT JOIN farms f ON br.farm_id = f.farm_id
+      WHERE s.date BETWEEN ? AND ?
+      ORDER BY s.date, si.scheduled_start_time
+    `, [startDate, endDate]);
+    
+    // Get unscheduled burn requests in date range
+    const unscheduledBurns = await query(`
+      SELECT 
+        br.request_id,
+        br.farm_id,
+        br.field_id,
+        br.acreage,
+        br.crop_type,
+        br.requested_date,
+        br.requested_window_start,
+        br.requested_window_end,
+        br.status,
+        br.priority_score,
+        f.farm_name,
+        f.owner_name
+      FROM burn_requests br
+      JOIN farms f ON br.farm_id = f.farm_id
+      WHERE br.requested_date BETWEEN ? AND ?
+      AND br.request_id NOT IN (
+        SELECT burn_request_id FROM schedule_items
+      )
+      AND br.status IN ('pending', 'approved')
+      ORDER BY br.requested_date, br.priority_score DESC
+    `, [startDate, endDate]);
+    
+    // Organize data by date for calendar display
+    const calendarData = {};
+    
+    // Process scheduled burns
+    scheduleData.forEach(item => {
+      const dateKey = item.schedule_date ? new Date(item.schedule_date).toISOString().split('T')[0] : null;
+      if (!dateKey) return;
+      
+      if (!calendarData[dateKey]) {
+        calendarData[dateKey] = {
+          date: dateKey,
+          schedule_id: item.schedule_id,
+          optimization_score: item.optimization_score,
+          total_conflicts: item.total_conflicts,
+          scheduled_burns: [],
+          unscheduled_burns: [],
+          total_acres: 0,
+          burn_count: 0
+        };
+      }
+      
+      if (item.burn_request_id) {
+        calendarData[dateKey].scheduled_burns.push({
+          burn_request_id: item.burn_request_id,
+          farm_name: item.farm_name,
+          field_id: item.field_id,
+          acres: item.acreage,
+          crop_type: item.crop_type,
+          scheduled_time: `${item.scheduled_start_time} - ${item.scheduled_end_time}`,
+          status: item.status,
+          priority_score: item.priority_score
+        });
+        calendarData[dateKey].total_acres += item.acreage || 0;
+        calendarData[dateKey].burn_count++;
+      }
+    });
+    
+    // Process unscheduled burns
+    unscheduledBurns.forEach(burn => {
+      const dateKey = new Date(burn.requested_date).toISOString().split('T')[0];
+      
+      if (!calendarData[dateKey]) {
+        calendarData[dateKey] = {
+          date: dateKey,
+          schedule_id: null,
+          optimization_score: null,
+          total_conflicts: 0,
+          scheduled_burns: [],
+          unscheduled_burns: [],
+          total_acres: 0,
+          burn_count: 0
+        };
+      }
+      
+      calendarData[dateKey].unscheduled_burns.push({
+        burn_request_id: burn.request_id,
+        farm_name: burn.farm_name,
+        field_id: burn.field_id,
+        acres: burn.acreage,
+        crop_type: burn.crop_type,
+        requested_time: `${burn.requested_window_start} - ${burn.requested_window_end}`,
+        status: burn.status,
+        priority_score: burn.priority_score
+      });
+    });
+    
+    // Convert to array and sort by date
+    const calendarArray = Object.values(calendarData).sort((a, b) => 
+      new Date(a.date) - new Date(b.date)
+    );
+    
+    // Calculate summary statistics
+    const summary = {
+      total_days: calendarArray.length,
+      total_scheduled_burns: scheduleData.filter(item => item.burn_request_id).length,
+      total_unscheduled_burns: unscheduledBurns.length,
+      days_with_schedules: calendarArray.filter(day => day.schedule_id).length,
+      days_with_unscheduled: calendarArray.filter(day => day.unscheduled_burns.length > 0).length,
+      total_acres_scheduled: calendarArray.reduce((sum, day) => sum + day.total_acres, 0)
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        date_range: {
+          start: startDate,
+          end: endDate
+        },
+        calendar: calendarArray,
+        summary
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Calendar schedule retrieval failed', { 
+      startDate, 
+      endDate, 
+      error: error.message 
+    });
+    
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    
+    throw new DatabaseError('Failed to retrieve calendar schedule', error);
+  }
+}));
+
+/**
  * GET /api/schedule/:date
  * Get optimized schedule for a specific date
  */
