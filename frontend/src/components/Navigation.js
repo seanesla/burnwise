@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import AnimatedFlameLogo from './AnimatedFlameLogo';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import '../styles/Navigation.css';
 
 const Navigation = () => {

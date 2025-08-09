@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import AnimatedFlameLogo from './AnimatedFlameLogo';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
 import '../styles/Landing.css';
 
@@ -46,9 +46,9 @@ const Landing = ({ isInitialLoad = true }) => {
       
       // For fixed positioning (during animation), use viewport coordinates
       // For absolute positioning (after animation), we need page coordinates
-      // Adjust Y position to place flame above the "I" - increase offset from 105 to 145
-      const iTopViewport = titleRect.top - 145; // Viewport coordinates for fixed positioning - flame above I
-      const iTopPage = titleRect.top + scrollTop - 145; // Page coordinates for absolute positioning
+      // Adjust Y position to place flame above the "I" - flame bottom should just touch top of I
+      const iTopViewport = titleRect.top - 180; // Viewport coordinates for fixed positioning - flame above I
+      const iTopPage = titleRect.top + scrollTop - 180; // Page coordinates for absolute positioning
       
       console.log('Title rect:', {
         left: titleRect.left,

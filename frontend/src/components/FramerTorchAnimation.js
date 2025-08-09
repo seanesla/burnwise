@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import AnimatedFlameLogo from "./AnimatedFlameLogo";
+import AnimatedFlameLogo from "./animations/logos/AnimatedFlameLogo";
 
 const FramerTorchAnimation = ({ onComplete }) => {
   const [phase, setPhase] = useState("center"); // 'center', 'morphing', 'complete'

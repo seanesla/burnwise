@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import AnimatedFlameLogo from "./AnimatedFlameLogo";
+import AnimatedFlameLogo from "./animations/logos/AnimatedFlameLogo";
 
 /**
  * Unified flame animation that transitions from center to above I and stays there

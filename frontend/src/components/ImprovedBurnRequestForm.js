@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaFire, FaMapMarkedAlt, FaCalendarAlt, FaClock, FaLeaf, FaExclamationTriangle } from 'react-icons/fa';
+import { FaFire, FaMapMarkedAlt, FaCalendarAlt, FaClock, FaLeaf, FaExclamationTriangle, FaCheck, FaUser, FaShieldAlt, FaCloudSun, FaRoute } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
+import '../styles/BurnRequestRedesign.css';
 import '../styles/mapbox-overrides.css';
 import '../styles/input-stabilization.css';
 
@@ -31,6 +32,17 @@ const ImprovedBurnRequestForm = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [drawingMode, setDrawingMode] = useState(false);
   const [mapboxgl, setMapboxgl] = useState(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [weatherChecked, setWeatherChecked] = useState(false);
+  const [weatherData, setWeatherData] = useState(null);
+  const [safetyChecklist, setSafetyChecklist] = useState({
+    fireBreaks: false,
+    waterSupply: false,
+    notifications: false,
+    equipment: false,
+    permits: false,
+    weather: false
+  });
   const mapContainer = useRef(null);
   const map = useRef(null);
   const draw = useRef(null);
@@ -183,7 +195,7 @@ const ImprovedBurnRequestForm = () => {
         canvas.addEventListener('webglcontextlost', (event) => {
           event.preventDefault();
           console.warn('WebGL context lost in burn request form');
-          toast.warning('Map graphics temporarily lost. Attempting recovery...');
+          toast('Map graphics temporarily lost. Attempting recovery...', { icon: '⚠️' });
         });
         
         canvas.addEventListener('webglcontextrestored', () => {
@@ -260,6 +272,44 @@ const ImprovedBurnRequestForm = () => {
     } catch (error) {
       console.error('Failed to fetch farms:', error);
       toast.error('Failed to load farms');
+    }
+  };
+
+  const checkWeatherConditions = async () => {
+    if (!formData.farm_id || !formData.burn_date) {
+      toast.error('Please select a farm and burn date first');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const farm = farms.find(f => f.id === parseInt(formData.farm_id));
+      if (!farm) return;
+
+      const response = await axios.get('/api/weather/forecast', {
+        params: {
+          lat: farm.lat,
+          lon: farm.lon,
+          date: formData.burn_date
+        }
+      });
+
+      setWeatherData(response.data);
+      setWeatherChecked(true);
+      
+      const conditions = response.data.conditions;
+      if (conditions && conditions.wind_speed <= formData.preferred_conditions.max_wind_speed &&
+          conditions.humidity >= formData.preferred_conditions.min_humidity &&
+          conditions.humidity <= formData.preferred_conditions.max_humidity) {
+        toast.success('Weather conditions are suitable for burning');
+      } else {
+        toast('Weather conditions may not be optimal', { icon: '⚠️' });
+      }
+    } catch (error) {
+      console.error('Failed to check weather:', error);
+      toast.error('Failed to check weather conditions');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -359,82 +409,141 @@ const ImprovedBurnRequestForm = () => {
     { value: 'other', label: 'Other' }
   ];
 
+  const getProgressPercentage = () => {
+    const totalSteps = 4;
+    return ((currentStep - 1) / (totalSteps - 1)) * 100;
+  };
+
+  const handleChecklistChange = (item) => {
+    setSafetyChecklist(prev => ({
+      ...prev,
+      [item]: !prev[item]
+    }));
+  };
+
+  const isFormValid = () => {
+    return formData.field_boundary && 
+           formData.farm_id && 
+           formData.field_name && 
+           formData.crop_type && 
+           formData.burn_date && 
+           formData.time_window_start && 
+           formData.time_window_end && 
+           formData.estimated_duration;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-dark p-6">
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <FaFire className="text-fire-orange" />
-            Submit Burn Request
-          </h1>
-          <p className="text-gray-400">
-            Draw your field boundary on the map and provide burn details
-          </p>
-        </motion.div>
+    <div className="burn-request-container">
+      {/* Map Section - Left Column */}
+      <div className="map-section">
+        <div className="map-header">
+          <div className="map-title">
+            <FaMapMarkedAlt />
+            <span>Field Boundary</span>
+          </div>
+          <div className="drawing-tools">
+            <button 
+              className={`tool-btn ${drawingMode ? 'active' : ''}`}
+              onClick={() => setDrawingMode(!drawingMode)}
+            >
+              Draw Polygon
+            </button>
+            <button 
+              className="tool-btn"
+              onClick={() => {
+                if (draw.current) {
+                  draw.current.deleteAll();
+                  clearArea();
+                }
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+        
+        <div className="map-container">
+          <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+          
+          {!mapLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <LoadingSpinner size="large" />
+            </div>
+          )}
+          
+          {mapLoaded && formData.field_boundary && (
+            <div className="map-overlay-info">
+              <div className="area-info">
+                <div className="info-item">
+                  <span className="info-label">Field Area</span>
+                  <span className="info-value">{formData.acres} acres</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Status</span>
+                  <span className="info-value" style={{ color: '#22c55e' }}>Ready</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Map Section */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="glass-card p-6"
-          >
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <FaMapMarkedAlt className="text-fire-orange" />
-              Draw Field Boundary
-            </h2>
-            
-            <div className="relative">
-              <div 
-                ref={mapContainer} 
-                className="w-full h-96 rounded-lg overflow-hidden"
-              />
-              
-              {!mapLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-                  <LoadingSpinner size="large" />
-                </div>
-              )}
-              
-              {mapLoaded && formData.field_boundary && (
-                <div className="absolute top-4 right-4 bg-black/80 text-white px-3 py-2 rounded">
-                  Area: {formData.acres} acres
-                </div>
-              )}
+      {/* Form Section - Right Column */}
+      <div className="form-section">
+        {/* Progress Bar */}
+        <div className="progress-container">
+          <div className="progress-bar">
+            <div className="progress-steps">
+              <div className="progress-line">
+                <div 
+                  className="progress-line-fill" 
+                  style={{ width: `${getProgressPercentage()}%` }}
+                />
+              </div>
+              <div className={`progress-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
+                <div className="step-circle">1</div>
+                <span className="step-label">Farm Details</span>
+              </div>
+              <div className={`progress-step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
+                <div className="step-circle">2</div>
+                <span className="step-label">Burn Schedule</span>
+              </div>
+              <div className={`progress-step ${currentStep >= 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
+                <div className="step-circle">3</div>
+                <span className="step-label">Weather Check</span>
+              </div>
+              <div className={`progress-step ${currentStep >= 4 ? 'active' : ''} ${currentStep > 4 ? 'completed' : ''}`}>
+                <div className="step-circle">4</div>
+                <span className="step-label">Safety Review</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {/* Farm & Field Information Card */}
+          <div className="form-card">
+            <div className="card-header">
+              <div className="card-icon">
+                <FaUser />
+              </div>
+              <div className="card-title">
+                <h3>Farm & Field Information</h3>
+                <p>Select your farm and provide field details</p>
+              </div>
             </div>
             
-            <div className="mt-3">
-              <p className="text-gray-400 text-sm">
-                🔥 Click to draw points around your field. Double-click to complete the polygon.
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Use the field boundary tool (top left of map) to start drawing
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Form Section */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="glass-card p-6"
-          >
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Farm Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Select Farm
+            <div className="form-grid form-grid-2">
+              <div className="form-group">
+                <label className="form-label">
+                  Farm Selection <span className="required-mark">*</span>
                 </label>
                 <select
                   name="farm_id"
                   value={formData.farm_id}
                   onChange={handleFarmSelect}
                   required
-                  className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                  className="form-select"
                 >
                   <option value="">Choose a farm...</option>
                   {farms.map(farm => (
@@ -444,11 +553,10 @@ const ImprovedBurnRequestForm = () => {
                   ))}
                 </select>
               </div>
-
-              {/* Field Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Field Name/Identifier
+              
+              <div className="form-group">
+                <label className="form-label">
+                  Field Name <span className="required-mark">*</span>
                 </label>
                 <input
                   type="text"
@@ -457,22 +565,21 @@ const ImprovedBurnRequestForm = () => {
                   onChange={handleInputChange}
                   required
                   placeholder="e.g., North Field, Block A"
-                  className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-fire-orange transition-colors"
+                  className="form-input"
                 />
               </div>
-
-              {/* Crop Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+              
+              <div className="form-group">
+                <label className="form-label">
                   <FaLeaf className="inline mr-1" />
-                  Crop Type
+                  Crop Type <span className="required-mark">*</span>
                 </label>
                 <select
                   name="crop_type"
                   value={formData.crop_type}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                  className="form-select"
                 >
                   <option value="">Select crop type...</option>
                   {cropTypes.map(crop => (
@@ -480,12 +587,39 @@ const ImprovedBurnRequestForm = () => {
                   ))}
                 </select>
               </div>
+              
+              <div className="form-group">
+                <label className="form-label">
+                  Field Area
+                </label>
+                <input
+                  type="text"
+                  value={formData.acres ? `${formData.acres} acres` : 'Draw boundary on map'}
+                  readOnly
+                  className="form-input"
+                  style={{ backgroundColor: '#f9fafb' }}
+                />
+              </div>
+            </div>
+          </div>
 
-              {/* Burn Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+          {/* Burn Schedule Card */}
+          <div className="form-card">
+            <div className="card-header">
+              <div className="card-icon">
+                <FaCalendarAlt />
+              </div>
+              <div className="card-title">
+                <h3>Burn Schedule</h3>
+                <p>Set your preferred burn date and time window</p>
+              </div>
+            </div>
+            
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label">
                   <FaCalendarAlt className="inline mr-1" />
-                  Preferred Burn Date
+                  Preferred Burn Date <span className="required-mark">*</span>
                 </label>
                 <input
                   type="date"
@@ -494,99 +628,119 @@ const ImprovedBurnRequestForm = () => {
                   onChange={handleInputChange}
                   required
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                  className="form-input"
                 />
+                <span className="helper-text">Select a date at least 24 hours in advance</span>
               </div>
-
-              {/* Time Window */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+              
+              <div className="form-grid form-grid-3">
+                <div className="form-group">
+                  <label className="form-label">
                     <FaClock className="inline mr-1" />
-                    Start Time
+                    Start Time <span className="required-mark">*</span>
                   </label>
                   <input
                     type="time"
                     name="time_window_start"
                     value={formData.time_window_start}
                     onChange={handleInputChange}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
                     required
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange"
-                    style={{ transition: 'border-color 0.2s ease' }}
+                    className="form-input"
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group">
+                  <label className="form-label">
                     <FaClock className="inline mr-1" />
-                    End Time
+                    End Time <span className="required-mark">*</span>
                   </label>
                   <input
                     type="time"
                     name="time_window_end"
                     value={formData.time_window_end}
                     onChange={handleInputChange}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
                     required
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange"
-                    style={{ transition: 'border-color 0.2s ease' }}
+                    className="form-input"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">
+                    Duration (hours) <span className="required-mark">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="estimated_duration"
+                    value={formData.estimated_duration}
+                    onChange={handleInputChange}
+                    required
+                    min="1"
+                    max="24"
+                    placeholder="4"
+                    className="form-input"
                   />
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Estimated Duration */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Estimated Burn Duration (hours)
-                </label>
-                <input
-                  type="number"
-                  name="estimated_duration"
-                  value={formData.estimated_duration}
-                  onChange={handleInputChange}
-                  required
-                  min="1"
-                  max="24"
-                  placeholder="e.g., 4"
-                  className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-fire-orange transition-colors"
-                />
+          {/* Weather Preferences Card */}
+          <div className="form-card">
+            <div className="card-header">
+              <div className="card-icon">
+                <FaCloudSun />
               </div>
-
-              {/* Weather Preferences */}
-              <div className="bg-black/30 p-4 rounded-lg">
-                <h3 className="text-sm font-medium text-gray-300 mb-3">
-                  Preferred Weather Conditions
-                </h3>
-                
-                <div className="space-y-3">
+              <div className="card-title">
+                <h3>Weather Preferences</h3>
+                <p>Set your ideal weather conditions for burning</p>
+              </div>
+            </div>
+            
+            <div className="weather-grid">
+              <div className="slider-group">
+                <div className="slider-header">
+                  <span className="slider-label">Maximum Wind Speed</span>
+                  <span className="slider-value">{formData.preferred_conditions.max_wind_speed} mph</span>
+                </div>
+                <div className="slider-track">
+                  <div 
+                    className="slider-fill" 
+                    style={{ width: `${((formData.preferred_conditions.max_wind_speed - 5) / 15) * 100}%` }}
+                  />
+                  <input
+                    type="range"
+                    min="5"
+                    max="20"
+                    value={formData.preferred_conditions.max_wind_speed}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      preferred_conditions: {
+                        ...prev.preferred_conditions,
+                        max_wind_speed: parseInt(e.target.value)
+                      }
+                    }))}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                  <div 
+                    className="slider-thumb" 
+                    style={{ left: `${((formData.preferred_conditions.max_wind_speed - 5) / 15) * 100}%` }}
+                  />
+                </div>
+              </div>
+              
+              <div className="slider-group">
+                <div className="slider-header">
+                  <span className="slider-label">Humidity Range</span>
+                  <span className="slider-value">{formData.preferred_conditions.min_humidity}% - {formData.preferred_conditions.max_humidity}%</span>
+                </div>
+                <div className="form-grid form-grid-2">
                   <div>
-                    <label className="text-xs text-gray-400">
-                      Max Wind Speed: {formData.preferred_conditions.max_wind_speed} mph
-                    </label>
-                    <input
-                      type="range"
-                      min="5"
-                      max="20"
-                      value={formData.preferred_conditions.max_wind_speed}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        preferred_conditions: {
-                          ...prev.preferred_conditions,
-                          max_wind_speed: parseInt(e.target.value)
-                        }
-                      }))}
-                      className="w-full accent-fire-orange"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-xs text-gray-400">
-                      Humidity Range: {formData.preferred_conditions.min_humidity}% - {formData.preferred_conditions.max_humidity}%
-                    </label>
-                    <div className="flex gap-2">
+                    <span className="text-sm text-gray-600">Minimum</span>
+                    <div className="slider-track">
+                      <div 
+                        className="slider-fill" 
+                        style={{ width: `${((formData.preferred_conditions.min_humidity - 10) / 40) * 100}%` }}
+                      />
                       <input
                         type="range"
                         min="10"
@@ -599,7 +753,20 @@ const ImprovedBurnRequestForm = () => {
                             min_humidity: parseInt(e.target.value)
                           }
                         }))}
-                        className="w-full accent-fire-orange"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                      <div 
+                        className="slider-thumb" 
+                        style={{ left: `${((formData.preferred_conditions.min_humidity - 10) / 40) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600">Maximum</span>
+                    <div className="slider-track">
+                      <div 
+                        className="slider-fill" 
+                        style={{ width: `${((formData.preferred_conditions.max_humidity - 60) / 30) * 100}%` }}
                       />
                       <input
                         type="range"
@@ -613,67 +780,169 @@ const ImprovedBurnRequestForm = () => {
                             max_humidity: parseInt(e.target.value)
                           }
                         }))}
-                        className="w-full accent-fire-orange"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                      <div 
+                        className="slider-thumb" 
+                        style={{ left: `${((formData.preferred_conditions.max_humidity - 60) / 30) * 100}%` }}
                       />
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Additional Notes
-                </label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows="3"
-                  placeholder="Any special considerations..."
-                  className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-fire-orange transition-colors resize-none"
-                />
-              </div>
-
-              {/* Warning */}
-              {!formData.field_boundary && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                  <p className="text-yellow-400 text-sm flex items-center gap-2">
-                    <FaExclamationTriangle />
-                    Please draw your field boundary on the map
-                  </p>
+              
+              <button
+                type="button"
+                onClick={checkWeatherConditions}
+                className="btn-action btn-submit"
+                disabled={!formData.farm_id || !formData.burn_date}
+              >
+                <FaCloudSun />
+                Check Weather Conditions
+              </button>
+              
+              {weatherData && (
+                <div className={`weather-results ${weatherData.suitable ? 'suitable' : 'warning'}`}>
+                  <div className="weather-grid-display">
+                    <div className="weather-metric">
+                      <div className="weather-metric-label">Wind Speed</div>
+                      <div className="weather-metric-value">{weatherData.conditions?.wind_speed || 0} mph</div>
+                    </div>
+                    <div className="weather-metric">
+                      <div className="weather-metric-label">Humidity</div>
+                      <div className="weather-metric-value">{weatherData.conditions?.humidity || 0}%</div>
+                    </div>
+                    <div className="weather-metric">
+                      <div className="weather-metric-label">Temperature</div>
+                      <div className="weather-metric-value">{weatherData.conditions?.temperature || 0}°F</div>
+                    </div>
+                    <div className="weather-metric">
+                      <div className="weather-metric-label">Visibility</div>
+                      <div className="weather-metric-value">{weatherData.conditions?.visibility || 0} mi</div>
+                    </div>
+                  </div>
                 </div>
               )}
+            </div>
+          </div>
 
-              {/* Submit Button */}
-              <motion.button
-                type="submit"
-                disabled={loading || !formData.field_boundary}
-                whileHover={!loading && formData.field_boundary ? { scale: 1.02 } : {}}
-                whileTap={!loading && formData.field_boundary ? { scale: 0.98 } : {}}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                onMouseDown={(e) => e.stopPropagation()}
-                className={`w-full py-3 px-6 rounded-lg font-semibold text-white ${
-                  loading || !formData.field_boundary
-                    ? 'bg-gray-700 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-fire-orange to-fire-red hover:shadow-lg hover:shadow-fire-orange/30'
-                }`}
-                style={{ transition: 'background 0.2s ease, box-shadow 0.2s ease' }}
+          {/* Safety Checklist Card */}
+          <div className="form-card">
+            <div className="card-header">
+              <div className="card-icon">
+                <FaShieldAlt />
+              </div>
+              <div className="card-title">
+                <h3>Safety Checklist</h3>
+                <p>Confirm all safety measures are in place</p>
+              </div>
+            </div>
+            
+            <div className="checklist-grid">
+              <div 
+                className={`checkbox-item ${safetyChecklist.fireBreaks ? 'checked' : ''}`}
+                onClick={() => handleChecklistChange('fireBreaks')}
               >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <LoadingSpinner size="small" color="#fff" />
-                    Submitting...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <FaFire />
-                    Submit Burn Request
-                  </span>
-                )}
-              </motion.button>
-            </form>
-          </motion.div>
+                <div className="checkbox-custom" />
+                <span className="checkbox-label">Fire breaks prepared</span>
+              </div>
+              
+              <div 
+                className={`checkbox-item ${safetyChecklist.waterSupply ? 'checked' : ''}`}
+                onClick={() => handleChecklistChange('waterSupply')}
+              >
+                <div className="checkbox-custom" />
+                <span className="checkbox-label">Water supply available</span>
+              </div>
+              
+              <div 
+                className={`checkbox-item ${safetyChecklist.notifications ? 'checked' : ''}`}
+                onClick={() => handleChecklistChange('notifications')}
+              >
+                <div className="checkbox-custom" />
+                <span className="checkbox-label">Neighbors notified</span>
+              </div>
+              
+              <div 
+                className={`checkbox-item ${safetyChecklist.equipment ? 'checked' : ''}`}
+                onClick={() => handleChecklistChange('equipment')}
+              >
+                <div className="checkbox-custom" />
+                <span className="checkbox-label">Equipment ready</span>
+              </div>
+              
+              <div 
+                className={`checkbox-item ${safetyChecklist.permits ? 'checked' : ''}`}
+                onClick={() => handleChecklistChange('permits')}
+              >
+                <div className="checkbox-custom" />
+                <span className="checkbox-label">Permits obtained</span>
+              </div>
+              
+              <div 
+                className={`checkbox-item ${safetyChecklist.weather ? 'checked' : ''}`}
+                onClick={() => handleChecklistChange('weather')}
+              >
+                <div className="checkbox-custom" />
+                <span className="checkbox-label">Weather conditions verified</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Additional Notes Card */}
+          <div className="form-card">
+            <div className="card-header">
+              <div className="card-icon">
+                <FaRoute />
+              </div>
+              <div className="card-title">
+                <h3>Additional Notes</h3>
+                <p>Any special considerations or requirements</p>
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleInputChange}
+                rows="4"
+                placeholder="Enter any special instructions, access routes, or safety considerations..."
+                className="form-textarea"
+              />
+            </div>
+          </div>
+
+        </form>
+        
+        {/* Floating Action Buttons */}
+        <div className="floating-actions">
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="btn-action btn-cancel"
+          >
+            Cancel
+          </button>
+          
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={loading || !isFormValid()}
+            className="btn-action btn-submit"
+          >
+            {loading ? (
+              <>
+                <LoadingSpinner size="small" color="#fff" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <FaFire />
+                Submit Burn Request
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
