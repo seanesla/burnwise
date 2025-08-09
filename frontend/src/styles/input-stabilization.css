@@ -1,0 +1,125 @@
+/* Input Stabilization Fix - Prevents rapid cursor/click switching */
+
+/* Stabilize time inputs specifically */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  pointer-events: auto;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.8;
+  /* Prevent rapid state changes */
+  transition-delay: 50ms;
+}
+
+/* Fix for rapid hover state switching on all form inputs */
+.glass-card input[type="text"],
+.glass-card input[type="date"],
+.glass-card input[type="time"],
+.glass-card input[type="number"],
+.glass-card select,
+.glass-card textarea {
+  /* Remove conflicting transitions */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  /* Prevent transition on background to avoid flicker */
+  transition-property: border-color, box-shadow !important;
+  cursor: text;
+}
+
+/* Stabilize focus states */
+.glass-card input:focus,
+.glass-card select:focus,
+.glass-card textarea:focus {
+  /* Add small delay to prevent rapid switching */
+  transition-delay: 50ms;
+}
+
+/* Fix button hover states */
+.glass-card button,
+.glass-card .btn-primary,
+.glass-card .btn-secondary {
+  /* Prevent rapid transition loops */
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Prevent hover state propagation issues */
+.glass-card button:hover {
+  transition-delay: 0ms;
+}
+
+/* Fix for select dropdown arrow */
+select::-ms-expand {
+  cursor: pointer;
+}
+
+/* Stabilize Framer Motion buttons */
+button[type="submit"] {
+  /* Override Framer Motion inline styles */
+  pointer-events: auto !important;
+}
+
+/* Prevent parent hover from affecting children */
+.glass-card:hover input,
+.glass-card:hover select,
+.glass-card:hover textarea {
+  /* Don't inherit parent transitions */
+  transition-delay: 0ms !important;
+}
+
+/* Fix range input hover states */
+input[type="range"] {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+/* Stabilize checkbox and radio inputs */
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+  transition: none !important;
+}
+
+/* Fix z-index stacking issues */
+.glass-card {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-card input,
+.glass-card select,
+.glass-card textarea,
+.glass-card button {
+  position: relative;
+  z-index: 2;
+}
+
+/* Disable pointer events on decorative elements */
+.glass-card::before,
+.glass-card::after {
+  pointer-events: none !important;
+}
+
+/* Media query for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover effects on touch devices */
+  .glass-card:hover,
+  .glass-card input:hover,
+  .glass-card button:hover {
+    transform: none !important;
+  }
+}
