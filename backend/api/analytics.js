@@ -17,6 +17,130 @@ const analyticsRequestSchema = Joi.object({
 });
 
 /**
+ * GET /api/analytics/metrics
+ * Get dashboard metrics for real-time display
+ */
+router.get('/metrics', asyncHandler(async (req, res) => {
+  try {
+    // Get burn request metrics
+    const burnMetrics = await query(`
+      SELECT 
+        COUNT(*) as total_requests,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_burns,
+        COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_burns,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_burns,
+        COUNT(CASE WHEN requested_date = CURDATE() THEN 1 END) as today_burns,
+        COUNT(CASE WHEN requested_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 1 END) as week_burns,
+        SUM(acreage) as total_acreage,
+        AVG(priority_score) as avg_priority
+      FROM burn_requests
+      WHERE created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
+    `);
+
+    // Get farm metrics
+    const farmMetrics = await query(`
+      SELECT 
+        COUNT(DISTINCT f.farm_id) as active_farms,
+        COUNT(DISTINCT bf.field_id) as total_fields,
+        SUM(bf.area_hectares) as total_field_area
+      FROM farms f
+      LEFT JOIN burn_fields bf ON f.farm_id = bf.farm_id
+      WHERE f.farm_name NOT LIKE '%Test%' 
+        AND f.farm_name NOT LIKE '%Load%'
+    `);
+
+    // Get weather suitability metrics
+    const weatherMetrics = await query(`
+      SELECT 
+        COUNT(*) as weather_readings,
+        AVG(temperature) as avg_temperature,
+        AVG(wind_speed) as avg_wind_speed,
+        AVG(humidity) as avg_humidity,
+        COUNT(CASE 
+          WHEN temperature BETWEEN 45 AND 85 
+            AND humidity BETWEEN 30 AND 70
+            AND wind_speed BETWEEN 2 AND 15
+          THEN 1 
+        END) as suitable_conditions
+      FROM weather_data
+      WHERE timestamp > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    `);
+
+    // Get alert metrics
+    const alertMetrics = await query(`
+      SELECT 
+        COUNT(*) as total_alerts,
+        COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_alerts,
+        COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_alerts,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_alerts
+      FROM alerts
+      WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+    `);
+
+    // Get smoke prediction metrics  
+    const smokeMetrics = await query(`
+      SELECT 
+        COUNT(*) as total_predictions,
+        AVG(dispersion_radius_km) as avg_dispersion_radius,
+        AVG(confidence_score) as avg_confidence,
+        COUNT(CASE WHEN affected_population_estimate > 0 THEN 1 END) as predictions_with_conflicts
+      FROM smoke_predictions
+      WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+    `);
+
+    // Calculate burn suitability percentage
+    const suitabilityPercentage = weatherMetrics[0].weather_readings > 0 
+      ? Math.round((weatherMetrics[0].suitable_conditions / weatherMetrics[0].weather_readings) * 100)
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        burns: {
+          total: burnMetrics[0].total_requests || 0,
+          pending: burnMetrics[0].pending_burns || 0,
+          approved: burnMetrics[0].approved_burns || 0,
+          completed: burnMetrics[0].completed_burns || 0,
+          today: burnMetrics[0].today_burns || 0,
+          this_week: burnMetrics[0].week_burns || 0,
+          total_acreage: Math.round(burnMetrics[0].total_acreage || 0),
+          avg_priority: parseFloat(parseFloat(burnMetrics[0].avg_priority || 0).toFixed(2))
+        },
+        farms: {
+          active: farmMetrics[0].active_farms || 0,
+          total_fields: farmMetrics[0].total_fields || 0,
+          total_area_hectares: Math.round(farmMetrics[0].total_field_area || 0)
+        },
+        weather: {
+          current_temp: Math.round(weatherMetrics[0].avg_temperature || 0),
+          avg_wind_speed: parseFloat(parseFloat(weatherMetrics[0].avg_wind_speed || 0).toFixed(1)),
+          avg_humidity: Math.round(weatherMetrics[0].avg_humidity || 0),
+          suitability_percentage: suitabilityPercentage,
+          readings_24h: weatherMetrics[0].weather_readings || 0
+        },
+        alerts: {
+          total: alertMetrics[0].total_alerts || 0,
+          critical: alertMetrics[0].critical_alerts || 0,
+          high: alertMetrics[0].high_alerts || 0,
+          pending: alertMetrics[0].pending_alerts || 0
+        },
+        smoke: {
+          total_predictions: smokeMetrics[0].total_predictions || 0,
+          avg_dispersion_km: parseFloat(parseFloat(smokeMetrics[0].avg_dispersion_radius || 0).toFixed(2)),
+          avg_confidence: parseFloat(parseFloat(smokeMetrics[0].avg_confidence || 0).toFixed(2)),
+          with_conflicts: smokeMetrics[0].predictions_with_conflicts || 0
+        },
+        timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to retrieve analytics metrics', { error: error.message });
+    throw new DatabaseError('Failed to retrieve analytics metrics', error);
+  }
+}));
+
+/**
  * GET /api/analytics/dashboard
  * Get comprehensive dashboard analytics
  */
