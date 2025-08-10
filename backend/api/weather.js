@@ -22,12 +22,12 @@ const weatherAnalysisSchema = Joi.object({
 
 /**
  * GET /api/weather/current
- * Get current weather for default location (Kansas agricultural region)
+ * Get current weather for default location (California agricultural region)
  */
 router.get('/current', asyncHandler(async (req, res) => {
   try {
-    // Default to Kansas agricultural region if no location specified
-    const location = { lat: 39.05, lon: -95.7 };
+    // Default to Davis, California agricultural region if no location specified
+    const location = { lat: 38.544, lon: -121.740 };
     const currentWeather = await weatherAgent.getCurrentWeather(location);
     
     res.json({
