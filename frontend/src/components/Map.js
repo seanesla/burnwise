@@ -62,24 +62,38 @@ const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOStr
       return;
     }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [lng, lat],
-      zoom: zoom
-    });
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/satellite-v9', // Use stable satellite style
+        center: [lng, lat],
+        zoom: zoom,
+        attributionControl: true
+      });
 
-    map.current.on('load', () => {
-      addFarmLayers();
-      addBurnRequestLayers();
-      addSmokeDispersionLayers();
-    });
+      map.current.on('load', () => {
+        console.log('Map loaded successfully');
+        addFarmLayers();
+        addBurnRequestLayers();
+        addSmokeDispersionLayers();
+      });
 
-    map.current.on('move', () => {
-      setLng(map.current.getCenter().lng.toFixed(4));
-      setLat(map.current.getCenter().lat.toFixed(4));
-      setZoom(map.current.getZoom().toFixed(2));
-    });
+      map.current.on('error', (e) => {
+        console.error('Map error:', e);
+        if (e.error && e.error.status === 401) {
+          toast.error('Invalid Mapbox token. Please check your API key.');
+        }
+      });
+
+      map.current.on('move', () => {
+        setLng(map.current.getCenter().lng.toFixed(4));
+        setLat(map.current.getCenter().lat.toFixed(4));
+        setZoom(map.current.getZoom().toFixed(2));
+      });
+    } catch (error) {
+      console.error('Failed to initialize map:', error);
+      toast.error('Failed to load map. Please check console for details.');
+    }
 
     return () => {
       if (map.current) {

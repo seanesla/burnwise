@@ -21,6 +21,39 @@ const weatherAnalysisSchema = Joi.object({
 });
 
 /**
+ * GET /api/weather/current
+ * Get current weather for default location (Kansas agricultural region)
+ */
+router.get('/current', asyncHandler(async (req, res) => {
+  try {
+    // Default to Kansas agricultural region if no location specified
+    const location = { lat: 39.05, lon: -95.7 };
+    const currentWeather = await weatherAgent.getCurrentWeather(location);
+    
+    res.json({
+      success: true,
+      data: {
+        location,
+        temperature: currentWeather.temperature,
+        wind_speed: currentWeather.windSpeed,
+        humidity: currentWeather.humidity,
+        pressure: currentWeather.pressure,
+        visibility: currentWeather.visibility,
+        conditions: currentWeather.conditions,
+        weather: currentWeather,
+        cached: false
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Current weather fetch failed', { 
+      error: error.message 
+    });
+    throw error;
+  }
+}));
+
+/**
  * GET /api/weather/current/:lat/:lon
  * Get current weather for specific coordinates
  */

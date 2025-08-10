@@ -335,35 +335,109 @@ const CinematicDashboard = () => {
   });
   
   const [dataStreams, setDataStreams] = useState({
-    burns: Array(20).fill(0).map(() => Math.random()),
-    smoke: Array(20).fill(0).map(() => Math.random()),
-    weather: Array(20).fill(0).map(() => Math.random())
+    burns: Array(20).fill(0),
+    smoke: Array(20).fill(0),
+    weather: Array(20).fill(0)
   });
   
-  const [alerts] = useState([
-    { id: 1, title: 'High Wind Alert', message: 'Winds exceeding safe burn limits', severity: 'high', location: 'Farm A', time: '14:30' },
-    { id: 2, title: 'Smoke Conflict', message: 'Potential overlap detected', severity: 'medium', location: 'Sector 7', time: '15:45' },
-    { id: 3, title: 'Burn Complete', message: 'Field B3 burn successful', severity: 'low', location: 'Farm C', time: '16:00' }
-  ]);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Simulate real-time data updates
+  // Fetch real data from backend APIs
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        activeBurns: Math.floor(Math.random() * 10),
-        windSpeed: Math.floor(Math.random() * 30),
-        temperature: 60 + Math.floor(Math.random() * 40),
-        smokeDensity: Math.floor(Math.random() * 100),
-        conflicts: Math.floor(Math.random() * 5),
-        efficiency: 70 + Math.floor(Math.random() * 30)
-      }));
-      
-      setDataStreams(prev => ({
-        burns: [...prev.burns.slice(1), Math.random()],
-        smoke: [...prev.smoke.slice(1), Math.random()],
-        weather: [...prev.weather.slice(1), Math.random()]
-      }));
-    }, 2000);
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch multiple endpoints in parallel
+        const [
+          burnRequestsRes,
+          weatherRes,
+          alertsRes,
+          analyticsRes,
+          schedulesRes
+        ] = await Promise.all([
+          fetch('http://localhost:5001/api/burn-requests'),
+          fetch('http://localhost:5001/api/weather/current'),
+          fetch('http://localhost:5001/api/alerts'),
+          fetch('http://localhost:5001/api/analytics/metrics'),
+          fetch('http://localhost:5001/api/schedule')
+        ]);
+        
+        // Parse responses
+        const burnRequests = await burnRequestsRes.json();
+        const weather = await weatherRes.json();
+        const alertsData = await alertsRes.json();
+        const analytics = await analyticsRes.json();
+        const schedules = await schedulesRes.json();
+        
+        // Calculate real metrics from API data
+        const activeBurnsCount = burnRequests.data?.filter(b => b.status === 'active').length || 0;
+        const pendingBurns = burnRequests.data?.filter(b => b.status === 'pending').length || 0;
+        const scheduledBurns = schedules.data?.filter(s => s.status === 'scheduled').length || 0;
+        
+        // Weather metrics
+        const currentWeather = weather.data || {};
+        const windSpeed = currentWeather.wind_speed || 0;
+        const temperature = currentWeather.temperature || 0;
+        
+        // Calculate smoke density from active burns
+        const smokeDensity = activeBurnsCount > 0 ? Math.min(activeBurnsCount * 15, 100) : 0;
+        
+        // Calculate conflicts from schedule
+        const conflicts = schedules.conflicts?.length || 0;
+        
+        // Calculate efficiency
+        const totalRequests = burnRequests.data?.length || 1;
+        const completedBurns = burnRequests.data?.filter(b => b.status === 'completed').length || 0;
+        const efficiency = totalRequests > 0 ? Math.round((completedBurns / totalRequests) * 100) : 0;
+        
+        setMetrics({
+          activeBurns: activeBurnsCount,
+          windSpeed: Math.round(windSpeed),
+          temperature: Math.round(temperature),
+          smokeDensity: Math.round(smokeDensity),
+          conflicts: conflicts,
+          efficiency: efficiency
+        });
+        
+        // Process alerts
+        if (alertsData.data && Array.isArray(alertsData.data)) {
+          const formattedAlerts = alertsData.data.slice(0, 5).map(alert => ({
+            id: alert.alert_id,
+            title: alert.alert_type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Alert',
+            message: alert.message,
+            severity: alert.severity || 'info',
+            location: `Farm ${alert.farm_id}`,
+            time: new Date(alert.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          }));
+          setAlerts(formattedAlerts);
+        }
+        
+        // Generate data streams from historical data
+        if (analytics.data?.burnActivity) {
+          setDataStreams({
+            burns: analytics.data.burnActivity.slice(-20).map(v => v / 100),
+            smoke: analytics.data.smokeData?.slice(-20).map(v => v / 100) || Array(20).fill(0),
+            weather: analytics.data.weatherData?.slice(-20).map(v => v / 100) || Array(20).fill(0)
+          });
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to fetch dashboard data');
+        setLoading(false);
+      }
+    };
+    
+    // Initial fetch
+    fetchDashboardData();
+    
+    // Set up polling for real-time updates
+    const interval = setInterval(fetchDashboardData, 5000); // Update every 5 seconds
     
     return () => clearInterval(interval);
   }, []);
