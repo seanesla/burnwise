@@ -69,6 +69,15 @@ router.get('/', asyncHandler(async (req, res) => {
     let whereConditions = [];
     let queryParams = [];
     
+    // ALWAYS exclude test data - no test/mock farms in production
+    whereConditions.push(`(
+      f.farm_name NOT LIKE '%Test%' 
+      AND f.farm_name NOT LIKE '%Load%' 
+      AND f.farm_name NOT LIKE '%Stress%' 
+      AND f.farm_name NOT LIKE '%Concurrent%'
+      AND f.farm_name NOT LIKE '%DROP TABLE%'
+    )`);
+    
     // Text search
     if (search) {
       whereConditions.push('(f.farm_name LIKE ? OR f.owner_name LIKE ? OR f.owner_name LIKE ?)');
