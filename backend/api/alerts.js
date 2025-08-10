@@ -114,7 +114,7 @@ router.get('/', asyncHandler(async (req, res) => {
         -- a.updated_at, -- column doesn't exist
         f.name as farm_name,
         f.owner_name,
-        br.field_name
+        br.field_id
       FROM alerts a
       LEFT JOIN farms f ON a.farm_id = f.farm_id
       LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
@@ -127,10 +127,10 @@ router.get('/', asyncHandler(async (req, res) => {
           ELSE 4
         END,
         a.${sort_by} ${sort_order}
-      LIMIT ? OFFSET ?
+      LIMIT ${parseInt(limit) || 50} OFFSET ${offset || 0}
     `;
     
-    queryParams.push(parseInt(limit), offset);
+    // Don't push limit and offset to params array since they're now literals
     const alerts = await query(alertsQuery, queryParams);
     
     // Parse sent_via JSON for each alert
@@ -187,8 +187,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
         f.owner_name,
         f.phone as farm_phone,
         f.email as farm_email,
-        br.field_name,
-        br.burn_date
+        br.field_id,
+        br.requested_date as burn_date
       FROM alerts a
       LEFT JOIN farms f ON a.farm_id = f.farm_id
       LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
@@ -607,8 +607,8 @@ router.get('/active', asyncHandler(async (req, res) => {
         a.created_at,
         f.name as farm_name,
         f.owner_name,
-        br.field_name,
-        br.burn_date,
+        br.field_id,
+        br.requested_date as burn_date,
         TIMESTAMPDIFF(MINUTE, a.created_at, NOW()) as age_minutes
       FROM alerts a
       LEFT JOIN farms f ON a.farm_id = f.farm_id
