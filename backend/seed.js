@@ -15,14 +15,14 @@ async function seedDatabase() {
     await query('DELETE FROM burn_fields WHERE farm_id IN (SELECT farm_id FROM farms WHERE farm_name LIKE "Green%" OR farm_name LIKE "Prairie%" OR farm_name LIKE "Sunrise%" OR farm_name LIKE "Harvest%" OR farm_name LIKE "Golden%")');
     await query('DELETE FROM farms WHERE farm_name LIKE "Green%" OR farm_name LIKE "Prairie%" OR farm_name LIKE "Sunrise%" OR farm_name LIKE "Harvest%" OR farm_name LIKE "Golden%"');
     
-    // Seed farms with real agricultural data
+    // Seed farms with real California agricultural region data
     console.log('Seeding farms...');
     const farms = [
-      { name: 'Green Acres Ranch', owner: 'Sarah Johnson', email: 'sarah@greenacres.com', phone: '555-0101', lat: 39.123, lon: -95.789, hectares: 1011.7 },
-      { name: 'Prairie Wind Farms', owner: 'Mike Thompson', email: 'mike@prairiewind.com', phone: '555-0102', lat: 39.456, lon: -95.234, hectares: 728.4 },
-      { name: 'Sunrise Valley Farm', owner: 'John Miller', email: 'john@sunrisevalley.com', phone: '555-0103', lat: 39.789, lon: -95.567, hectares: 1294.9 },
-      { name: 'Harvest Moon Ranch', owner: 'Emily Davis', email: 'emily@harvestmoon.com', phone: '555-0104', lat: 39.234, lon: -95.890, hectares: 607.0 },
-      { name: 'Golden Fields Farm', owner: 'Robert Wilson', email: 'robert@goldenfields.com', phone: '555-0105', lat: 39.567, lon: -95.123, hectares: 1133.1 }
+      { name: 'Green Acres Ranch', owner: 'Sarah Johnson', email: 'sarah@greenacres.com', phone: '555-0101', lat: 38.544, lon: -121.740, hectares: 1011.7 }, // Davis, CA
+      { name: 'Prairie Wind Farms', owner: 'Mike Thompson', email: 'mike@prairiewind.com', phone: '555-0102', lat: 38.678, lon: -121.176, hectares: 728.4 }, // Sacramento Valley
+      { name: 'Sunrise Valley Farm', owner: 'John Miller', email: 'john@sunrisevalley.com', phone: '555-0103', lat: 39.140, lon: -121.616, hectares: 1294.9 }, // Yuba City area
+      { name: 'Harvest Moon Ranch', owner: 'Emily Davis', email: 'emily@harvestmoon.com', phone: '555-0104', lat: 38.352, lon: -121.958, hectares: 607.0 }, // Winters area
+      { name: 'Golden Fields Farm', owner: 'Robert Wilson', email: 'robert@goldenfields.com', phone: '555-0105', lat: 38.702, lon: -121.551, hectares: 1133.1 } // Woodland area
     ];
     
     for (const farm of farms) {
