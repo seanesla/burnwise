@@ -50,6 +50,8 @@ Start with `.claude/NAVIGATION.md` for efficient codebase traversal.
 - **ALWAYS** scan codebase for CLAUDE.md violations before changes
 - **NEVER** create redundant files - update/rename existing files instead
 - Use descriptive naming reflecting business domain
+- **ALWAYS** update `.claude/` context files when codebase structure changes significantly
+- **PROACTIVELY** maintain navigation guides when adding/removing major features
 
 ### Git Standards
 - Commit early/often, one logical change per commit
