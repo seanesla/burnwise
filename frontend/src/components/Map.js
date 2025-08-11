@@ -8,9 +8,9 @@ mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
 const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOString().split('T')[0] }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
-  const [lng, setLng] = useState(-98.5795);
-  const [lat, setLat] = useState(39.8283);
-  const [zoom, setZoom] = useState(5);
+  const [lng, setLng] = useState(-121.740); // Davis, California
+  const [lat, setLat] = useState(38.544);    // Davis, California  
+  const [zoom, setZoom] = useState(9);       // Closer zoom for California Central Valley
   const [smokeOverlays, setSmokeOverlays] = useState([]);
   const [farmsData, setFarmsData] = useState(farms);
   const [burnData, setBurnData] = useState(burnRequests);
