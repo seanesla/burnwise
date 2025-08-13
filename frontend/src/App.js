@@ -7,7 +7,7 @@ import './styles/App.css';
 
 // Lazy load route components
 const Landing = lazy(() => import('./components/Landing'));
-const CinematicDashboard = lazy(() => import('./components/CinematicDashboard'));
+const SimpleDashboard = lazy(() => import('./components/SimpleDashboard'));
 const Map = lazy(() => import('./components/Map'));
 const Schedule = lazy(() => import('./components/Schedule'));
 const AlertsPanel = lazy(() => import('./components/AlertsPanel'));
@@ -40,7 +40,7 @@ function AppContent() {
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
             <Routes>
               <Route path="/" element={<Landing isInitialLoad={location.pathname === '/' && isInitialLoad} />} />
-              <Route path="/dashboard" element={<CinematicDashboard />} />
+              <Route path="/dashboard" element={<SimpleDashboard />} />
               <Route path="/map" element={<Map />} />
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/alerts" element={<AlertsPanel />} />
