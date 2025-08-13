@@ -645,23 +645,36 @@ const ImmersiveBurnRequest = () => {
       setFarms(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch farms:', error);
-      // Use mock data for demo
-      setFarms([
-        { id: 1, name: 'Sunrise Farm', owner_name: 'John Doe' },
-        { id: 2, name: 'Valley Ranch', owner_name: 'Jane Smith' },
-        { id: 3, name: 'Hilltop Fields', owner_name: 'Bob Johnson' }
-      ]);
+      // Set empty array instead of mock data
+      setFarms([]);
     }
   };
 
   const fetchWeatherData = async () => {
-    // Simulate weather data
-    setWeatherData({
-      windSpeed: 12,
-      windDirection: Math.PI / 4,
-      temperature: 75,
-      humidity: 45
-    });
+    // Fetch real weather data from API
+    try {
+      const response = await fetch('http://localhost:5001/api/weather/current');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setWeatherData({
+            windSpeed: data.data.wind_speed || 0,
+            windDirection: (data.data.wind_direction || 0) * Math.PI / 180,
+            temperature: data.data.temperature || 0,
+            humidity: data.data.humidity || 0
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      // Set to zero instead of fake values
+      setWeatherData({
+        windSpeed: 0,
+        windDirection: 0,
+        temperature: 0,
+        humidity: 0
+      });
+    }
   };
 
   const handleInputChange = (e) => {
