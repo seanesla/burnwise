@@ -180,7 +180,8 @@
   left: 40px;
   right: 40px;
   height: 2px;
-  background: #e5e7eb;
+  background: rgba(255, 107, 53, 0.15);
+  backdrop-filter: blur(5px);
   z-index: 0;
 }
 
@@ -413,9 +414,11 @@
 
 .slider-track {
   height: 8px;
-  background: #e5e7eb;
+  background: rgba(255, 107, 53, 0.1);
+  backdrop-filter: blur(5px);
   border-radius: 4px;
   position: relative;
+  border: 1px solid rgba(255, 107, 53, 0.15);
 }
 
 .slider-fill {
