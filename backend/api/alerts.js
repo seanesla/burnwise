@@ -133,15 +133,14 @@ router.get('/', asyncHandler(async (req, res) => {
     // Don't push limit and offset to params array since they're now literals
     const alerts = await query(alertsQuery, queryParams);
     
-    // Parse sent_via JSON for each alert
+    // Convert sent_via ENUM to object format for compatibility
     alerts.forEach(alert => {
-      if (alert.sent_via) {
-        try {
-          alert.sent_via = JSON.parse(alert.sent_via);
-        } catch (e) {
-          logger.warn('Failed to parse sent_via data', { alertId: alert.id });
-          alert.sent_via = {};
-        }
+      if (alert.sent_via && typeof alert.sent_via === 'string') {
+        // Convert ENUM value to object format
+        const method = alert.sent_via.toString();
+        alert.sent_via = { [method]: true };
+      } else if (!alert.sent_via) {
+        alert.sent_via = {};
       }
     });
     
@@ -204,13 +203,12 @@ router.get('/:id', asyncHandler(async (req, res) => {
     
     const alert = alertDetails[0];
     
-    // Parse sent_via data
-    if (alert.sent_via) {
-      try {
-        alert.sent_via = JSON.parse(alert.sent_via);
-      } catch (e) {
-        alert.sent_via = {};
-      }
+    // Convert sent_via ENUM to object format
+    if (alert.sent_via && typeof alert.sent_via === 'string') {
+      const method = alert.sent_via.toString();
+      alert.sent_via = { [method]: true };
+    } else if (!alert.sent_via) {
+      alert.sent_via = {};
     }
     
     // Get delivery tracking information
@@ -854,14 +852,11 @@ router.get('/delivery-status/:id', asyncHandler(async (req, res) => {
     
     const alertInfo = alert[0];
     
-    // Parse delivery channels
+    // Convert delivery channels from ENUM to object format
     let deliveryChannels = {};
-    if (alertInfo.sent_via) {
-      try {
-        deliveryChannels = JSON.parse(alertInfo.sent_via);
-      } catch (e) {
-        deliveryChannels = {};
-      }
+    if (alertInfo.sent_via && typeof alertInfo.sent_via === 'string') {
+      const method = alertInfo.sent_via.toString();
+      deliveryChannels = { [method]: true };
     }
     
     // Get detailed delivery tracking

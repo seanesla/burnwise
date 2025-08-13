@@ -90,8 +90,87 @@ router.get('/current/:lat/:lon', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /api/weather/forecast
+ * Get weather forecast with query parameters (for frontend compatibility)
+ */
+router.get('/forecast', asyncHandler(async (req, res) => {
+  const { lat, lon, date } = req.query;
+  
+  try {
+    // Validate coordinates
+    if (!lat || !lon) {
+      throw new ValidationError('Latitude and longitude are required', 'location');
+    }
+    
+    const { error } = locationSchema.validate({ lat: parseFloat(lat), lon: parseFloat(lon) });
+    if (error) {
+      throw new ValidationError('Invalid coordinates', 'location', error.details);
+    }
+    
+    if (!date) {
+      throw new ValidationError('Date parameter is required', 'date');
+    }
+    
+    const location = { lat: parseFloat(lat), lon: parseFloat(lon) };
+    const burnDate = new Date(date);
+    
+    if (burnDate < new Date()) {
+      throw new ValidationError('Date cannot be in the past', 'date');
+    }
+    
+    // Get weather forecast from OpenWeatherMap via weather agent
+    const forecast = await weatherAgent.getWeatherForecast(
+      location, 
+      burnDate.toISOString().split('T')[0],
+      { start: '06:00', end: '18:00' }
+    );
+    
+    // Calculate average conditions for the day
+    const avgConditions = forecast.reduce((acc, hour) => {
+      acc.temperature += hour.temperature;
+      acc.humidity += hour.humidity;
+      acc.windSpeed += hour.windSpeed;
+      acc.visibility += hour.visibility || 10;
+      return acc;
+    }, { temperature: 0, humidity: 0, windSpeed: 0, visibility: 0 });
+    
+    const hourCount = forecast.length || 1;
+    
+    // Return in format expected by frontend
+    res.json({
+      success: true,
+      data: {
+        location,
+        date: burnDate,
+        conditions: {
+          temperature: Math.round(avgConditions.temperature / hourCount),
+          wind_speed: Math.round(avgConditions.windSpeed / hourCount * 10) / 10,
+          humidity: Math.round(avgConditions.humidity / hourCount),
+          visibility: Math.round(avgConditions.visibility / hourCount),
+          weather_condition: forecast[0]?.conditions || 'Clear'
+        },
+        suitable: avgConditions.windSpeed / hourCount <= 10 && 
+                 avgConditions.humidity / hourCount >= 30 && 
+                 avgConditions.humidity / hourCount <= 70,
+        forecast: forecast.slice(0, 12), // Return 12 hours of forecast
+        total_hours: forecast.length
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Weather forecast fetch failed', { 
+      lat, 
+      lon, 
+      date, 
+      error: error.message 
+    });
+    throw error;
+  }
+}));
+
+/**
  * GET /api/weather/forecast/:lat/:lon
- * Get weather forecast for specific coordinates and date
+ * Get weather forecast for specific coordinates and date (path params version)
  */
 router.get('/forecast/:lat/:lon', asyncHandler(async (req, res) => {
   const { lat, lon } = req.params;
