@@ -206,7 +206,7 @@ async function seedDatabase() {
         farm.farm_id,
         alertTypes[Math.floor(Math.random() * alertTypes.length)],
         severityLevels[Math.floor(Math.random() * severityLevels.length)],
-        'System generated alert for testing',
+        `${alertTypes[Math.floor(Math.random() * alertTypes.length)].replace(/_/g, ' ').toUpperCase()} - Farm ${farm.farm_name}`,
         deliveryMethods[Math.floor(Math.random() * deliveryMethods.length)],
         'pending',
         new Date()
