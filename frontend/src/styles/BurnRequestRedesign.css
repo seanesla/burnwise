@@ -117,7 +117,7 @@
 
 .area-info {
   display: flex;
-  gap: 24px;
+  gap: 12px;
 }
 
 .info-item {
@@ -142,7 +142,7 @@
 /* Form Section - Right Column */
 .form-section {
   flex: 1.2;
-  padding: 40px;
+  padding: 20px;
   overflow-y: auto;
   height: calc(100vh - 80px);
 }
@@ -247,7 +247,7 @@
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(20px);
   border-radius: 16px;
-  padding: 32px;
+  padding: 16px;
   margin-bottom: 32px;
   box-shadow: 0 4px 20px rgba(255, 87, 34, 0.15);
   border: 1px solid rgba(255, 107, 53, 0.1);
@@ -314,7 +314,7 @@
 /* Form Grid Layout */
 .form-grid {
   display: grid;
-  gap: 24px;
+  gap: 12px;
 }
 
 .form-grid-2 {
@@ -382,7 +382,7 @@
 /* Weather Preferences Card */
 .weather-grid {
   display: grid;
-  gap: 32px;
+  gap: 16px;
 }
 
 .slider-group {
@@ -654,7 +654,7 @@
   transform: translate(-50%, -50%);
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
-  padding: 48px;
+  padding: 24px;
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(255, 87, 34, 0.3);
   border: 1px solid rgba(255, 107, 53, 0.2);
@@ -672,7 +672,7 @@
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 40px;
+  font-size: 24px;
 }
 
 /* Responsive Design */
