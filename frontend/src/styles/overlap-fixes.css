@@ -1,0 +1,115 @@
+/* Critical Overlap Fixes for Burnwise UI */
+
+/* Prevent all overlapping elements */
+* {
+  box-sizing: border-box;
+}
+
+/* Fix form section overlaps */
+.form-section,
+.map-section {
+  position: relative !important;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Fix progress container positioning */
+.progress-container {
+  position: relative !important;
+  margin-top: 0 !important;
+  margin-bottom: 20px !important;
+  top: auto !important;
+}
+
+/* Prevent text overlaps */
+.step-label,
+.map-title span,
+.card-title h3 {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Fix z-index stacking */
+.map-header {
+  z-index: 1;
+}
+
+.form-card {
+  z-index: 2;
+  position: relative;
+}
+
+.progress-bar {
+  z-index: 3;
+  position: relative;
+}
+
+/* Fix sticky elements */
+.sticky,
+[class*="sticky"] {
+  position: relative !important;
+}
+
+/* Ensure proper spacing */
+.form-step {
+  padding-top: 20px !important;
+  margin-top: 0 !important;
+}
+
+/* Fix absolute positioned overlays */
+.map-overlay-info {
+  z-index: 5 !important;
+  pointer-events: none;
+}
+
+.map-overlay-info > * {
+  pointer-events: auto;
+}
+
+/* Fix flex container issues */
+.burn-request-form {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 0;
+}
+
+/* Prevent negative margins */
+[style*="margin-top: -"],
+[style*="margin-left: -"],
+[style*="margin-right: -"],
+[style*="margin-bottom: -"] {
+  margin: 0 !important;
+}
+
+/* Media query for mobile */
+@media (max-width: 768px) {
+  .burn-request-form {
+    flex-direction: column;
+  }
+  
+  .map-section,
+  .form-section {
+    width: 100%;
+    position: relative !important;
+    height: auto !important;
+  }
+  
+  .progress-container {
+    position: relative !important;
+    padding: 10px !important;
+  }
+}
+
+/* Emergency override for any remaining overlaps */
+.overlap-fix {
+  position: relative !important;
+  z-index: auto !important;
+  margin: 0 !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+}

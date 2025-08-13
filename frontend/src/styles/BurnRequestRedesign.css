@@ -13,7 +13,7 @@
 .burn-request-container::before {
   content: '';
   position: absolute;
-  top: -20%;
+  top: 0;
   right: -10%;
   width: 600px;
   height: 600px;
@@ -31,14 +31,15 @@
 /* Map Section - Left Column */
 .map-section {
   flex: 1;
-  position: sticky;
-  top: 80px;
+  position: relative;
+  min-height: 600px;
   height: calc(100vh - 80px);
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
-  z-index: 10;
+  z-index: 1;
   border-right: 1px solid rgba(255, 107, 53, 0.2);
+  overflow: hidden;
 }
 
 .map-header {
@@ -142,21 +143,20 @@
 /* Form Section - Right Column */
 .form-section {
   flex: 1.2;
-  padding: 20px;
+  padding: 20px 40px;
   overflow-y: auto;
   height: calc(100vh - 80px);
+  position: relative;
+  z-index: 2;
 }
 
 /* Progress Bar - Sticky Top */
 .progress-container {
-  position: sticky;
-  top: -40px;
-  z-index: 20;
+  position: relative;
+  z-index: 5;
   background: linear-gradient(180deg, rgba(255, 107, 53, 0.05) 0%, transparent 100%);
-  padding: 20px 0 30px;
-  margin: -40px -40px 40px;
-  padding-left: 40px;
-  padding-right: 40px;
+  padding: 20px 40px 30px;
+  margin: 0 0 40px 0;
 }
 
 .progress-bar {
@@ -569,7 +569,7 @@
   right: 32px;
   display: flex;
   gap: 16px;
-  z-index: 100;
+  z-index: 10;
 }
 
 .btn-action {
@@ -625,7 +625,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 50;
   backdrop-filter: blur(10px);
 }
 
@@ -659,7 +659,7 @@
   box-shadow: 0 20px 60px rgba(255, 87, 34, 0.3);
   border: 1px solid rgba(255, 107, 53, 0.2);
   text-align: center;
-  z-index: 2000;
+  z-index: 100;
 }
 
 .success-icon {
