@@ -206,6 +206,13 @@ class CoordinatorAgent {
     }
   }
 
+  parseTime(timeString) {
+    // Convert "HH:MM" to decimal hours (e.g., "14:30" -> 14.5)
+    if (!timeString) return 0;
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours + (minutes / 60);
+  }
+
   async validateBurnRequest(requestData) {
     const schema = this.getBurnRequestSchema();
     const { error, value } = schema.validate(requestData, { abortEarly: false });

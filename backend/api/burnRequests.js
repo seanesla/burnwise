@@ -239,10 +239,11 @@ router.post('/', asyncHandler(async (req, res) => {
     logger.info('Creating new burn request', { farmId: req.body.farm_id });
     
     // Transform API fields to match coordinator's expected schema
+    // Note: Don't send field_id to coordinator - it handles that internally
     const transformedRequest = {
       farm_id: req.body.farm_id,
       field_name: req.body.field_name || `Field-${req.body.farm_id}`,
-      field_id: req.body.field_id,
+      // field_id removed - coordinator handles this
       field_boundary: req.body.field_boundary || {
         type: 'Polygon',
         coordinates: [[[-98.5, 30.2], [-98.5, 30.3], [-98.4, 30.3], [-98.4, 30.2], [-98.5, 30.2]]]
@@ -258,7 +259,18 @@ router.post('/', asyncHandler(async (req, res) => {
     logger.info('Transformed burn request:', transformedRequest);
     
     // Step 1: Coordinator Agent - Validate and store burn request
-    const coordinatorResult = await coordinatorAgent.coordinateBurnRequest(transformedRequest);
+    let coordinatorResult;
+    try {
+      coordinatorResult = await coordinatorAgent.coordinateBurnRequest(transformedRequest);
+    } catch (coordError) {
+      logger.error('Coordinator validation failed:', coordError);
+      return res.status(400).json({
+        success: false,
+        error: coordError.message || 'Burn request validation failed',
+        details: coordError.details || null,
+        field: coordError.field || null
+      });
+    }
     
     if (!coordinatorResult.success) {
       return res.status(400).json({
