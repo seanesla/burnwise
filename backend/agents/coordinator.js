@@ -208,7 +208,17 @@ class CoordinatorAgent {
 
   parseTime(timeString) {
     // Convert "HH:MM" to decimal hours (e.g., "14:30" -> 14.5)
-    if (!timeString) return 0;
+    if (!timeString || typeof timeString !== 'string') {
+      logger.agent(this.agentName, 'warn', 'Invalid timeString provided to parseTime', { timeString });
+      return 0;
+    }
+    
+    // Validate format
+    if (!timeString.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+      logger.agent(this.agentName, 'warn', 'Invalid time format', { timeString });
+      return 0;
+    }
+    
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours + (minutes / 60);
   }
@@ -463,7 +473,7 @@ class CoordinatorAgent {
           const hectares = (requestData.acres || 50) * 0.404686; // Convert acres to hectares
           const fieldResult = await query(
             'INSERT INTO burn_fields (farm_id, field_name, area_hectares, crop_type) VALUES (?, ?, ?, ?)',
-            [requestData.farm_id, requestData.field_name || 'Default Field', hectares, requestData.crop_type || 'wheat']
+            [requestData.farm_id, requestData.field_name || `Field_${Date.now()}`, hectares, requestData.crop_type || 'wheat']
           );
           fieldId = fieldResult.insertId;
         }
@@ -518,11 +528,7 @@ class CoordinatorAgent {
     }
   }
 
-  // Utility methods
-  parseTime(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours + minutes / 60;
-  }
+  // Utility methods removed - duplicate parseTime deleted
 
   async getStatus() {
     if (!this.initialized) {
