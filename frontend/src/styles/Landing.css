@@ -116,7 +116,7 @@
   min-height: 100vh;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 3rem;
+  padding: 1.5rem;
   position: relative; /* For absolute logo positioning */
 }
 
@@ -309,7 +309,7 @@
 .section-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 3rem;
+  padding: 1.5rem;
 }
 
 .section-title {
@@ -335,7 +335,7 @@
 /* Problem Section */
 .problem-section {
   background: linear-gradient(180deg, transparent 0%, rgba(255, 107, 53, 0.05) 50%, transparent 100%);
-  padding: 6rem 0;
+  padding: 3rem 0;
   position: relative;
   background-color: rgba(10, 10, 10, 0.95);
 }
@@ -352,7 +352,7 @@
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  padding: 1.5rem 1rem;
   text-align: center;
   transition: all 0.4s ease;
 }
@@ -420,7 +420,7 @@
 
 /* Solution Section */
 .solution-section {
-  padding: 6rem 0;
+  padding: 3rem 0;
   background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
 }
 
@@ -475,7 +475,7 @@
 
 /* Technical Features Section */
 .tech-features-section {
-  padding: 6rem 0;
+  padding: 3rem 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
 }
 
@@ -490,7 +490,7 @@
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  padding: 1.5rem 1rem;
   transition: all 0.4s ease;
 }
 
@@ -531,7 +531,7 @@
 
 /* Benefits Section */
 .benefits-section {
-  padding: 6rem 0;
+  padding: 3rem 0;
   background: linear-gradient(180deg, transparent 0%, rgba(255, 107, 53, 0.05) 100%);
 }
 
@@ -546,7 +546,7 @@
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  padding: 1.5rem 1rem;
   transition: all 0.4s ease;
 }
 
@@ -587,7 +587,7 @@
 
 /* CTA Section */
 .cta-section {
-  padding: 6rem 0;
+  padding: 3rem 0;
   background: linear-gradient(180deg, rgba(255, 107, 53, 0.05) 0%, transparent 100%);
   text-align: center;
 }
@@ -662,7 +662,7 @@
   gap: 2rem;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 3rem;
+  padding: 1.5rem;
   animation: slideInFromBottom 1s ease-out 0.8s both;
 }
 
@@ -675,7 +675,7 @@
   backdrop-filter: blur(40px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  padding: 1.5rem 1rem;
   text-align: center;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
@@ -872,7 +872,7 @@
 /* Ultra-wide screens */
 @media (min-width: 2000px) {
   .hero-title {
-    font-size: 7rem;
+    font-size: 4rem;
   }
   
   .hero-subtitle {

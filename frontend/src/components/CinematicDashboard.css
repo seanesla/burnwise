@@ -8,35 +8,13 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* Ambient Effects */
+/* Ambient Effects - DISABLED FOR PERFORMANCE */
 .ambient-smoke {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.1), transparent),
-              radial-gradient(circle at 80% 80%, rgba(255, 87, 34, 0.05), transparent);
-  animation: smokeFlow 20s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 1;
+  display: none;
 }
 
 .ambient-embers {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(2px 2px at 20% 30%, #ff6b35, transparent),
-    radial-gradient(2px 2px at 60% 70%, #ff5722, transparent),
-    radial-gradient(1px 1px at 90% 10%, #FFB000, transparent);
-  background-size: 300% 300%;
-  animation: embersFloat 15s linear infinite;
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0.3;
+  display: none;
 }
 
 @keyframes smokeFlow {
@@ -70,7 +48,7 @@
 .dashboard-content {
   position: relative;
   z-index: 10;
-  padding: 2rem;
+  padding: 1rem;
   max-width: 1600px;
   margin: 0 auto;
 }
@@ -80,7 +58,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   padding: 1.5rem 2rem;
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(255, 107, 53, 0.1));
   backdrop-filter: blur(20px);
@@ -98,7 +76,7 @@
 }
 
 .dashboard-title {
-  font-size: 2.5rem;
+  font-size: 1.5rem;
   font-weight: 900;
   letter-spacing: 0.1em;
   background: linear-gradient(135deg, #ff6b35, #ff5722, #FFB000);
@@ -132,7 +110,7 @@
 }
 
 .emergency-stop {
-  padding: 1rem 2rem;
+  padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #ff5722, #d32f2f);
   border: none;
   border-radius: 50px;
@@ -160,7 +138,7 @@
 .dashboard-tabs {
   display: flex;
   gap: 1rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   padding: 0.5rem;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
@@ -211,7 +189,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 .breathing-metric {
@@ -289,7 +267,7 @@
 
 /* Data Streams */
 .data-streams-section {
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 .section-title {
@@ -330,7 +308,7 @@
 
 /* Holographic Alerts */
 .alerts-section {
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 .holographic-alert {
@@ -429,7 +407,7 @@
   display: flex;
   gap: 1.5rem;
   justify-content: center;
-  padding: 2rem;
+  padding: 1rem;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -437,7 +415,7 @@
 }
 
 .action-button {
-  padding: 1rem 2rem;
+  padding: 0.5rem 1rem;
   border: none;
   border-radius: 50px;
   font-weight: 700;

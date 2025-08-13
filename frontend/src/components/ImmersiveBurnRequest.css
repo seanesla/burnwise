@@ -58,13 +58,13 @@
   position: relative;
   z-index: 10;
   text-align: center;
-  padding: 2rem;
+  padding: 1rem;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent);
   backdrop-filter: blur(10px);
 }
 
 .request-title {
-  font-size: 3rem;
+  font-size: 1.75rem;
   font-weight: 900;
   letter-spacing: 0.2em;
   background: linear-gradient(135deg, #ff6b35, #ff5722, #FFB000);
@@ -100,7 +100,7 @@
   display: grid;
   grid-template-columns: 1fr 400px;
   gap: 2rem;
-  padding: 2rem;
+  padding: 1rem;
   max-width: 1600px;
   margin: 0 auto;
 }
