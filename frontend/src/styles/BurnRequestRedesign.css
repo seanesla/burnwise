@@ -86,9 +86,11 @@
 }
 
 .tool-btn.active {
-  background: white;
-  color: #ff5722;
-  border-color: white;
+  background: rgba(255, 176, 0, 0.3);
+  backdrop-filter: blur(10px);
+  color: white;
+  border-color: #FFB000;
+  box-shadow: 0 0 20px rgba(255, 176, 0, 0.4);
 }
 
 .map-container {
@@ -429,11 +431,12 @@
   transform: translate(-50%, -50%);
   width: 24px;
   height: 24px;
-  background: white;
+  background: rgba(255, 176, 0, 0.8);
+  backdrop-filter: blur(5px);
   border: 3px solid #ff5722;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
   transition: all 0.3s;
 }
 
@@ -782,7 +785,8 @@
 .form-group.error .form-select,
 .form-group.error .form-textarea {
   border-color: #ef4444;
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.05);
+  backdrop-filter: blur(5px);
 }
 
 .error-message {
@@ -799,7 +803,8 @@
 .form-group.success .form-select,
 .form-group.success .form-textarea {
   border-color: #10b981;
-  background: #f0fdf4;
+  background: rgba(16, 185, 129, 0.05);
+  backdrop-filter: blur(5px);
 }
 
 .success-check {

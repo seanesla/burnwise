@@ -90,9 +90,10 @@
 }
 
 .step.active .step-number {
-  background: white;
-  color: #ff5722;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+  background: rgba(255, 176, 0, 0.3);
+  backdrop-filter: blur(10px);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(255, 176, 0, 0.3);
 }
 
 .step-label {
