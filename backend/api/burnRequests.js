@@ -241,18 +241,21 @@ router.post('/', asyncHandler(async (req, res) => {
     // Transform API fields to match coordinator's expected schema
     const transformedRequest = {
       farm_id: req.body.farm_id,
-      field_name: req.body.field_id || req.body.field_name || 'Field-' + req.body.farm_id,
+      field_name: req.body.field_name || `Field-${req.body.farm_id}`,
+      field_id: req.body.field_id,
       field_boundary: req.body.field_boundary || {
         type: 'Polygon',
         coordinates: [[[-98.5, 30.2], [-98.5, 30.3], [-98.4, 30.3], [-98.4, 30.2], [-98.5, 30.2]]]
       },
       acres: req.body.acreage || req.body.acres || 50,
-      crop_type: req.body.crop_type,
-      burn_date: req.body.requested_date || req.body.burn_date,
+      crop_type: req.body.crop_type || 'wheat',
+      burn_date: req.body.requested_date || req.body.burn_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       time_window_start: req.body.requested_window_start || req.body.time_window_start || '08:00',
       time_window_end: req.body.requested_window_end || req.body.time_window_end || '12:00',
       reason: req.body.reason || 'Agricultural burn'
     };
+    
+    logger.info('Transformed burn request:', transformedRequest);
     
     // Step 1: Coordinator Agent - Validate and store burn request
     const coordinatorResult = await coordinatorAgent.coordinateBurnRequest(transformedRequest);
