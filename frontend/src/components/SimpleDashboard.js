@@ -34,40 +34,28 @@ const SimpleDashboard = () => {
 
         const result = await response.json();
         
-        // Use mock data if API fails
-        const mockData = {
-          activeBurns: 3,
-          pendingRequests: 7,
-          windSpeed: 12,
-          temperature: 75,
-          alerts: [
-            { id: 1, message: 'High wind warning in Zone A', severity: 'warning' },
-            { id: 2, message: 'Smoke conflict detected', severity: 'high' }
-          ]
-        };
-
+        // No mock data - use real API data only
         setData({
-          activeBurns: result.data?.activeBurns || mockData.activeBurns,
-          pendingRequests: result.data?.pendingRequests || mockData.pendingRequests,
-          windSpeed: result.data?.windSpeed || mockData.windSpeed,
-          temperature: result.data?.temperature || mockData.temperature,
-          alerts: result.data?.alerts || mockData.alerts,
+          activeBurns: result.data?.activeBurns || 0,
+          pendingRequests: result.data?.pendingRequests || 0,
+          windSpeed: result.data?.windSpeed || 0,
+          temperature: result.data?.temperature || 0,
+          alerts: result.data?.alerts || [],
           lastUpdate: new Date().toLocaleTimeString()
         });
         
         setError(null);
       } catch (err) {
         console.error('Dashboard fetch error:', err);
-        // Use mock data on error
+        // Show error state - no mock data
+        setError(`Failed to fetch dashboard data: ${err.message}`);
         setData({
-          activeBurns: 3,
-          pendingRequests: 7,
-          windSpeed: 12,
-          temperature: 75,
-          alerts: [
-            { id: 1, message: 'Using demo data', severity: 'info' }
-          ],
-          lastUpdate: new Date().toLocaleTimeString()
+          activeBurns: 0,
+          pendingRequests: 0,
+          windSpeed: 0,
+          temperature: 0,
+          alerts: [],
+          lastUpdate: 'Failed to update'
         });
       } finally {
         setLoading(false);
