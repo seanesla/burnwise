@@ -294,10 +294,10 @@ const ImprovedBurnRequestForm = () => {
         }
       });
 
-      setWeatherData(response.data);
+      setWeatherData(response.data.data);
       setWeatherChecked(true);
       
-      const conditions = response.data.conditions;
+      const conditions = response.data.data.conditions;
       if (conditions && conditions.wind_speed <= formData.preferred_conditions.max_wind_speed &&
           conditions.humidity >= formData.preferred_conditions.min_humidity &&
           conditions.humidity <= formData.preferred_conditions.max_humidity) {
