@@ -1,0 +1,101 @@
+/* BURNWISE Z-INDEX SCALE - Standardized hierarchy to prevent conflicts */
+
+:root {
+  /* Z-Index Scale (use these variables, not arbitrary numbers) */
+  --z-base: 1;                /* Base content */
+  --z-dropdown: 100;          /* Dropdowns, tooltips */
+  --z-sticky: 200;            /* Sticky elements */
+  --z-fixed: 300;             /* Fixed positioned elements */
+  --z-navigation: 500;        /* Main navigation */
+  --z-modal-backdrop: 600;    /* Modal backgrounds */
+  --z-modal: 700;             /* Modal content */
+  --z-notification: 800;      /* Notifications, toasts */
+  --z-critical: 900;          /* Critical overlays */
+  --z-max: 999;              /* Maximum z-index */
+}
+
+/* Apply to commonly problematic elements */
+.main-navigation {
+  z-index: var(--z-navigation) !important;
+}
+
+.startup-screen {
+  z-index: var(--z-critical) !important;
+}
+
+.torch-animation {
+  z-index: var(--z-critical) !important;
+}
+
+.modal {
+  z-index: var(--z-modal) !important;
+}
+
+.modal-backdrop {
+  z-index: var(--z-modal-backdrop) !important;
+}
+
+/* Prevent pseudo-elements from interfering with cursor */
+*::before,
+*::after {
+  pointer-events: none;
+}
+
+/* Re-enable pointer events where needed */
+.clickable::before,
+.clickable::after,
+.interactive::before,
+.interactive::after {
+  pointer-events: auto;
+}
+
+/* Global cursor fixes */
+a,
+button,
+[role="button"],
+.nav-link,
+.btn,
+.clickable,
+.interactive {
+  cursor: pointer !important;
+}
+
+/* Prevent layout shifts on hover */
+*:hover {
+  transform: none !important;
+}
+
+/* Allow specific controlled transforms */
+.allow-transform:hover {
+  transform: translateY(-2px) !important;
+}
+
+/* Stabilize hover states */
+a,
+button,
+.nav-link,
+.btn {
+  transition-delay: 0ms !important;
+  will-change: auto !important;
+}
+
+/* Fix cursor flickering on rapid movement */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable text selection where needed */
+input,
+textarea,
+.selectable,
+.content-text,
+p,
+h1, h2, h3, h4, h5, h6 {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
