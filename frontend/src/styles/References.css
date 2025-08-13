@@ -1,0 +1,120 @@
+.references-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 600px;
+}
+
+.references-toggle {
+  background: rgba(255, 107, 53, 0.9);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.references-toggle:hover {
+  background: rgba(255, 107, 53, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+.references-list {
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.references-list h3 {
+  color: #ff6b35;
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.references-list ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.reference-item {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ref-authors {
+  font-weight: 600;
+}
+
+.ref-title {
+  font-style: italic;
+}
+
+.ref-source {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ref-date {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ref-link {
+  color: #ff6b35;
+  text-decoration: none;
+  margin-left: 8px;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.ref-link:hover {
+  color: #ff8555;
+  text-decoration: underline;
+}
+
+/* Custom scrollbar for references list */
+.references-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.references-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.references-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 53, 0.5);
+  border-radius: 4px;
+}
+
+.references-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 53, 0.7);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .references-container {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .references-list {
+    max-height: 300px;
+  }
+}
