@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Navigation from './components/Navigation';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
+import settingsManager from './utils/settingsManager';
 import './styles/App.css';
 
 // Lazy load route components
@@ -24,6 +25,9 @@ function AppContent() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   useEffect(() => {
+    // Apply saved settings on app load
+    settingsManager.applySettings();
+    
     // Mark as not initial load after animation completes
     const timer = setTimeout(() => {
       setIsInitialLoad(false);

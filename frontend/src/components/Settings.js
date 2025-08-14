@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
+import settingsManager from '../utils/settingsManager';
 import './Settings.css';
 
 const Settings = () => {
@@ -56,11 +57,10 @@ const Settings = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      // In production, this would fetch from API
-      const savedSettings = localStorage.getItem('burnwise_settings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
-      }
+      // Load settings from settingsManager which applies them immediately
+      const loadedSettings = settingsManager.loadSettings();
+      setSettings(loadedSettings);
+      settingsManager.applySettings(); // Ensure settings are applied
     } catch (error) {
       console.error('Failed to load settings:', error);
       toast.error('Failed to load settings');
@@ -72,9 +72,13 @@ const Settings = () => {
   const saveSettings = async () => {
     try {
       setSaving(true);
-      // In production, this would save to API
-      localStorage.setItem('burnwise_settings', JSON.stringify(settings));
-      toast.success('Settings saved successfully');
+      // Save settings through settingsManager which also applies them
+      const success = settingsManager.saveSettings(settings);
+      if (success) {
+        toast.success('Settings saved and applied successfully');
+      } else {
+        throw new Error('Failed to save settings');
+      }
     } catch (error) {
       console.error('Failed to save settings:', error);
       toast.error('Failed to save settings');
