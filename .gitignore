@@ -3,14 +3,21 @@ node_modules/
 frontend/node_modules/
 backend/node_modules/
 
-# Environment files
+# Environment files - NEVER COMMIT THESE!
 .env
+.env.*
+*.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 frontend/.env
+frontend/.env.*
 backend/.env
+backend/.env.*
+**/.env
+**/.env.*
 
 # Logs
 logs
