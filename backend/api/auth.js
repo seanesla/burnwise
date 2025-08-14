@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const { query } = require('../db/connection');
 const { generateToken, authenticateToken, refreshToken } = require('../middleware/auth');
 const { setTokenCookie, clearAuthCookies, authenticateFromCookie, verifyRefreshToken, refreshAccessToken } = require('../middleware/cookieAuth');
-const { loginRateLimiter, registrationRateLimiter, trackFailedLogin, clearFailedAttempts, isAccountLocked } = require('../middleware/authRateLimiter');
+const { loginRateLimiter, registrationRateLimiter, trackFailedLogin, clearFailedAttempts, isAccountLocked, getRemainingAttempts } = require('../middleware/authRateLimiter');
 const { setCSRFToken, verifyCSRFToken, getCSRFToken } = require('../middleware/csrf');
 const { loginSchema, registrationSchema, validateInput } = require('../validation/authSchemas');
 const logger = require('../middleware/logger');
@@ -44,7 +44,8 @@ router.post('/login', loginRateLimiter, async (req, res) => {
       logger.security('Login blocked - account locked', { email });
       return res.status(429).json({
         error: 'Account locked',
-        message: 'Too many failed attempts. Please try again later.',
+        message: 'Too many failed attempts. Please try again in 5 minutes.',
+        retryAfter: 5 * 60,
         timestamp: new Date().toISOString()
       });
     }
@@ -112,10 +113,23 @@ router.post('/login', loginRateLimiter, async (req, res) => {
     if (!validPassword) {
       logger.security('Login failed - invalid password', { email, isDemoMode });
       trackFailedLogin(req); // Track failed attempt
-      return res.status(401).json({
+      const remainingAttempts = getRemainingAttempts(req);
+      
+      // Build response with helpful feedback
+      const response = {
         error: 'Authentication failed',
-        message: 'Invalid credentials'
-      });
+        message: 'Invalid credentials',
+        remainingAttempts
+      };
+      
+      // Add warning when attempts are running low
+      if (remainingAttempts <= 3 && remainingAttempts > 0) {
+        response.warning = `Only ${remainingAttempts} login attempts remaining before temporary lockout`;
+      } else if (remainingAttempts === 0) {
+        response.warning = 'Account will be locked after next failed attempt. Please wait 5 minutes.';
+      }
+      
+      return res.status(401).json(response);
     }
     
     // Clear failed attempts on successful login

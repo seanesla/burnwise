@@ -11,29 +11,36 @@ const logger = require('./logger');
 const failedAttempts = new Map();
 
 /**
- * Login rate limiter - 5 attempts per 15 minutes
+ * Login rate limiter - 10 attempts per 5 minutes
+ * More user-friendly while still preventing brute force
  */
 const loginRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  windowMs: 5 * 60 * 1000, // 5 minutes (reduced from 15)
+  max: 10, // 10 requests per window (increased from 5)
   message: {
     error: 'Too many login attempts',
-    message: 'Please try again in 15 minutes',
+    message: 'Please try again in 5 minutes',
     timestamp: new Date().toISOString()
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
   handler: (req, res) => {
+    const key = `${req.ip}:${req.body.email || 'unknown'}`;
+    const attempts = failedAttempts.get(key) || 0;
+    
     logger.security('Login rate limit exceeded', {
       ip: req.ip,
       email: req.body.email,
-      attempts: failedAttempts.get(req.ip) || 0
+      attempts: attempts
     });
     
     res.status(429).json({
       error: 'Too many login attempts',
-      message: 'Account temporarily locked. Please try again in 15 minutes.',
-      retryAfter: 15 * 60,
+      message: `You've exceeded the maximum number of login attempts. Please wait 5 minutes before trying again.`,
+      retryAfter: 5 * 60,
+      remainingTime: '5 minutes',
+      maxAttempts: 10,
       timestamp: new Date().toISOString()
     });
   },
@@ -98,10 +105,10 @@ const trackFailedLogin = (req) => {
   const attempts = failedAttempts.get(key) || 0;
   failedAttempts.set(key, attempts + 1);
   
-  // Clear after 15 minutes
+  // Clear after 5 minutes (matches rate limit window)
   setTimeout(() => {
     failedAttempts.delete(key);
-  }, 15 * 60 * 1000);
+  }, 5 * 60 * 1000);
   
   logger.security('Failed login attempt tracked', {
     ip: req.ip,
@@ -131,7 +138,16 @@ const clearFailedAttempts = (req) => {
 const isAccountLocked = (req) => {
   const key = `${req.ip}:${req.body.email}`;
   const attempts = failedAttempts.get(key) || 0;
-  return attempts >= 5;
+  return attempts >= 10; // Updated to match new limit
+};
+
+/**
+ * Get remaining attempts for user feedback
+ */
+const getRemainingAttempts = (req) => {
+  const key = `${req.ip}:${req.body.email}`;
+  const attempts = failedAttempts.get(key) || 0;
+  return Math.max(0, 10 - attempts);
 };
 
 /**
@@ -167,5 +183,6 @@ module.exports = {
   apiRateLimiter,
   trackFailedLogin,
   clearFailedAttempts,
-  isAccountLocked
+  isAccountLocked,
+  getRemainingAttempts
 };
