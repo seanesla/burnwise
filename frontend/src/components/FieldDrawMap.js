@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import * as turf from '@turf/turf';
+import { FaMapMarkerAlt, FaPencilAlt, FaTrash } from 'react-icons/fa';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import '../styles/FieldDrawMap.css';
 
@@ -188,7 +189,7 @@ const FieldDrawMap = ({ onFieldDrawn, existingFields = [], savedFields = [] }) =
   return (
     <div className="field-draw-map">
       <div className="map-header">
-        <h3>📍 Select Your Field</h3>
+        <h3><FaMapMarkerAlt style={{ display: 'inline', marginRight: '8px' }} />Select Your Field</h3>
         <div className="map-instructions">
           {!drawMode && !selectedField && (
             <p>Click "Draw Field" to outline your burn area, or select a saved field below</p>
@@ -221,7 +222,7 @@ const FieldDrawMap = ({ onFieldDrawn, existingFields = [], savedFields = [] }) =
               className="btn-draw-field"
               onClick={startDrawing}
             >
-              ✏️ Draw New Field
+              <FaPencilAlt style={{ display: 'inline', marginRight: '8px' }} />Draw New Field
             </button>
           )}
           
@@ -230,7 +231,7 @@ const FieldDrawMap = ({ onFieldDrawn, existingFields = [], savedFields = [] }) =
               className="btn-clear"
               onClick={clearDrawing}
             >
-              🗑️ Clear Selection
+              <FaTrash style={{ display: 'inline', marginRight: '8px' }} />Clear Selection
             </button>
           )}
         </div>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useAn
 import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, Cloud, Sky, Stars, Float, Trail, Text3D, Center } from '@react-three/drei';
 import * as THREE from 'three';
-import { FaFire, FaWind, FaThermometerHalf, FaClock, FaLeaf, FaExclamationTriangle, FaSatellite, FaRadiation, FaBolt } from 'react-icons/fa';
+import { FaFire, FaWind, FaThermometerHalf, FaClock, FaLeaf, FaExclamationTriangle, FaSatellite, FaRadiation, FaBolt, FaCheck } from 'react-icons/fa';
 import { GiWheat, GiCorn, GiFireZone, GiSmokeBomb, GiWindsock, GiFireBowl } from 'react-icons/gi';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -568,19 +568,19 @@ const HolographicControlPanel = ({ formData, onChange, onSubmit, farms }) => {
               <div className="pre-submit-checklist">
                 <h3>PRE-BURN CHECKLIST</h3>
                 <div className="checklist-item">
-                  <span className={formData.field_boundary ? 'check complete' : 'check incomplete'}>✓</span>
+                  <span className={formData.field_boundary ? 'check complete' : 'check incomplete'}><FaCheck /></span>
                   <span>Field boundary defined</span>
                 </div>
                 <div className="checklist-item">
-                  <span className={formData.farm_id ? 'check complete' : 'check incomplete'}>✓</span>
+                  <span className={formData.farm_id ? 'check complete' : 'check incomplete'}><FaCheck /></span>
                   <span>Farm selected</span>
                 </div>
                 <div className="checklist-item">
-                  <span className={formData.burn_date ? 'check complete' : 'check incomplete'}>✓</span>
+                  <span className={formData.burn_date ? 'check complete' : 'check incomplete'}><FaCheck /></span>
                   <span>Burn date scheduled</span>
                 </div>
                 <div className="checklist-item">
-                  <span className="check complete">✓</span>
+                  <span className="check complete"><FaCheck /></span>
                   <span>Weather parameters configured</span>
                 </div>
               </div>
@@ -720,7 +720,7 @@ const ImmersiveBurnRequest = () => {
     
     // Simulate API call
     setTimeout(() => {
-      toast.success('🔥 Burn request initiated! 5-Agent system processing...');
+      toast.success('Burn request initiated! 5-Agent system processing...');
       setLoading(false);
       
       // Reset form

@@ -496,10 +496,14 @@
 }
 
 .checkbox-item.checked .checkbox-custom::after {
-  content: '✓';
-  color: white;
-  font-weight: bold;
-  font-size: 14px;
+  content: '';
+  width: 12px;
+  height: 8px;
+  border: 2px solid white;
+  border-top: none;
+  border-right: none;
+  transform: rotate(-45deg);
+  margin-bottom: 2px;
 }
 
 .checkbox-label {

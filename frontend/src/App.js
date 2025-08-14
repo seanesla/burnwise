@@ -17,7 +17,7 @@ const Settings = lazy(() => import('./components/Settings'));
 
 // Debug system (disabled for production)
 const DEBUG = false;
-const LOG_PREFIX = '🔥 BURNWISE:';
+const LOG_PREFIX = '[BURNWISE]:';
 
 function AppContent() {
   const location = useLocation();
