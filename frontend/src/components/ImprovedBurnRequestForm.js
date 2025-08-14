@@ -720,6 +720,7 @@ const ImprovedBurnRequestForm = () => {
                       }
                     }))}
                     className="absolute inset-0 opacity-0 cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                   />
                   <div 
                     className="slider-thumb" 
@@ -754,6 +755,7 @@ const ImprovedBurnRequestForm = () => {
                           }
                         }))}
                         className="absolute inset-0 opacity-0 cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                       />
                       <div 
                         className="slider-thumb" 
@@ -781,6 +783,7 @@ const ImprovedBurnRequestForm = () => {
                           }
                         }))}
                         className="absolute inset-0 opacity-0 cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                       />
                       <div 
                         className="slider-thumb" 
