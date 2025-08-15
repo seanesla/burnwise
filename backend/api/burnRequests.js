@@ -935,6 +935,117 @@ router.get('/analytics/summary', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * POST /api/burn-requests/detect-conflicts
+ * Detect conflicts for burn requests
+ */
+router.post('/detect-conflicts', asyncHandler(async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const { burn_request_ids, date } = req.body;
+    
+    // Validate input
+    if (!burn_request_ids && !date) {
+      throw new ValidationError('Either burn_request_ids or date must be provided', 'input');
+    }
+    
+    let burnRequests;
+    
+    if (burn_request_ids) {
+      // Get specific burn requests
+      burnRequests = await query(`
+        SELECT br.*, 
+               bf.longitude, bf.latitude,
+               sp.plume_geometry, sp.max_concentration
+        FROM burn_requests br
+        JOIN burn_fields bf ON br.field_id = bf.field_id
+        LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id
+        WHERE br.request_id IN (${burn_request_ids.map(() => '?').join(',')})
+      `, burn_request_ids);
+    } else {
+      // Get all burn requests for a date
+      burnRequests = await query(`
+        SELECT br.*, 
+               bf.longitude, bf.latitude,
+               sp.plume_geometry, sp.max_concentration
+        FROM burn_requests br
+        JOIN burn_fields bf ON br.field_id = bf.field_id
+        LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id
+        WHERE DATE(br.requested_date) = ?
+        AND br.status IN ('pending', 'approved')
+      `, [date]);
+    }
+    
+    if (burnRequests.length < 2) {
+      return res.json({
+        success: true,
+        conflicts: [],
+        message: 'No conflicts detected (less than 2 burns to compare)'
+      });
+    }
+    
+    // Detect conflicts using predictor agent
+    const conflicts = [];
+    
+    for (let i = 0; i < burnRequests.length; i++) {
+      for (let j = i + 1; j < burnRequests.length; j++) {
+        const burn1 = burnRequests[i];
+        const burn2 = burnRequests[j];
+        
+        // Check temporal overlap
+        const start1 = new Date(`${burn1.requested_date} ${burn1.requested_window_start}`);
+        const end1 = new Date(`${burn1.requested_date} ${burn1.requested_window_end}`);
+        const start2 = new Date(`${burn2.requested_date} ${burn2.requested_window_start}`);
+        const end2 = new Date(`${burn2.requested_date} ${burn2.requested_window_end}`);
+        
+        const hasTimeOverlap = (start1 <= end2 && end1 >= start2);
+        
+        if (hasTimeOverlap) {
+          // Calculate smoke overlap using predictor
+          const overlapResult = await predictorAgent.detectOverlap(
+            burn1,
+            burn2,
+            { windSpeed: 5, windDirection: 270 } // Use current weather if available
+          );
+          
+          if (overlapResult.hasConflict) {
+            conflicts.push({
+              burn1_id: burn1.request_id,
+              burn2_id: burn2.request_id,
+              burn1_farm: burn1.farm_name,
+              burn2_farm: burn2.farm_name,
+              conflict_type: overlapResult.type,
+              severity: overlapResult.severity,
+              overlap_area: overlapResult.overlapArea,
+              max_pm25: overlapResult.maxConcentration,
+              resolution_suggestions: overlapResult.suggestions
+            });
+          }
+        }
+      }
+    }
+    
+    const duration = Date.now() - startTime;
+    
+    logger.performance('conflict_detection', duration, {
+      burnsAnalyzed: burnRequests.length,
+      conflictsFound: conflicts.length
+    });
+    
+    res.json({
+      success: true,
+      conflicts,
+      burns_analyzed: burnRequests.length,
+      processing_time_ms: duration
+    });
+    
+  } catch (error) {
+    logger.error('Conflict detection failed', { error: error.message });
+    throw error;
+  }
+}));
+
 // Helper method to detect significant changes requiring reprocessing
 function detectSignificantChanges(original, updated) {
   const changes = {

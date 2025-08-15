@@ -2,6 +2,101 @@ const mysql = require('mysql2/promise');
 const logger = require('../middleware/logger');
 const { queryCache, invalidateRelatedCaches } = require('./queryCache');
 
+// Mock database implementation for testing
+class MockDatabase {
+  constructor() {
+    this.data = {
+      users: [
+        { id: 1, email: 'test@burnwise.com', name: 'Test User', role: 'farmer' }
+      ],
+      farms: [
+        { id: 1, name: 'Test Farm', location: JSON.stringify({lat: 38.5, lng: -121.5}), owner_id: 1 }
+      ],
+      burn_requests: [],
+      weather_data: [
+        { id: 1, temperature: 72, humidity: 45, wind_speed: 5, wind_direction: 180 }
+      ],
+      alerts: [],
+      burn_fields: [],
+      weather_vectors: [],
+      smoke_plume_vectors: [],
+      burn_embeddings: []
+    };
+    this.nextId = 100;
+  }
+
+  async initialize() {
+    logger.info('Mock database initialized for testing');
+    return true;
+  }
+
+  async testConnection() {
+    return true;
+  }
+
+  async query(sql, params = []) {
+    const upperSql = sql.trim().toUpperCase();
+    
+    // Handle SHOW TABLES
+    if (upperSql.startsWith('SHOW TABLES')) {
+      return Object.keys(this.data).map(table => ({ [`Tables_in_${process.env.TIDB_DATABASE}`]: table }));
+    }
+
+    // Handle SELECT
+    if (upperSql.startsWith('SELECT')) {
+      const tableMatch = sql.match(/FROM\s+`?(\w+)`?/i);
+      if (tableMatch) {
+        const table = tableMatch[1];
+        if (this.data[table]) {
+          // Simple mock - return all data from table
+          return this.data[table];
+        }
+      }
+      return [];
+    }
+
+    // Handle INSERT
+    if (upperSql.startsWith('INSERT')) {
+      const tableMatch = sql.match(/INSERT INTO\s+`?(\w+)`?/i);
+      if (tableMatch) {
+        const table = tableMatch[1];
+        if (this.data[table]) {
+          const newItem = { id: this.nextId++, created_at: new Date() };
+          this.data[table].push(newItem);
+          return { insertId: newItem.id, affectedRows: 1 };
+        }
+      }
+      return { insertId: this.nextId++, affectedRows: 1 };
+    }
+
+    // Handle UPDATE
+    if (upperSql.startsWith('UPDATE')) {
+      return { affectedRows: 1, changedRows: 1 };
+    }
+
+    // Handle DELETE
+    if (upperSql.startsWith('DELETE')) {
+      return { affectedRows: 1 };
+    }
+
+    // Handle CREATE TABLE
+    if (upperSql.startsWith('CREATE TABLE')) {
+      const tableMatch = sql.match(/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?`?(\w+)`?/i);
+      if (tableMatch && !this.data[tableMatch[1]]) {
+        this.data[tableMatch[1]] = [];
+      }
+      return { affectedRows: 0 };
+    }
+
+    // Default response
+    return [];
+  }
+
+  async close() {
+    logger.info('Mock database connection closed');
+  }
+}
+
 class CircuitBreaker {
   constructor(threshold = 5, timeout = 60000) {
     this.threshold = threshold;
@@ -50,6 +145,8 @@ class CircuitBreaker {
 class DatabaseConnection {
   constructor() {
     this.pool = null;
+    this.mockDb = null;
+    this.useMock = process.env.USE_MOCK_DB === 'true';
     this.circuitBreaker = new CircuitBreaker(5, 60000);
     this.retryDelay = 1000;
     this.maxRetries = 3;
@@ -57,6 +154,14 @@ class DatabaseConnection {
 
   async initialize() {
     try {
+      // Use mock database if configured
+      if (this.useMock) {
+        this.mockDb = new MockDatabase();
+        await this.mockDb.initialize();
+        logger.info('Using mock database for testing');
+        return;
+      }
+
       // TiDB Serverless connection configuration - OPTIMIZED
       this.pool = mysql.createPool({
         host: process.env.TIDB_HOST,
@@ -95,6 +200,9 @@ class DatabaseConnection {
   }
 
   async testConnection() {
+    if (this.useMock) {
+      return this.mockDb.testConnection();
+    }
     return this.circuitBreaker.execute(async () => {
       const connection = await this.pool.getConnection();
       await connection.ping();
@@ -109,6 +217,11 @@ class DatabaseConnection {
       ttl = 60000, // 1 minute default
       forceRefresh = false 
     } = options;
+    
+    // Use mock database if configured
+    if (this.useMock) {
+      return this.mockDb.query(sql, params);
+    }
     
     // Check if this is a SELECT query that can be cached
     const isSelectQuery = sql.trim().toUpperCase().startsWith('SELECT');
@@ -176,6 +289,12 @@ class DatabaseConnection {
 
   async initializeSchema() {
     try {
+      // Skip schema initialization for mock database
+      if (this.useMock) {
+        logger.info('Mock database - schema initialization skipped');
+        return;
+      }
+      
       // Check if tables exist
       const tables = await this.query(`SHOW TABLES`);
       const tableNames = tables.map(row => Object.values(row)[0]);
@@ -227,7 +346,9 @@ class DatabaseConnection {
   // Removed vector search and spatial methods - overengineered and unused
 
   async close() {
-    if (this.pool) {
+    if (this.useMock && this.mockDb) {
+      await this.mockDb.close();
+    } else if (this.pool) {
       await this.pool.end();
       logger.info('Database connection pool closed');
     }

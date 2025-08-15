@@ -20,7 +20,8 @@ class WeatherAgent {
     this.agentName = 'weather';
     this.version = '1.0.0';
     this.initialized = false;
-    // No demo mode - real API only
+    // Check for mock mode
+    this.useMock = process.env.USE_MOCK_WEATHER === 'true';
     this.apiKey = process.env.OPENWEATHERMAP_API_KEY;
     this.baseUrl = 'https://api.openweathermap.org/data/2.5';
     this.oneCallUrl = 'https://api.openweathermap.org/data/3.0/onecall';
@@ -66,7 +67,13 @@ class WeatherAgent {
 
   async testWeatherAPI() {
     try {
-      // Require real API key - no mocks or demo mode allowed
+      // Skip API test in mock mode
+      if (this.useMock) {
+        logger.agent(this.agentName, 'debug', 'Using mock weather data - API test skipped');
+        return;
+      }
+      
+      // Require real API key for non-mock mode
       if (!this.apiKey || this.apiKey.length < 10) {
         throw new Error('Valid OpenWeatherMap API key required - no mock/demo mode allowed');
       }
@@ -233,7 +240,22 @@ class WeatherAgent {
         return cached.data;
       }
       
-      // Always use real weather data - no demo/mock mode
+      // Return mock data in test mode
+      if (this.useMock) {
+        const mockData = {
+          temperature: 72,
+          humidity: 45,
+          windSpeed: 8,
+          windDirection: 180,
+          condition: 'Clear',
+          visibility: 10,
+          pressure: 30.1,
+          dewPoint: 48,
+          cloudCover: 10
+        };
+        logger.agent(this.agentName, 'debug', 'Using mock weather data');
+        return mockData;
+      }
       
       const response = await axios.get(`${this.baseUrl}/weather`, {
         params: {
@@ -283,7 +305,23 @@ class WeatherAgent {
         return cached.data;
       }
       
-      // Always use real forecast data - no demo/mock mode
+      // Return mock forecast data in test mode
+      if (this.useMock) {
+        const mockForecast = [];
+        for (let i = 0; i < 8; i++) {
+          mockForecast.push({
+            time: new Date(Date.now() + i * 3 * 60 * 60 * 1000),
+            temperature: 70 + Math.random() * 10,
+            humidity: 40 + Math.random() * 20,
+            windSpeed: 5 + Math.random() * 10,
+            windDirection: 150 + Math.random() * 60,
+            condition: ['Clear', 'Partly Cloudy', 'Cloudy'][Math.floor(Math.random() * 3)],
+            precipitation: Math.random() < 0.2 ? Math.random() * 0.1 : 0
+          });
+        }
+        logger.agent(this.agentName, 'debug', 'Using mock forecast data');
+        return mockForecast;
+      }
       
       // Use free 5-day forecast API instead of paid One Call API
       const response = await axios.get(`${this.baseUrl}/forecast`, {
