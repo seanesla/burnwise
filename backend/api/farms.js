@@ -147,12 +147,12 @@ router.get('/', asyncHandler(async (req, res) => {
         f.owner_name,
         f.contact_phone as phone,
         f.contact_email as email,
-        f.permit_number as address,
+        f.address,
         f.longitude as lon,
         f.latitude as lat,
         f.total_acreage as farm_size_acres,
         NULL as primary_crops,
-        f.permit_number as certification_number,
+        NULL as certification_number,
         NULL as emergency_contact,
         f.created_at,
         f.updated_at
@@ -778,9 +778,9 @@ router.get('/nearby/:lat/:lon', asyncHandler(async (req, res) => {
     if (include_details === 'true') {
       selectFields += `,
         f.contact_email as email,
-        f.permit_number as address,
+        f.address,
         NULL as primary_crops,
-        f.permit_number as certification_number
+        NULL as certification_number
       `;
     }
     

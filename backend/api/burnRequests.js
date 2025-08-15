@@ -87,11 +87,11 @@ router.get('/', asyncHandler(async (req, res) => {
         br.status,
         br.created_at,
         br.updated_at,
-        sp.dispersion_radius_km as max_dispersion_radius,
+        sp.affected_area_km2 as max_dispersion_radius,
         sp.confidence_score as prediction_confidence
       FROM burn_requests br
       JOIN farms f ON br.farm_id = f.farm_id
-      LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id
+      LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
       ${whereClause}
       ORDER BY br.${sort_by} ${sort_order}
       LIMIT ${parseInt(limit) || 10} OFFSET ${offset || 0}
@@ -183,8 +183,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
     // Get smoke predictions  
     const smokePredictions = await query(`
       SELECT *
-      FROM smoke_predictions
-      WHERE burn_request_id = ?
+      FROM burn_smoke_predictions
+      WHERE request_id = ?
       ORDER BY created_at DESC
       LIMIT 1
     `, [id]);
@@ -703,8 +703,8 @@ router.get('/:id/workflow-status', asyncHandler(async (req, res) => {
     
     // Check smoke predictions
     const predictions = await query(`
-      SELECT created_at FROM smoke_predictions
-      WHERE burn_request_id = ?
+      SELECT created_at FROM burn_smoke_predictions
+      WHERE request_id = ?
       LIMIT 1
     `, [id]);
     
