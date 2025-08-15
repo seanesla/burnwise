@@ -58,3 +58,17 @@ coverage/
 # Test artifacts
 test-results/
 e2e-tests/*.png
+
+# Security - NEVER commit these!
+secrets-to-remove.txt
+*-credentials.sh
+*-credentials-*.sh
+clean-git-history.sh
+redact-*.sh
+rotate-*.sh
+*.backup
+*.backup2
+.git.backup.*
+
+# Files with potential secrets
+EMERGENCY-*.sh

@@ -9,11 +9,16 @@ test.describe('TiDB Vector Search Tests', () => {
 
   test.beforeAll(async () => {
     // Direct database connection for vector operations
+    // IMPORTANT: Always use environment variables for credentials!
+    if (!process.env.TIDB_HOST || !process.env.TIDB_PASSWORD) {
+      throw new Error('Database credentials not configured. Please set TIDB_HOST, TIDB_USER, and TIDB_PASSWORD environment variables.');
+    }
+    
     connection = await mysql.createConnection({
-      host: process.env.TIDB_HOST || 'gateway01.us-west-2.prod.aws.tidbcloud.com',
-      port: 4000,
-      user: process.env.TIDB_USER || '3DESLehQEnZA91s.root',
-      password: process.env.TIDB_PASSWORD || '[REDACTED-TIDB-PASSWORD]',
+      host: process.env.TIDB_HOST,
+      port: process.env.TIDB_PORT || 4000,
+      user: process.env.TIDB_USER,
+      password: process.env.TIDB_PASSWORD,
       database: process.env.TIDB_DATABASE || 'test',
       ssl: {
         minVersion: 'TLSv1.2',
