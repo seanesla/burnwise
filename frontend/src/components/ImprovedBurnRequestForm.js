@@ -195,7 +195,7 @@ const ImprovedBurnRequestForm = () => {
         canvas.addEventListener('webglcontextlost', (event) => {
           event.preventDefault();
           console.warn('WebGL context lost in burn request form');
-          toast('Map graphics temporarily lost. Attempting recovery...', { icon: '⚠️' });
+          toast.error('Map graphics temporarily lost. Attempting recovery...');
         });
         
         canvas.addEventListener('webglcontextrestored', () => {
@@ -303,7 +303,7 @@ const ImprovedBurnRequestForm = () => {
           conditions.humidity <= formData.preferred_conditions.max_humidity) {
         toast.success('Weather conditions are suitable for burning');
       } else {
-        toast('Weather conditions may not be optimal', { icon: '⚠️' });
+        toast.warning('Weather conditions may not be optimal');
       }
     } catch (error) {
       console.error('Failed to check weather:', error);
@@ -720,6 +720,7 @@ const ImprovedBurnRequestForm = () => {
                       }
                     }))}
                     className="absolute inset-0 opacity-0 cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                   />
                   <div 
                     className="slider-thumb" 
@@ -754,6 +755,7 @@ const ImprovedBurnRequestForm = () => {
                           }
                         }))}
                         className="absolute inset-0 opacity-0 cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                       />
                       <div 
                         className="slider-thumb" 
@@ -781,6 +783,7 @@ const ImprovedBurnRequestForm = () => {
                           }
                         }))}
                         className="absolute inset-0 opacity-0 cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                       />
                       <div 
                         className="slider-thumb" 

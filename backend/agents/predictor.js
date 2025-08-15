@@ -95,16 +95,16 @@ class PredictorAgent {
     try {
       const historicalData = await query(`
         SELECT 
-          pm.max_dispersion_radius,
+          pm.dispersion_radius_km,
           pm.confidence_score,
           br.crop_type,
-          br.acres,
+          br.acreage,
           wd.wind_speed,
           wd.wind_direction,
           wd.temperature,
           wd.weather_condition
         FROM smoke_predictions pm
-        JOIN burn_requests br ON pm.burn_request_id = br.id
+        JOIN burn_requests br ON pm.burn_request_id = br.request_id
         JOIN weather_data wd ON DATE(pm.created_at) = DATE(wd.timestamp)
         WHERE pm.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
         AND pm.confidence_score > 0.7

@@ -272,7 +272,7 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         COUNT(CASE WHEN status = 'sent' THEN 1 END) as sent_alerts,
         COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_alerts,
         COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_alerts,
-        AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) as avg_delivery_time_seconds,
+        AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(delivered_at, created_at))) as avg_delivery_time_seconds,
         COUNT(CASE WHEN type = 'smoke_warning' THEN 1 END) as smoke_warnings,
         COUNT(CASE WHEN type = 'conflict_detected' THEN 1 END) as conflict_alerts
       FROM alerts a
@@ -285,11 +285,11 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         COUNT(CASE WHEN weather_pattern_embedding IS NOT NULL THEN 1 END) as weather_vectors,
         (SELECT COUNT(*) FROM smoke_predictions WHERE plume_vector IS NOT NULL 
          AND created_at > DATE_SUB(NOW(), INTERVAL ? DAY)) as smoke_vectors,
-        (SELECT COUNT(*) FROM burn_requests WHERE burn_vector IS NOT NULL 
+        (SELECT COUNT(*) FROM burn_requests WHERE terrain_vector IS NOT NULL 
          AND created_at > DATE_SUB(NOW(), INTERVAL ? DAY)) as burn_vectors
       FROM weather_data
       WHERE timestamp > DATE_SUB(NOW(), INTERVAL ? DAY)
-    `, [periodDays, periodDays]);
+    `, [periodDays, periodDays, periodDays]);
     
     // 8. Daily Trends
     analytics.daily_trends = await query(`
@@ -297,7 +297,7 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         DATE(br.created_at) as date,
         COUNT(br.request_id) as burn_requests,
         COUNT(CASE WHEN br.status = 'completed' THEN 1 END) as completed_burns,
-        SUM(br.acres) as acres_requested,
+        SUM(br.acreage) as acres_requested,
         AVG(br.priority_score) as avg_priority,
         COUNT(DISTINCT br.farm_id) as farms_active,
         (SELECT COUNT(*) FROM alerts WHERE DATE(created_at) = DATE(br.created_at)) as alerts_sent
@@ -390,7 +390,7 @@ router.get('/efficiency', asyncHandler(async (req, res) => {
         COUNT(*) as total_operations,
         COUNT(CASE WHEN wd.weather_condition IS NULL THEN 1 END) as failed_operations
       FROM burn_requests br
-      LEFT JOIN weather_data wd ON DATE(wd.timestamp) = DATE(br.burn_date)
+      LEFT JOIN weather_data wd ON DATE(wd.timestamp) = DATE(br.requested_date)
       WHERE br.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
       
       UNION ALL
@@ -496,7 +496,7 @@ router.get('/safety', asyncHandler(async (req, res) => {
       SELECT 
         COUNT(*) as total_emergency_alerts,
         COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_alerts,
-        AVG(TIMESTAMPDIFF(MINUTE, created_at, updated_at)) as avg_response_time_minutes,
+        AVG(TIMESTAMPDIFF(MINUTE, created_at, COALESCE(acknowledged_at, created_at))) as avg_response_time_minutes,
         COUNT(CASE WHEN type = 'emergency_stop' THEN 1 END) as emergency_stops,
         COUNT(CASE WHEN type = 'smoke_warning' AND severity = 'critical' THEN 1 END) as critical_smoke_warnings
       FROM alerts a
@@ -796,7 +796,7 @@ async function getCoordinatorMetrics(periodDays) {
     SELECT 
       COUNT(*) as requests_processed,
       AVG(priority_score) as avg_priority_assigned,
-      COUNT(CASE WHEN burn_vector IS NOT NULL THEN 1 END) as vectors_generated
+      COUNT(CASE WHEN terrain_vector IS NOT NULL THEN 1 END) as vectors_generated
     FROM burn_requests
     WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
   `, [periodDays]);
@@ -871,7 +871,7 @@ async function getAlertsMetrics(periodDays) {
     SELECT 
       COUNT(*) as alerts_sent,
       COUNT(CASE WHEN status = 'sent' THEN 1 END) as successful_deliveries,
-      AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) as avg_delivery_time
+      AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(delivered_at, created_at))) as avg_delivery_time
     FROM alerts
     WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
   `, [periodDays]);
@@ -1099,7 +1099,7 @@ router.get('/dashboard-stats', asyncHandler(async (req, res) => {
         (SELECT AVG(air_quality_index) FROM weather_data WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 1 DAY)) as weatherScore,
         (SELECT COUNT(*) FROM alerts WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) AND status = 'pending') as alerts,
         (SELECT COUNT(*) FROM burn_requests WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as completedBurns,
-        (SELECT COUNT(*) FROM burn_requests WHERE status = 'approved' AND burn_date >= CURDATE()) as upcomingBurns
+        (SELECT COUNT(*) FROM burn_requests WHERE status = 'approved' AND requested_date >= CURDATE()) as upcomingBurns
     `);
     
     res.json({ 

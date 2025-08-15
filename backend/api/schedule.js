@@ -302,18 +302,19 @@ router.get('/:date', asyncHandler(async (req, res) => {
         si.time_slot,
         si.assigned_resources,
         br.field_name,
-        br.acres,
+        br.acreage as acres,
         br.crop_type,
         br.priority_score,
         br.status as burn_status,
         f.name as farm_name,
         f.owner_name,
-        ST_AsGeoJSON(br.field_boundary) as field_boundary
+        bf.field_geometry as field_boundary
       FROM schedules s
       JOIN schedule_items si ON s.id = si.schedule_id
-      JOIN burn_requests br ON si.burn_request_id = br.id
-      JOIN farms f ON br.farm_id = f.id
-      WHERE s.schedule_date = ?
+      JOIN burn_requests br ON si.burn_request_id = br.request_id
+      JOIN farms f ON br.farm_id = f.farm_id
+      LEFT JOIN burn_fields bf ON br.field_id = bf.field_id
+      WHERE s.date = ?
       ORDER BY s.created_at DESC, si.time_slot ASC
       LIMIT 1
     `;
@@ -373,20 +374,21 @@ router.get('/:date', asyncHandler(async (req, res) => {
       // Get conflict information
       const conflicts = await query(`
         SELECT 
-          bc.conflict_type,
-          bc.severity_level,
-          bc.description,
-          br1.field_name as field1,
-          br2.field_name as field2,
+          bc.severity,
+          bc.overlap_percentage,
+          bf1.field_name as field1,
+          bf2.field_name as field2,
           f1.name as farm1,
           f2.name as farm2
         FROM burn_conflicts bc
-        JOIN burn_requests br1 ON bc.burn_request_1_id = br1.id
-        JOIN burn_requests br2 ON bc.burn_request_2_id = br2.id
-        JOIN farms f1 ON br1.farm_id = f1.id
-        JOIN farms f2 ON br2.farm_id = f2.id
+        JOIN burn_requests br1 ON bc.request1_id = br1.request_id
+        JOIN burn_requests br2 ON bc.request2_id = br2.request_id
+        LEFT JOIN burn_fields bf1 ON br1.field_id = bf1.field_id
+        LEFT JOIN burn_fields bf2 ON br2.field_id = bf2.field_id
+        JOIN farms f1 ON br1.farm_id = f1.farm_id
+        JOIN farms f2 ON br2.farm_id = f2.farm_id
         WHERE bc.conflict_date = ?
-        ORDER BY bc.severity_level DESC
+        ORDER BY bc.severity DESC
       `, [date]);
       
       // Get weather analysis for the date
@@ -453,7 +455,7 @@ router.post('/optimize', asyncHandler(async (req, res) => {
     const existingSchedule = await query(`
       SELECT id, optimization_score, created_at
       FROM schedules
-      WHERE schedule_date = ?
+      WHERE date = ?
       ORDER BY created_at DESC
       LIMIT 1
     `, [scheduleDate]);
@@ -482,12 +484,13 @@ router.post('/optimize', asyncHandler(async (req, res) => {
         br.*,
         f.name as farm_name,
         f.owner_name,
-        ST_X(f.location) as farm_lon,
-        ST_Y(f.location) as farm_lat,
-        ST_AsGeoJSON(br.field_boundary) as field_boundary
+        f.longitude as farm_lon,
+        f.latitude as farm_lat,
+        bf.field_geometry as field_boundary
       FROM burn_requests br
-      JOIN farms f ON br.farm_id = f.id
-      WHERE br.burn_date = ?
+      JOIN farms f ON br.farm_id = f.farm_id
+      LEFT JOIN burn_fields bf ON br.field_id = bf.field_id
+      WHERE br.requested_date = ?
       AND br.status IN ('pending', 'approved')
       ORDER BY br.priority_score DESC
     `, [scheduleDate]);
@@ -505,17 +508,16 @@ router.post('/optimize', asyncHandler(async (req, res) => {
     }
     
     // Get weather data for the date
-    const weatherData = await this.getWeatherForOptimization(scheduleDate);
+    const weatherData = await getWeatherForOptimization(scheduleDate);
     
     // Get smoke predictions for all burn requests
     const smokePredictions = await query(`
       SELECT 
-        sp.*,
-        ST_AsGeoJSON(sp.affected_area) as affected_area
+        sp.*
       FROM smoke_predictions sp
       WHERE sp.burn_request_id IN (${burnRequests.map(() => '?').join(',')})
       ORDER BY sp.created_at DESC
-    `, burnRequests.map(br => br.id));
+    `, burnRequests.map(br => br.request_id));
     
     // Run optimization
     const optimizationResult = await optimizerAgent.optimizeSchedule(
@@ -580,44 +582,42 @@ router.get('/conflicts/:date', asyncHandler(async (req, res) => {
     }
     
     if (resolved === 'false') {
-      whereConditions.push('bc.resolved = FALSE');
+      whereConditions.push("bc.resolution_status = 'pending'");
     } else if (resolved === 'true') {
-      whereConditions.push('bc.resolved = TRUE');
+      whereConditions.push("bc.resolution_status = 'resolved'");
     }
     
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
     
     const conflicts = await query(`
       SELECT 
-        bc.id,
-        bc.conflict_type,
-        bc.severity_level,
-        bc.description,
-        bc.distance_meters,
+        bc.conflict_id,
+        bc.severity,
         bc.overlap_percentage,
-        bc.resolved,
-        bc.resolution_method,
+        bc.resolution_status,
         bc.created_at,
-        br1.id as burn1_id,
-        br1.field_name as field1,
-        br1.time_window_start as time1_start,
-        br1.time_window_end as time1_end,
+        br1.request_id as burn1_id,
+        bf1.field_name as field1,
+        br1.requested_window_start as time1_start,
+        br1.requested_window_end as time1_end,
         f1.name as farm1,
         f1.owner_name as owner1,
-        br2.id as burn2_id,
-        br2.field_name as field2,
-        br2.time_window_start as time2_start,
-        br2.time_window_end as time2_end,
+        br2.request_id as burn2_id,
+        bf2.field_name as field2,
+        br2.requested_window_start as time2_start,
+        br2.requested_window_end as time2_end,
         f2.name as farm2,
         f2.owner_name as owner2
       FROM burn_conflicts bc
-      JOIN burn_requests br1 ON bc.burn_request_1_id = br1.id
-      JOIN burn_requests br2 ON bc.burn_request_2_id = br2.id
-      JOIN farms f1 ON br1.farm_id = f1.id
-      JOIN farms f2 ON br2.farm_id = f2.id
+      JOIN burn_requests br1 ON bc.request1_id = br1.request_id
+      JOIN burn_requests br2 ON bc.request2_id = br2.request_id
+      LEFT JOIN burn_fields bf1 ON br1.field_id = bf1.field_id
+      LEFT JOIN burn_fields bf2 ON br2.field_id = bf2.field_id
+      JOIN farms f1 ON br1.farm_id = f1.farm_id
+      JOIN farms f2 ON br2.farm_id = f2.farm_id
       ${whereClause}
       ORDER BY 
-        CASE bc.severity_level
+        CASE bc.severity
           WHEN 'critical' THEN 1
           WHEN 'high' THEN 2
           WHEN 'medium' THEN 3
@@ -688,14 +688,14 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
         br.priority_score,
         f.name as farm_name,
         f.owner_name,
-        ST_X(f.location) as farm_lon,
-        ST_Y(f.location) as farm_lat,
+        f.longitude as farm_lon,
+        f.latitude as farm_lat,
         sp.max_dispersion_radius,
         sp.confidence_score as smoke_confidence
       FROM schedule_items si
       JOIN schedules s ON si.schedule_id = s.id
       JOIN burn_requests br ON si.burn_request_id = br.id
-      JOIN farms f ON br.farm_id = f.id
+      JOIN farms f ON br.farm_id = f.farm_id
       LEFT JOIN smoke_predictions sp ON br.id = sp.burn_request_id
       WHERE s.schedule_date = ?
       ORDER BY si.time_slot ASC, br.priority_score DESC
@@ -789,7 +789,7 @@ router.put('/update', asyncHandler(async (req, res) => {
       FROM schedule_items si
       JOIN schedules s ON si.schedule_id = s.id
       JOIN burn_requests br ON si.burn_request_id = br.id
-      JOIN farms f ON br.farm_id = f.id
+      JOIN farms f ON br.farm_id = f.farm_id
       WHERE si.burn_request_id = ?
       ORDER BY si.created_at DESC
       LIMIT 1
@@ -1026,7 +1026,7 @@ router.post('/reoptimize/:date', asyncHandler(async (req, res) => {
     await query(`
       UPDATE schedules
       SET status = 'archived', updated_at = NOW()
-      WHERE schedule_date = ?
+      WHERE date = ?
       AND status = 'active'
     `, [date]);
     
@@ -1048,8 +1048,8 @@ router.post('/reoptimize/:date', asyncHandler(async (req, res) => {
         ST_X(f.location) as farm_lon,
         ST_Y(f.location) as farm_lat
       FROM burn_requests br
-      JOIN farms f ON br.farm_id = f.id
-      WHERE br.burn_date = ?
+      JOIN farms f ON br.farm_id = f.farm_id
+      WHERE br.requested_date = ?
       AND br.status IN ('pending', 'approved')
     `, [date]);
     
@@ -1062,7 +1062,7 @@ router.post('/reoptimize/:date', asyncHandler(async (req, res) => {
     }
     
     // Get fresh weather data
-    const weatherData = await this.getWeatherForOptimization(date);
+    const weatherData = await getWeatherForOptimization(date);
     
     // Get current smoke predictions
     const smokePredictions = await query(`
@@ -1070,7 +1070,7 @@ router.post('/reoptimize/:date', asyncHandler(async (req, res) => {
       FROM smoke_predictions sp
       WHERE sp.burn_request_id IN (${burnRequests.map(() => '?').join(',')})
       ORDER BY sp.created_at DESC
-    `, burnRequests.map(br => br.id));
+    `, burnRequests.map(br => br.request_id));
     
     // Run re-optimization
     const optimizationResult = await optimizerAgent.optimizeSchedule(
@@ -1084,7 +1084,7 @@ router.post('/reoptimize/:date', asyncHandler(async (req, res) => {
     const previousSchedule = await query(`
       SELECT optimization_score, total_conflicts
       FROM schedules
-      WHERE schedule_date = ?
+      WHERE date = ?
       AND status = 'archived'
       ORDER BY created_at DESC
       LIMIT 1
@@ -1183,7 +1183,7 @@ router.get('/statistics', asyncHandler(async (req, res) => {
     // Daily optimization trends
     const dailyTrends = await query(`
       SELECT 
-        DATE(schedule_date) as date,
+        DATE(date) as schedule_date,
         COUNT(*) as schedules_created,
         AVG(optimization_score) as avg_score,
         SUM((SELECT COUNT(*) FROM schedule_items WHERE schedule_id = schedules.id)) as total_burns_scheduled,
@@ -1191,7 +1191,7 @@ router.get('/statistics', asyncHandler(async (req, res) => {
       FROM schedules
       WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
       AND status = 'active'
-      GROUP BY DATE(schedule_date)
+      GROUP BY DATE(date)
       ORDER BY date DESC
     `, [days]);
     

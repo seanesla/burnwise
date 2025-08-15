@@ -1,0 +1,184 @@
+{
+  "timestamp": "2025-08-14T08:52:45.845Z",
+  "compliance": "65.7%",
+  "totalTests": 35,
+  "passed": 23,
+  "failed": 12,
+  "results": [
+    {
+      "name": "Backend server running on port 5001",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "5-Agent system active (Coordinator)",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "5-Agent system active (Weather)",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "5-Agent system active (Predictor)",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "5-Agent system active (Optimizer)",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "5-Agent system active (Alerts)",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "List farms endpoint works",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Farms have required fields",
+      "status": "PASS",
+      "details": "-121.551000"
+    },
+    {
+      "name": "Current weather endpoint works",
+      "status": "FAIL",
+      "details": "Test returned false"
+    },
+    {
+      "name": "Weather data includes required fields",
+      "status": "FAIL",
+      "error": "Cannot read properties of undefined (reading 'temperature')"
+    },
+    {
+      "name": "Weather analysis endpoint works",
+      "status": "FAIL",
+      "error": "Request failed with status code 400"
+    },
+    {
+      "name": "List burn requests endpoint works",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Create burn request with 5-agent processing",
+      "status": "FAIL",
+      "details": "Test returned false"
+    },
+    {
+      "name": "Conflict detection endpoint exists",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Schedule optimization endpoint works",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Get schedule for date works",
+      "status": "FAIL",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "name": "List alerts endpoint works",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Alert delivery endpoint exists",
+      "status": "FAIL",
+      "details": "Test returned false"
+    },
+    {
+      "name": "Analytics summary endpoint works",
+      "status": "FAIL",
+      "error": "Request failed with status code 404"
+    },
+    {
+      "name": "Analytics burn history works",
+      "status": "FAIL",
+      "error": "Request failed with status code 404"
+    },
+    {
+      "name": "Analytics conflict trends works",
+      "status": "FAIL",
+      "error": "Request failed with status code 404"
+    },
+    {
+      "name": "Weather pattern vectors stored (128-dim)",
+      "status": "FAIL",
+      "error": "Request failed with status code 400"
+    },
+    {
+      "name": "Socket.io endpoint configured",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Smoke prediction via burn request processing",
+      "status": "FAIL",
+      "details": "Test returned false"
+    },
+    {
+      "name": "API: Submit burn request",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API: List burn requests",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API: Get current weather",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API: Analyze weather",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API: Optimize schedule",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API: Get schedule",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API: List alerts",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API: Send alert",
+      "status": "FAIL",
+      "details": "Test returned false"
+    },
+    {
+      "name": "Database tables configured",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Sub-second conflict detection",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "API response time < 500ms",
+      "status": "PASS",
+      "details": true
+    }
+  ]
+}

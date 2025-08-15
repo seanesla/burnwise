@@ -370,7 +370,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 999999;
+  z-index: 900; /* Reduced from 999999 to prevent cursor conflicts */
   display: flex;
   align-items: center;
   justify-content: center;

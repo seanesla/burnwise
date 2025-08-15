@@ -3,14 +3,21 @@ node_modules/
 frontend/node_modules/
 backend/node_modules/
 
-# Environment files
+# Environment files - NEVER COMMIT THESE!
 .env
+.env.*
+*.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 frontend/.env
+frontend/.env.*
 backend/.env
+backend/.env.*
+**/.env
+**/.env.*
 
 # Logs
 logs
@@ -51,3 +58,17 @@ coverage/
 # Test artifacts
 test-results/
 e2e-tests/*.png
+
+# Security - NEVER commit these!
+secrets-to-remove.txt
+*-credentials.sh
+*-credentials-*.sh
+clean-git-history.sh
+redact-*.sh
+rotate-*.sh
+*.backup
+*.backup2
+.git.backup.*
+
+# Files with potential secrets
+EMERGENCY-*.sh

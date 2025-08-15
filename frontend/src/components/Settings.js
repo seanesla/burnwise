@@ -6,6 +6,8 @@ import {
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
+import settingsManager from '../utils/settingsManager';
+import './Settings.css';
 
 const Settings = () => {
   const [settings, setSettings] = useState({
@@ -55,11 +57,10 @@ const Settings = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      // In production, this would fetch from API
-      const savedSettings = localStorage.getItem('burnwise_settings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
-      }
+      // Load settings from settingsManager which applies them immediately
+      const loadedSettings = settingsManager.loadSettings();
+      setSettings(loadedSettings);
+      settingsManager.applySettings(); // Ensure settings are applied
     } catch (error) {
       console.error('Failed to load settings:', error);
       toast.error('Failed to load settings');
@@ -71,9 +72,13 @@ const Settings = () => {
   const saveSettings = async () => {
     try {
       setSaving(true);
-      // In production, this would save to API
-      localStorage.setItem('burnwise_settings', JSON.stringify(settings));
-      toast.success('Settings saved successfully');
+      // Save settings through settingsManager which also applies them
+      const success = settingsManager.saveSettings(settings);
+      if (success) {
+        toast.success('Settings saved and applied successfully');
+      } else {
+        throw new Error('Failed to save settings');
+      }
     } catch (error) {
       console.error('Failed to save settings:', error);
       toast.error('Failed to save settings');
@@ -114,43 +119,39 @@ const Settings = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-dark">
+      <div className="settings-loading">
         <LoadingSpinner size="large" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-dark p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="settings-container">
+      <div className="settings-wrapper">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="settings-header"
         >
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <FaCog className="text-fire-orange" />
+          <h1 className="settings-title">
+            <FaCog />
             Settings
           </h1>
-          <p className="text-gray-400">
+          <p className="settings-subtitle">
             Configure your BURNWISE experience
           </p>
         </motion.div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-4 mb-8 overflow-x-auto">
+        <div className="settings-tabs">
           {tabs.map(tab => (
             <motion.button
               key={tab.id}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-fire-orange to-fire-red text-white'
-                  : 'glass-card text-gray-400 hover:text-white'
-              }`}
+              className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
             >
               <tab.icon />
               {tab.label}
@@ -163,81 +164,81 @@ const Settings = () => {
           key={activeTab}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass-card p-6"
+          className="settings-content"
         >
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white mb-4">Profile Information</h2>
+            <div>
+              <h2 className="section-title">Profile Information</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">
                     Full Name
                   </label>
                   <input
                     type="text"
                     value={settings.profile.name}
                     onChange={(e) => handleInputChange('profile', 'name', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-input"
                     placeholder="John Doe"
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group">
+                  <label className="form-label">
                     Email Address
                   </label>
                   <input
                     type="email"
                     value={settings.profile.email}
                     onChange={(e) => handleInputChange('profile', 'email', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-input"
                     placeholder="john@example.com"
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group">
+                  <label className="form-label">
                     Phone Number
                   </label>
                   <input
                     type="tel"
                     value={settings.profile.phone}
                     onChange={(e) => handleInputChange('profile', 'phone', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-input"
                     placeholder="+1 555-123-4567"
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group">
+                  <label className="form-label">
                     Farm Name
                   </label>
                   <input
                     type="text"
                     value={settings.profile.farmName}
                     onChange={(e) => handleInputChange('profile', 'farmName', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-input"
                     placeholder="Green Acres Farm"
                   />
                 </div>
               </div>
               
-              <div className="pt-4 border-t border-gray-700">
-                <h3 className="text-lg font-semibold text-white mb-3">Account Role</h3>
-                <div className="flex gap-4">
+              <div className="subsection">
+                <h3 className="subsection-title">Account Role</h3>
+                <div className="radio-group">
                   {['Farm Owner', 'Farm Manager', 'Coordinator'].map(role => (
-                    <label key={role} className="flex items-center gap-2 cursor-pointer">
+                    <label key={role} className="radio-label">
                       <input
                         type="radio"
                         name="role"
                         value={role}
                         checked={settings.profile.role === role}
                         onChange={(e) => handleInputChange('profile', 'role', e.target.value)}
-                        className="accent-fire-orange"
+                        className="radio-input"
                       />
-                      <span className="text-gray-300">{role}</span>
+                      <span>{role}</span>
                     </label>
                   ))}
                 </div>
@@ -247,99 +248,100 @@ const Settings = () => {
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white mb-4">Notification Preferences</h2>
+            <div>
+              <h2 className="section-title">Notification Preferences</h2>
               
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Alert Channels</h3>
+              <div>
+                <h3 className="subsection-title">Alert Channels</h3>
                 
-                <label className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <FaBell className="text-fire-orange" />
-                    <div>
-                      <p className="text-white font-medium">Email Alerts</p>
-                      <p className="text-gray-400 text-sm">Receive alerts via email</p>
+                <label className="toggle-card">
+                  <div className="toggle-info">
+                    <FaBell className="toggle-icon" />
+                    <div className="toggle-text">
+                      <p className="toggle-title">Email Alerts</p>
+                      <p className="toggle-description">Receive alerts via email</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.notifications.emailAlerts}
                     onChange={(e) => handleInputChange('notifications', 'emailAlerts', e.target.checked)}
-                    className="w-5 h-5 accent-fire-orange"
+                    className="checkbox-input"
                   />
                 </label>
                 
-                <label className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <FaBell className="text-fire-orange" />
-                    <div>
-                      <p className="text-white font-medium">SMS Alerts</p>
-                      <p className="text-gray-400 text-sm">Receive alerts via text message</p>
+                <label className="toggle-card">
+                  <div className="toggle-info">
+                    <FaBell className="toggle-icon" />
+                    <div className="toggle-text">
+                      <p className="toggle-title">SMS Alerts</p>
+                      <p className="toggle-description">Receive alerts via text message</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.notifications.smsAlerts}
                     onChange={(e) => handleInputChange('notifications', 'smsAlerts', e.target.checked)}
-                    className="w-5 h-5 accent-fire-orange"
+                    className="checkbox-input"
                   />
                 </label>
                 
-                <label className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <FaBell className="text-fire-orange" />
-                    <div>
-                      <p className="text-white font-medium">Browser Notifications</p>
-                      <p className="text-gray-400 text-sm">Show desktop notifications</p>
+                <label className="toggle-card">
+                  <div className="toggle-info">
+                    <FaBell className="toggle-icon" />
+                    <div className="toggle-text">
+                      <p className="toggle-title">Browser Notifications</p>
+                      <p className="toggle-description">Show desktop notifications</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.notifications.browserNotifications}
                     onChange={(e) => handleInputChange('notifications', 'browserNotifications', e.target.checked)}
-                    className="w-5 h-5 accent-fire-orange"
+                    className="checkbox-input"
                   />
                 </label>
               </div>
               
-              <div className="space-y-4 pt-4 border-t border-gray-700">
-                <h3 className="text-lg font-semibold text-white">Alert Types</h3>
-                
-                {Object.entries({
-                  burnApproved: 'Burn Request Approved',
-                  burnRejected: 'Burn Request Rejected',
-                  weatherChange: 'Weather Condition Changes',
-                  conflictDetected: 'Conflict Detected',
-                  scheduleUpdate: 'Schedule Updates'
-                }).map(([key, label]) => (
-                  <label key={key} className="flex items-center justify-between p-3 bg-black/20 rounded-lg hover:bg-black/30 cursor-pointer">
-                    <span className="text-gray-300">{label}</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.alertTypes[key]}
-                      onChange={(e) => handleNestedChange('notifications', 'alertTypes', key, e.target.checked)}
-                      className="w-5 h-5 accent-fire-orange"
-                    />
-                  </label>
-                ))}
+              <div className="subsection">
+                <h3 className="subsection-title">Alert Types</h3>
+                <div className="alert-types-grid">
+                  {Object.entries({
+                    burnApproved: 'Burn Request Approved',
+                    burnRejected: 'Burn Request Rejected',
+                    weatherChange: 'Weather Condition Changes',
+                    conflictDetected: 'Conflict Detected',
+                    scheduleUpdate: 'Schedule Updates'
+                  }).map(([key, label]) => (
+                    <label key={key} className="alert-type-item">
+                      <span className="alert-type-label">{label}</span>
+                      <input
+                        type="checkbox"
+                        checked={settings.notifications.alertTypes[key]}
+                        onChange={(e) => handleNestedChange('notifications', 'alertTypes', key, e.target.checked)}
+                        className="checkbox-input"
+                      />
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {/* Preferences Tab */}
           {activeTab === 'preferences' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white mb-4">Display Preferences</h2>
+            <div>
+              <h2 className="section-title">Display Preferences</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">
                     Theme
                   </label>
                   <select
                     value={settings.preferences.theme}
                     onChange={(e) => handleInputChange('preferences', 'theme', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-select"
                   >
                     <option value="dark">Dark (Fire)</option>
                     <option value="light">Light</option>
@@ -347,14 +349,14 @@ const Settings = () => {
                   </select>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group">
+                  <label className="form-label">
                     Map Style
                   </label>
                   <select
                     value={settings.preferences.mapStyle}
                     onChange={(e) => handleInputChange('preferences', 'mapStyle', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-select"
                   >
                     <option value="satellite">Satellite</option>
                     <option value="streets">Streets</option>
@@ -363,28 +365,28 @@ const Settings = () => {
                   </select>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group">
+                  <label className="form-label">
                     Units
                   </label>
                   <select
                     value={settings.preferences.units}
                     onChange={(e) => handleInputChange('preferences', 'units', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-select"
                   >
                     <option value="imperial">Imperial (miles, °F)</option>
                     <option value="metric">Metric (km, °C)</option>
                   </select>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group">
+                  <label className="form-label">
                     Language
                   </label>
                   <select
                     value={settings.preferences.language}
                     onChange={(e) => handleInputChange('preferences', 'language', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-select"
                   >
                     <option value="en">English</option>
                     <option value="es">Español</option>
@@ -392,14 +394,14 @@ const Settings = () => {
                   </select>
                 </div>
                 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                <div className="form-group full-width">
+                  <label className="form-label">
                     Timezone
                   </label>
                   <select
                     value={settings.preferences.timezone}
                     onChange={(e) => handleInputChange('preferences', 'timezone', e.target.value)}
-                    className="w-full px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                    className="form-select"
                   >
                     <option value="America/Chicago">Central Time (Chicago)</option>
                     <option value="America/New_York">Eastern Time (New York)</option>
@@ -413,45 +415,45 @@ const Settings = () => {
 
           {/* System Tab */}
           {activeTab === 'system' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white mb-4">System Settings</h2>
+            <div>
+              <h2 className="section-title">System Settings</h2>
               
-              <div className="space-y-4">
-                <label className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <FaDatabase className="text-fire-orange" />
-                    <div>
-                      <p className="text-white font-medium">Enable Cache</p>
-                      <p className="text-gray-400 text-sm">Store data locally for faster loading</p>
+              <div>
+                <label className="toggle-card">
+                  <div className="toggle-info">
+                    <FaDatabase className="toggle-icon" />
+                    <div className="toggle-text">
+                      <p className="toggle-title">Enable Cache</p>
+                      <p className="toggle-description">Store data locally for faster loading</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.system.cacheEnabled}
                     onChange={(e) => handleInputChange('system', 'cacheEnabled', e.target.checked)}
-                    className="w-5 h-5 accent-fire-orange"
+                    className="checkbox-input"
                   />
                 </label>
                 
-                <label className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <FaSync className="text-fire-orange" />
-                    <div>
-                      <p className="text-white font-medium">Auto Refresh</p>
-                      <p className="text-gray-400 text-sm">Automatically update data</p>
+                <label className="toggle-card">
+                  <div className="toggle-info">
+                    <FaSync className="toggle-icon" />
+                    <div className="toggle-text">
+                      <p className="toggle-title">Auto Refresh</p>
+                      <p className="toggle-description">Automatically update data</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.system.autoRefresh}
                     onChange={(e) => handleInputChange('system', 'autoRefresh', e.target.checked)}
-                    className="w-5 h-5 accent-fire-orange"
+                    className="checkbox-input"
                   />
                 </label>
                 
                 {settings.system.autoRefresh && (
-                  <div className="ml-12">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <div className="number-input-group">
+                    <label className="form-label">
                       Refresh Interval (seconds)
                     </label>
                     <input
@@ -460,53 +462,53 @@ const Settings = () => {
                       max="300"
                       value={settings.system.refreshInterval}
                       onChange={(e) => handleInputChange('system', 'refreshInterval', parseInt(e.target.value))}
-                      className="w-32 px-4 py-2 bg-black/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-fire-orange transition-colors"
+                      className="number-input"
                     />
                   </div>
                 )}
                 
-                <label className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <FaExclamationTriangle className="text-yellow-500" />
-                    <div>
-                      <p className="text-white font-medium">Debug Mode</p>
-                      <p className="text-gray-400 text-sm">Show detailed error messages</p>
+                <label className="toggle-card">
+                  <div className="toggle-info">
+                    <FaExclamationTriangle className="toggle-icon" style={{color: '#FFB000'}} />
+                    <div className="toggle-text">
+                      <p className="toggle-title">Debug Mode</p>
+                      <p className="toggle-description">Show detailed error messages</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.system.debugMode}
                     onChange={(e) => handleInputChange('system', 'debugMode', e.target.checked)}
-                    className="w-5 h-5 accent-fire-orange"
+                    className="checkbox-input"
                   />
                 </label>
                 
-                <label className="flex items-center justify-between p-4 bg-black/30 rounded-lg hover:bg-black/40 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <FaCog className="text-fire-orange" />
-                    <div>
-                      <p className="text-white font-medium">Performance Mode</p>
-                      <p className="text-gray-400 text-sm">Reduce animations for better performance</p>
+                <label className="toggle-card">
+                  <div className="toggle-info">
+                    <FaCog className="toggle-icon" />
+                    <div className="toggle-text">
+                      <p className="toggle-title">Performance Mode</p>
+                      <p className="toggle-description">Reduce animations for better performance</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.system.performanceMode}
                     onChange={(e) => handleInputChange('system', 'performanceMode', e.target.checked)}
-                    className="w-5 h-5 accent-fire-orange"
+                    className="checkbox-input"
                   />
                 </label>
               </div>
               
-              <div className="pt-4 border-t border-gray-700">
-                <h3 className="text-lg font-semibold text-white mb-3">Data Management</h3>
-                <div className="flex gap-4">
+              <div className="subsection">
+                <h3 className="subsection-title">Data Management</h3>
+                <div className="action-buttons">
                   <button
                     onClick={() => {
                       localStorage.clear();
                       toast.success('Cache cleared successfully');
                     }}
-                    className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                    className="btn-secondary"
                   >
                     Clear Cache
                   </button>
@@ -518,7 +520,7 @@ const Settings = () => {
                         toast.success('Settings reset to default');
                       }
                     }}
-                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className="btn-danger"
                   >
                     Reset to Default
                   </button>
@@ -532,14 +534,14 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-6 flex justify-end"
+          className="settings-footer"
         >
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={saveSettings}
             disabled={saving}
-            className="px-8 py-3 bg-gradient-to-r from-fire-orange to-fire-red text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-fire-orange/30 transition-all duration-200 flex items-center gap-2"
+            className="btn-save"
           >
             {saving ? (
               <>

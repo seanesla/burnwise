@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const cookieParser = require('cookie-parser');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
@@ -63,14 +64,53 @@ const PORT = process.env.PORT || 5001;
 
 console.log('🚀 Express app created');
 
-// Security middleware
-app.use(helmet());
+// Security middleware with enhanced configuration
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
 app.use(compression());
 
-// CORS configuration
+// Cookie parser - MUST come before auth middleware
+app.use(cookieParser());
+
+// CORS configuration with strict origin validation
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.security('CORS blocked origin', { origin });
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // Logging
@@ -78,10 +118,13 @@ console.log('📍 Setting up morgan logging...');
 app.use(morgan('combined', { stream: logger.stream }));
 console.log('✅ Morgan configured');
 
-// Body parsing
+// Body parsing with size limits for security
 console.log('📍 Setting up body parsing...');
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' })); // Reduced limit for security
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Trust proxy for accurate IP addresses
+app.set('trust proxy', 1);
 
 // Rate limiting - properly apply array of middlewares
 console.log('📍 Setting up rate limiter...');

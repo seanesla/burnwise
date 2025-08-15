@@ -1,0 +1,273 @@
+/* Theme System - Makes theme switching ACTUALLY WORK */
+
+/* CSS Variables that change based on theme */
+:root {
+  /* Default (Dark) Theme */
+  --bg-primary: #000000;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: rgba(255, 107, 53, 0.05);
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-muted: #999999;
+  --border-color: rgba(255, 107, 53, 0.2);
+  --accent-primary: #ff6b35;
+  --accent-secondary: #ff5722;
+  --accent-tertiary: #FFB000;
+  --success: #22c55e;
+  --warning: #FFB000;
+  --error: #ef4444;
+  --glass-bg: rgba(0, 0, 0, 0.6);
+  --glass-border: rgba(255, 107, 53, 0.1);
+  --shadow: 0 4px 20px rgba(255, 87, 34, 0.15);
+}
+
+/* Light Theme */
+:root[data-theme="light"],
+:root.theme-light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: rgba(255, 107, 53, 0.05);
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #666666;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --accent-primary: #ff6b35;
+  --accent-secondary: #ff5722;
+  --accent-tertiary: #ff9800;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #dc2626;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Apply theme to body and main containers */
+body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Navigation */
+.navigation {
+  background: var(--glass-bg) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.nav-link {
+  color: var(--text-secondary) !important;
+}
+
+.nav-link:hover {
+  color: var(--accent-primary) !important;
+}
+
+/* Cards and containers */
+.glass-card,
+.form-card,
+.settings-card,
+.card {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Form inputs */
+.form-input,
+.form-select,
+.form-textarea,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.form-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+  color: white !important;
+}
+
+.btn-secondary {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+/* Labels and text */
+.form-label,
+.section-title,
+.subsection-title,
+label {
+  color: var(--text-primary) !important;
+}
+
+.text-muted,
+.helper-text,
+.description {
+  color: var(--text-muted) !important;
+}
+
+/* Modals */
+.modal-content {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Tables */
+table {
+  background: var(--glass-bg) !important;
+}
+
+th {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+td {
+  color: var(--text-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-secondary);
+}
+
+/* Settings specific */
+.settings-container {
+  background: var(--bg-primary) !important;
+}
+
+.settings-wrapper {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+.settings-tab {
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+}
+
+.settings-tab.active {
+  background: var(--accent-primary) !important;
+  color: white !important;
+}
+
+/* Toggle switches */
+.toggle-card {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+.toggle-title {
+  color: var(--text-primary) !important;
+}
+
+.toggle-description {
+  color: var(--text-muted) !important;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+.stat-value {
+  color: var(--text-primary) !important;
+}
+
+.stat-label {
+  color: var(--text-muted) !important;
+}
+
+/* Map controls */
+.map-controls {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+/* Alerts and toasts */
+.toast {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  border-color: var(--border-color) !important;
+  border-top-color: var(--accent-primary) !important;
+}
+
+/* Schedule components */
+.schedule-container {
+  background: var(--bg-primary) !important;
+}
+
+.schedule-item {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+/* Analytics charts */
+.chart-container {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+/* Recharts customization */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border-color) !important;
+}
+
+.recharts-text {
+  fill: var(--text-secondary) !important;
+}
+
+/* Focus states */
+*:focus {
+  outline-color: var(--accent-primary) !important;
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-primary);
+  color: white;
+}
+
+::-moz-selection {
+  background: var(--accent-primary);
+  color: white;
+}

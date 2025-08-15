@@ -99,7 +99,10 @@
 .step-label {
   font-size: 12px;
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 100px;
   opacity: 0.8;
 }
 

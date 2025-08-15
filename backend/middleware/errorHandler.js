@@ -2,11 +2,12 @@ const logger = require('./logger');
 
 // Custom error classes
 class ValidationError extends Error {
-  constructor(message, field = null) {
+  constructor(message, field = null, details = null) {
     super(message);
     this.name = 'ValidationError';
     this.statusCode = 400;
     this.field = field;
+    this.details = details;
   }
 }
 

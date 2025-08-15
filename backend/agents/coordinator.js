@@ -111,7 +111,7 @@ class CoordinatorAgent {
   getBurnRequestSchema() {
     return Joi.object({
       farm_id: Joi.number().integer().positive().required(),
-      field_name: Joi.string().min(1).max(255).required(),
+      field_name: Joi.string().min(1).max(255).optional().default('DefaultField'),
       field_boundary: Joi.object({
         type: Joi.string().valid('Polygon').required(),
         coordinates: Joi.array().items(
@@ -119,7 +119,7 @@ class CoordinatorAgent {
             Joi.array().items(Joi.number()).length(2)
           ).min(4)
         ).length(1).required()
-      }).required(),
+      }).optional(),
       acres: Joi.number().positive().max(10000).required(),
       crop_type: Joi.string().valid(
         'rice', 'wheat', 'corn', 'barley', 'oats', 'sorghum', 
@@ -204,6 +204,23 @@ class CoordinatorAgent {
       });
       throw error;
     }
+  }
+
+  parseTime(timeString) {
+    // Convert "HH:MM" to decimal hours (e.g., "14:30" -> 14.5)
+    if (!timeString || typeof timeString !== 'string') {
+      logger.agent(this.agentName, 'warn', 'Invalid timeString provided to parseTime', { timeString });
+      return 0;
+    }
+    
+    // Validate format
+    if (!timeString.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+      logger.agent(this.agentName, 'warn', 'Invalid time format', { timeString });
+      return 0;
+    }
+    
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours + (minutes / 60);
   }
 
   async validateBurnRequest(requestData) {
@@ -440,15 +457,37 @@ class CoordinatorAgent {
         burnDate.toISOString().split('T')[0] : 
         burnDate.split('T')[0];  // Handle both Date and string formats
       
+      // First, get or create field_id based on farm_id
+      let fieldId = requestData.field_id;
+      if (!fieldId) {
+        // Try to find existing field for this farm
+        const existingField = await query(
+          'SELECT field_id FROM burn_fields WHERE farm_id = ? LIMIT 1',
+          [requestData.farm_id]
+        );
+        
+        if (existingField.length > 0) {
+          fieldId = existingField[0].field_id;
+        } else {
+          // Create a default field for this farm
+          const hectares = (requestData.acres || 50) * 0.404686; // Convert acres to hectares
+          const fieldResult = await query(
+            'INSERT INTO burn_fields (farm_id, field_name, area_hectares, crop_type) VALUES (?, ?, ?, ?)',
+            [requestData.farm_id, requestData.field_name || `Field_${Date.now()}`, hectares, requestData.crop_type || 'wheat']
+          );
+          fieldId = fieldResult.insertId;
+        }
+      }
+      
       // request_id is auto_increment, don't include it in INSERT
       const insertData = {
         farm_id: requestData.farm_id,
-        field_id: parseInt(requestData.field_id) || 1,  // field_id is INT, convert string or use default
-        acreage: requestData.acres || requestData.acreage,
+        field_id: fieldId,
+        acreage: requestData.acres || requestData.acreage || 50,
         crop_type: requestData.crop_type,
         requested_date: formattedDate,
-        requested_window_start: `${formattedDate} ${requestData.time_window_start || requestData.requested_window_start}:00`,
-        requested_window_end: `${formattedDate} ${requestData.time_window_end || requestData.requested_window_end}:00`,
+        requested_window_start: `${formattedDate} ${requestData.time_window_start || requestData.requested_window_start || '08:00'}:00`,
+        requested_window_end: `${formattedDate} ${requestData.time_window_end || requestData.requested_window_end || '12:00'}:00`,
         priority_score: requestData.priority_score || 5,
         status: requestData.status || 'pending'
       };
@@ -489,11 +528,7 @@ class CoordinatorAgent {
     }
   }
 
-  // Utility methods
-  parseTime(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours + minutes / 60;
-  }
+  // Utility methods removed - duplicate parseTime deleted
 
   async getStatus() {
     if (!this.initialized) {

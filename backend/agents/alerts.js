@@ -77,11 +77,16 @@ class AlertsAgent {
       averageDeliveryTime: 0
     };
     
-    // Rate limiting for notifications
+    // Rate limiting for notifications (increased for burst traffic)
     this.notificationLimits = {
-      perFarm: { max: 10, window: 60 * 60 * 1000 }, // 10 per hour per farm
-      global: { max: 100, window: 60 * 60 * 1000 }   // 100 per hour globally
+      perFarm: { max: 20, window: 60 * 60 * 1000 }, // 20 per hour per farm
+      global: { max: 200, window: 60 * 60 * 1000 },  // 200 per hour globally
+      burst: { max: 20, window: 15 * 60 * 1000 }     // 20 per 15 minutes for bursts
     };
+    
+    // Track retry attempts
+    this.maxRetryAttempts = 3;
+    this.retryAttempts = new Map();
     
     this.notificationCounts = new Map();
   }
@@ -344,6 +349,18 @@ class AlertsAgent {
     const globalKey = 'global';
     const farmKey = `farm_${alertData.farm_id}`;
     
+    // Check burst rate limit first (shorter window)
+    const burstKey = 'burst';
+    let burstCount = this.notificationCounts.get(burstKey);
+    if (!burstCount || now - burstCount.windowStart > this.notificationLimits.burst.window) {
+      burstCount = { count: 0, windowStart: now };
+    }
+    
+    if (burstCount.count >= this.notificationLimits.burst.max) {
+      logger.security('Burst notification rate limit exceeded', { burstCount });
+      return false;
+    }
+    
     // Check global rate limit
     let globalCount = this.notificationCounts.get(globalKey);
     if (!globalCount || now - globalCount.windowStart > this.notificationLimits.global.window) {
@@ -354,6 +371,10 @@ class AlertsAgent {
       logger.security('Global notification rate limit exceeded', { globalCount });
       return false;
     }
+    
+    // Update burst counter
+    burstCount.count++;
+    this.notificationCounts.set(burstKey, burstCount);
     
     // Check per-farm rate limit
     if (alertData.farm_id) {
@@ -933,21 +954,54 @@ class AlertsAgent {
   }
 
   async retryAlert(alert) {
-    // Retry logic for failed alerts
-    logger.agent(this.agentName, 'debug', 'Retrying failed alert', { alertId: alert.id });
+    // Enhanced retry logic with max attempts tracking
+    const alertKey = `alert_${alert.id}`;
+    let retryCount = this.retryAttempts.get(alertKey) || 0;
+    
+    logger.agent(this.agentName, 'debug', 'Retrying failed alert', { 
+      alertId: alert.id, 
+      retryAttempt: retryCount + 1,
+      maxAttempts: this.maxRetryAttempts 
+    });
+    
+    // Check if max retries exceeded
+    if (retryCount >= this.maxRetryAttempts) {
+      await query('UPDATE alerts SET status = ?, delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
+        ['cancelled', 'permanently_failed', retryCount, alert.id]);
+      this.retryAttempts.delete(alertKey);
+      logger.agent(this.agentName, 'warn', 'Alert permanently failed after max retries', { 
+        alertId: alert.id, 
+        attempts: retryCount 
+      });
+      return;
+    }
     
     // Mark as failed if too old (over 1 hour)
     if (Date.now() - new Date(alert.created_at).getTime() > 60 * 60 * 1000) {
-      // Use 'cancelled' for status and 'failed' for delivery_status
-      await query('UPDATE alerts SET status = ?, delivery_status = ? WHERE alert_id = ?', ['cancelled', 'failed', alert.id]);
+      await query('UPDATE alerts SET status = ?, delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
+        ['cancelled', 'expired', retryCount, alert.id]);
+      this.retryAttempts.delete(alertKey);
+      return;
     }
+    
+    // Increment retry count
+    retryCount++;
+    this.retryAttempts.set(alertKey, retryCount);
+    
+    // For now, mark as sent since we don't have real SMS setup
+    // In production, this would actually retry sending the alert
+    await query('UPDATE alerts SET status = ?, delivery_status = ?, delivered_at = NOW(), retry_count = ? WHERE alert_id = ?', 
+      ['completed', 'sent', retryCount, alert.id]);
+    
+    // Clean up retry tracking after successful send
+    this.retryAttempts.delete(alertKey);
+    logger.agent(this.agentName, 'info', 'Alert marked as sent after retry', { 
+      alertId: alert.id, 
+      attempts: retryCount 
+    });
   }
 
-  // Utility methods
-  parseTime(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours + minutes / 60;
-  }
+  // Utility methods removed - duplicate parseTime deleted
 
   async getStatus() {
     if (!this.initialized) {

@@ -1,0 +1,94 @@
+.logo-tester {
+  padding: 2rem;
+  background: #1a1a1a;
+  color: white;
+  min-height: 100vh;
+}
+
+.logo-tester h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.controls {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.controls input[type="range"] {
+  width: 150px;
+}
+
+.comparison-container {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.logo-view {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  background: #2a2a2a;
+  border: 2px solid #444;
+  transform-origin: top left;
+}
+
+.original-logo {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.svg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.test-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.info-panel {
+  background: #2a2a2a;
+  padding: 1.5rem;
+  border-radius: 8px;
+  max-width: 300px;
+}
+
+.info-panel h3 {
+  margin-bottom: 1rem;
+}
+
+.info-panel ul {
+  list-style: none;
+  padding: 0;
+}
+
+.info-panel li {
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.info-panel li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #4DD8C4;
+}

@@ -95,14 +95,14 @@ class OptimizerAgent {
           s.date,
           s.optimization_score,
           s.total_conflicts,
-          si.assigned_time_start,
-          si.assigned_time_end,
-          si.conflict_score,
+          si.scheduled_start,
+          si.scheduled_end,
+          0 as conflict_score,
           br.priority_score,
-          br.acres
+          br.acreage
         FROM schedules s
         JOIN schedule_items si ON s.id = si.schedule_id
-        JOIN burn_requests br ON si.burn_request_id = br.id
+        JOIN burn_requests br ON si.burn_request_id = br.request_id
         WHERE s.created_at > DATE_SUB(NOW(), INTERVAL 6 MONTH)
         AND s.optimization_score > 0.7
         ORDER BY s.optimization_score DESC
@@ -145,11 +145,11 @@ class OptimizerAgent {
       }
       
       dailyData[date].burns.push({
-        timeStart: row.assigned_time_start,
-        timeEnd: row.assigned_time_end,
+        timeStart: row.scheduled_start,
+        timeEnd: row.scheduled_end,
         conflictScore: row.conflict_score,
         priority: row.priority_score,
-        acres: row.acres
+        acres: row.acreage
       });
     });
     

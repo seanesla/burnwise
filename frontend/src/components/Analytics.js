@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import LoadingSpinner from './LoadingSpinner';
+import './Analytics.css';
 
 const Analytics = () => {
   const [analyticsData, setAnalyticsData] = useState({
@@ -97,26 +98,26 @@ const Analytics = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-dark">
+      <div className="analytics-loading">
         <LoadingSpinner size="large" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-dark p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="analytics-container">
+      <div className="analytics-wrapper">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="analytics-header"
         >
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <FaChartLine className="text-fire-orange" />
+          <h1 className="analytics-title">
+            <FaChartLine />
             Analytics Dashboard
           </h1>
-          <p className="text-gray-400">
+          <p className="analytics-subtitle">
             Comprehensive burn coordination insights and trends
           </p>
         </motion.div>
@@ -125,17 +126,13 @@ const Analytics = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mb-6 flex gap-2"
+          className="time-range-selector"
         >
           {['7d', '30d', '90d', '1y'].map(range => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`px-4 py-2 rounded-lg transition-all ${
-                timeRange === range
-                  ? 'bg-fire-orange text-white'
-                  : 'bg-black/50 text-gray-400 hover:bg-black/70'
-              }`}
+              className={`time-range-btn ${timeRange === range ? 'active' : ''}`}
             >
               {range === '7d' ? 'Week' : 
                range === '30d' ? 'Month' : 
@@ -145,18 +142,14 @@ const Analytics = () => {
         </motion.div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-4 mb-8 overflow-x-auto">
+        <div className="analytics-tabs">
           {tabs.map(tab => (
             <motion.button
               key={tab.id}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-fire-orange to-fire-red text-white'
-                  : 'glass-card text-gray-400 hover:text-white'
-              }`}
+              className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
             >
               <tab.icon />
               {tab.label}
@@ -166,14 +159,14 @@ const Analytics = () => {
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="analytics-content grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Burn Trends */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card p-6"
+              className="chart-card"
             >
-              <h3 className="text-xl font-bold text-white mb-4">Burn Request Trends</h3>
+              <h3 className="chart-title">Burn Request Trends</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={analyticsData.burnTrends}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -196,9 +189,9 @@ const Analytics = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="glass-card p-6"
+              className="chart-card"
             >
-              <h3 className="text-xl font-bold text-white mb-4">Seasonal Distribution</h3>
+              <h3 className="chart-title">Seasonal Distribution</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -227,33 +220,33 @@ const Analytics = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="glass-card p-6 lg:col-span-2"
+              className="chart-card lg:col-span-2"
             >
-              <h3 className="text-xl font-bold text-white mb-4">Key Metrics</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-black/30 rounded-lg p-4">
-                  <FaFire className="text-fire-orange text-2xl mb-2" />
-                  <p className="text-3xl font-bold text-white">423</p>
-                  <p className="text-gray-400 text-sm">Total Burns</p>
-                  <p className="text-green-400 text-xs mt-1">↑ 12% from last period</p>
+              <h3 className="chart-title">Key Metrics</h3>
+              <div className="metrics-grid">
+                <div className="metric-card">
+                  <FaFire className="metric-icon text-fire-orange" />
+                  <p className="metric-value">423</p>
+                  <p className="metric-label">Total Burns</p>
+                  <p className="metric-trend up">↑ 12% from last period</p>
                 </div>
-                <div className="bg-black/30 rounded-lg p-4">
-                  <FaLeaf className="text-green-500 text-2xl mb-2" />
-                  <p className="text-3xl font-bold text-white">15,230</p>
-                  <p className="text-gray-400 text-sm">Acres Burned</p>
-                  <p className="text-green-400 text-xs mt-1">↑ 8% from last period</p>
+                <div className="metric-card">
+                  <FaLeaf className="metric-icon text-green-500" />
+                  <p className="metric-value">15,230</p>
+                  <p className="metric-label">Acres Burned</p>
+                  <p className="metric-trend up">↑ 8% from last period</p>
                 </div>
-                <div className="bg-black/30 rounded-lg p-4">
-                  <FaCheckCircle className="text-blue-500 text-2xl mb-2" />
-                  <p className="text-3xl font-bold text-white">92%</p>
-                  <p className="text-gray-400 text-sm">Success Rate</p>
-                  <p className="text-yellow-400 text-xs mt-1">→ Same as last period</p>
+                <div className="metric-card">
+                  <FaCheckCircle className="metric-icon text-blue-500" />
+                  <p className="metric-value">92%</p>
+                  <p className="metric-label">Success Rate</p>
+                  <p className="metric-trend neutral">→ Same as last period</p>
                 </div>
-                <div className="bg-black/30 rounded-lg p-4">
-                  <FaClock className="text-purple-500 text-2xl mb-2" />
-                  <p className="text-3xl font-bold text-white">4.2h</p>
-                  <p className="text-gray-400 text-sm">Avg Duration</p>
-                  <p className="text-red-400 text-xs mt-1">↓ 5% from last period</p>
+                <div className="metric-card">
+                  <FaClock className="metric-icon text-purple-500" />
+                  <p className="metric-value">4.2h</p>
+                  <p className="metric-label">Avg Duration</p>
+                  <p className="metric-trend down">↓ 5% from last period</p>
                 </div>
               </div>
             </motion.div>
@@ -262,13 +255,13 @@ const Analytics = () => {
 
         {/* Weather Tab */}
         {activeTab === 'weather' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="analytics-content grid grid-cols-1 lg:grid-cols-2 gap-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card p-6"
+              className="chart-card"
             >
-              <h3 className="text-xl font-bold text-white mb-4">Weather Patterns</h3>
+              <h3 className="chart-title">Weather Patterns</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={analyticsData.weatherPatterns}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -289,9 +282,9 @@ const Analytics = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="glass-card p-6"
+              className="chart-card"
             >
-              <h3 className="text-xl font-bold text-white mb-4">PM2.5 Dispersion</h3>
+              <h3 className="chart-title">PM2.5 Dispersion</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={analyticsData.smokeDispersion}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -313,13 +306,13 @@ const Analytics = () => {
 
         {/* Conflicts Tab */}
         {activeTab === 'conflicts' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="analytics-content grid grid-cols-1 lg:grid-cols-2 gap-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card p-6"
+              className="chart-card"
             >
-              <h3 className="text-xl font-bold text-white mb-4">Conflict Types</h3>
+              <h3 className="chart-title">Conflict Types</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={analyticsData.conflictAnalysis} layout="horizontal">
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -344,30 +337,30 @@ const Analytics = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="glass-card p-6"
+              className="chart-card"
             >
-              <h3 className="text-xl font-bold text-white mb-4">Resolution Stats</h3>
+              <h3 className="chart-title">Resolution Stats</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-black/30 rounded-lg">
+                <div className="metric-card flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FaCheckCircle className="text-green-500 text-xl" />
+                    <FaCheckCircle className="metric-icon text-green-500" />
                     <span className="text-white">Resolved Automatically</span>
                   </div>
-                  <span className="text-2xl font-bold text-white">78%</span>
+                  <span className="metric-value text-2xl">78%</span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-black/30 rounded-lg">
+                <div className="metric-card flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FaClock className="text-yellow-500 text-xl" />
+                    <FaClock className="metric-icon text-yellow-500" />
                     <span className="text-white">Rescheduled</span>
                   </div>
-                  <span className="text-2xl font-bold text-white">18%</span>
+                  <span className="metric-value text-2xl">18%</span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-black/30 rounded-lg">
+                <div className="metric-card flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FaExclamationTriangle className="text-red-500 text-xl" />
+                    <FaExclamationTriangle className="metric-icon text-red-500" />
                     <span className="text-white">Manual Intervention</span>
                   </div>
-                  <span className="text-2xl font-bold text-white">4%</span>
+                  <span className="metric-value text-2xl">4%</span>
                 </div>
               </div>
             </motion.div>
@@ -376,42 +369,42 @@ const Analytics = () => {
 
         {/* Performance Tab */}
         {activeTab === 'performance' && (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="analytics-content grid grid-cols-1 gap-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card p-6"
+              className="chart-card"
             >
-              <h3 className="text-xl font-bold text-white mb-4">Farm Performance Rankings</h3>
+              <h3 className="chart-title">Farm Performance Rankings</h3>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="performance-table">
                   <thead>
-                    <tr className="border-b border-gray-700">
-                      <th className="text-left py-3 px-4 text-gray-400">Rank</th>
-                      <th className="text-left py-3 px-4 text-gray-400">Farm</th>
-                      <th className="text-center py-3 px-4 text-gray-400">Requests</th>
-                      <th className="text-center py-3 px-4 text-gray-400">Approved</th>
-                      <th className="text-center py-3 px-4 text-gray-400">Efficiency</th>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Farm</th>
+                      <th className="text-center">Requests</th>
+                      <th className="text-center">Approved</th>
+                      <th className="text-center">Efficiency</th>
                     </tr>
                   </thead>
                   <tbody>
                     {analyticsData.farmPerformance
                       .sort((a, b) => b.efficiency - a.efficiency)
                       .map((farm, index) => (
-                        <tr key={farm.name} className="border-b border-gray-800 hover:bg-black/30">
-                          <td className="py-3 px-4">
-                            <span className={`text-xl font-bold ${
-                              index === 0 ? 'text-yellow-500' :
-                              index === 1 ? 'text-gray-400' :
-                              index === 2 ? 'text-orange-600' : 'text-gray-600'
+                        <tr key={farm.name}>
+                          <td>
+                            <span className={`rank-badge ${
+                              index === 0 ? 'gold' :
+                              index === 1 ? 'silver' :
+                              index === 2 ? 'bronze' : ''
                             }`}>
                               #{index + 1}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-white font-medium">{farm.name}</td>
-                          <td className="py-3 px-4 text-center text-gray-300">{farm.requests}</td>
-                          <td className="py-3 px-4 text-center text-gray-300">{farm.approved}</td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="text-white font-medium">{farm.name}</td>
+                          <td className="text-center">{farm.requests}</td>
+                          <td className="text-center">{farm.approved}</td>
+                          <td className="text-center">
                             <span className={`font-bold ${
                               farm.efficiency >= 90 ? 'text-green-400' :
                               farm.efficiency >= 80 ? 'text-yellow-400' : 'text-red-400'

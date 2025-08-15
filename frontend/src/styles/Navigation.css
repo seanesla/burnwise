@@ -31,11 +31,13 @@
   gap: 0.75rem;
   text-decoration: none;
   color: white;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
 }
 
 .brand-link:hover {
-  transform: translateY(-2px);
+  opacity: 0.9;
+  /* Removed transform to prevent layout shift */
 }
 
 .brand-icon {
@@ -77,9 +79,11 @@
   font-weight: 500;
   font-size: 1rem;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  will-change: color;
 }
 
 .nav-link::before {
@@ -92,11 +96,13 @@
   background: linear-gradient(135deg, rgba(255, 107, 53, 0) 0%, rgba(255, 107, 53, 0.2) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none; /* Fix cursor flickering */
+  z-index: -1;
 }
 
 .nav-link:hover {
   color: white;
-  transform: translateY(-2px);
+  /* Removed transform to prevent layout shift */
 }
 
 .nav-link:hover::before {
@@ -146,6 +152,124 @@
     opacity: 0.6;
     box-shadow: 0 0 20px rgba(76, 175, 80, 1);
   }
+}
+
+/* User Menu Styles */
+.nav-user {
+  position: relative;
+}
+
+.nav-user-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 20px;
+  color: #ff6b35;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-user-button:hover {
+  background: rgba(255, 107, 53, 0.2);
+  border-color: rgba(255, 107, 53, 0.5);
+}
+
+.nav-user-button svg {
+  font-size: 1rem;
+}
+
+.nav-user-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 250px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+  overflow: hidden;
+  animation: fadeInDown 0.2s ease;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-menu-header {
+  padding: 1rem;
+  background: rgba(255, 107, 53, 0.05);
+  border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.user-menu-name {
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
+}
+
+.user-menu-email {
+  font-size: 0.875rem;
+  color: #999999;
+  margin-bottom: 0.25rem;
+}
+
+.user-menu-farm {
+  font-size: 0.75rem;
+  color: #ff6b35;
+  font-weight: 500;
+}
+
+.user-menu-divider {
+  height: 1px;
+  background: rgba(255, 107, 53, 0.1);
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: #cccccc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.user-menu-item:hover {
+  background: rgba(255, 107, 53, 0.1);
+  color: #ffffff;
+}
+
+.user-menu-item svg {
+  font-size: 1rem;
+  color: #ff6b35;
+}
+
+.user-menu-item.logout {
+  color: #ff6b35;
+}
+
+.user-menu-item.logout:hover {
+  background: rgba(255, 107, 53, 0.2);
+  color: #ff5722;
 }
 
 /* Add padding to main content to account for fixed nav */
