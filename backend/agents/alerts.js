@@ -21,9 +21,6 @@ class AlertsAgent {
     this.version = '1.0.0';
     this.initialized = false;
     
-    // Check for mock mode
-    this.useMock = process.env.USE_MOCK_SMS === 'true';
-    
     // Twilio configuration
     this.twilioClient = null;
     this.twilioConfig = {
@@ -121,12 +118,6 @@ class AlertsAgent {
 
   async initializeTwilioClient() {
     try {
-      // Skip Twilio initialization in mock mode
-      if (this.useMock) {
-        logger.agent(this.agentName, 'info', 'Using mock SMS service - Twilio initialization skipped');
-        return;
-      }
-      
       if (this.twilioConfig.accountSid && this.twilioConfig.authToken) {
         this.twilioClient = twilio(this.twilioConfig.accountSid, this.twilioConfig.authToken);
         
@@ -144,7 +135,7 @@ class AlertsAgent {
   }
 
   async testTwilioConnection() {
-    if (this.useMock || !this.twilioClient) return;
+    if (!this.twilioClient) return;
     
     try {
       // Verify account details
@@ -628,35 +619,6 @@ class AlertsAgent {
       failed: [],
       summary: { sent: 0, failed: 0 }
     };
-    
-    // Handle mock SMS sending
-    if (this.useMock) {
-      for (const recipient of recipients) {
-        if (!recipient.phone) continue;
-        
-        const mockResult = {
-          sid: `MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          to: recipient.phone,
-          from: this.twilioConfig.phoneNumber || '+1234567890',
-          status: 'sent',
-          dateCreated: new Date()
-        };
-        
-        results.successful.push({
-          recipientId: recipient.id,
-          phone: recipient.phone,
-          sid: mockResult.sid,
-          status: 'sent'
-        });
-        results.summary.sent++;
-        
-        logger.agent(this.agentName, 'debug', 'Mock SMS sent', { 
-          to: recipient.phone, 
-          sid: mockResult.sid 
-        });
-      }
-      return results;
-    }
     
     if (!this.twilioClient) {
       logger.agent(this.agentName, 'warn', 'SMS sending skipped - Twilio not configured');

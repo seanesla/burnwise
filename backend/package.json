@@ -6,9 +6,6 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "setup": "node setup-tidb.js",
-    "setup:db": "node setup-database.js",
-    "setup:all": "npm run setup && npm run setup:db && npm run seed",
     "test": "jest --coverage",
     "test:agents": "jest tests/agents --coverage",
     "test:integration": "jest tests/integration --coverage",
