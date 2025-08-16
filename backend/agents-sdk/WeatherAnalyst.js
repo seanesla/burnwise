@@ -125,16 +125,48 @@ const weatherTools = [
       lng: z.number()
     }),
     execute: async (params) => {
-      // In production, this would call an air quality API
-      // For now, return baseline data
       logger.info('REAL: Checking air quality', { location: params });
       
-      return {
-        aqi: 50, // Good air quality baseline
-        pm25: 12,
-        pm10: 20,
-        category: 'Good'
-      };
+      try {
+        // Use OpenWeatherMap Air Pollution API (included in our API key)
+        const axios = require('axios');
+        const response = await axios.get(
+          `http://api.openweathermap.org/data/2.5/air_pollution?lat=${params.lat}&lon=${params.lng}&appid=${process.env.OPENWEATHERMAP_API_KEY}`
+        );
+        
+        const data = response.data.list[0];
+        const aqi = data.main.aqi; // 1-5 scale
+        
+        // Convert OpenWeatherMap AQI to US EPA AQI scale
+        const aqiMapping = {
+          1: { aqi: 25, category: 'Good', pm25: data.components.pm2_5 || 0 },
+          2: { aqi: 75, category: 'Fair', pm25: data.components.pm2_5 || 0 },
+          3: { aqi: 125, category: 'Moderate', pm25: data.components.pm2_5 || 0 },
+          4: { aqi: 175, category: 'Poor', pm25: data.components.pm2_5 || 0 },
+          5: { aqi: 250, category: 'Very Poor', pm25: data.components.pm2_5 || 0 }
+        };
+        
+        const result = aqiMapping[aqi] || aqiMapping[1];
+        
+        return {
+          aqi: result.aqi,
+          pm25: result.pm25,
+          pm10: data.components.pm10 || 0,
+          category: result.category,
+          raw_data: data.components
+        };
+        
+      } catch (error) {
+        logger.warn('Air quality API failed, using conservative estimate', { error: error.message });
+        // On API failure, assume moderate air quality for safety
+        return {
+          aqi: 100,
+          pm25: 35,
+          pm10: 50,
+          category: 'Moderate',
+          error: 'API unavailable, using conservative estimate'
+        };
+      }
     }
   }),
 
