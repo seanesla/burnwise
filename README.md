@@ -20,12 +20,24 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 
 ## ✨ Key Features
 
-### 🤖 5-Agent AI System
-1. **Burn Request Coordinator** - Validates requests and assigns priority scores
-2. **Weather Analysis Agent** - Real-time weather monitoring with vector pattern matching
-3. **Smoke Overlap Predictor** - Gaussian plume modeling for dispersion prediction
-4. **Schedule Optimizer** - Simulated annealing algorithm for conflict resolution
-5. **Alert System Agent** - SMS/email notifications to affected farms
+### 🤖 REAL Autonomous Multi-Agent System (OpenAI Agents SDK)
+**Implementation Status**: Phase 2 of 3 (Agents SDK installed, building agents)
+
+1. **BurnRequestAgent** - Natural language → structured data using GPT-5-nano
+2. **WeatherAnalyst** - Autonomous SAFE/UNSAFE/MARGINAL decisions (not just weather fetching)
+3. **ConflictResolver** - Multi-farm negotiation using GPT-5-mini for complex reasoning
+4. **ScheduleOptimizer** - AI-enhanced simulated annealing with GPT-5-nano
+5. **ProactiveMonitor** - 24/7 autonomous monitoring without user triggers
+
+**Key Innovation**: Real agent handoffs using OpenAI SDK - agents delegate to specialists autonomously. Human-in-the-loop for safety-critical decisions (burns >100 acres or near populated areas).
+
+**Cost Optimized**: Uses GPT-5-nano ($0.05/1M tokens) for most agents, GPT-5-mini ($0.25/1M) only for complex reasoning. Total API cost: ~$1-2 for complete testing.
+
+### 💬 Natural Language Interface (NEW)
+- **Conversational UI** - Chat with agents instead of filling forms
+- **Context Awareness** - Agents remember your farm details and preferences
+- **One Question at a Time** - No overwhelming 18-field forms
+- **Smart Suggestions** - "Tomorrow has high winds, but Thursday looks perfect"
 
 ### 🗺️ Interactive Features
 - **Real-time Map Visualization** - Mapbox integration showing farms and smoke plumes
@@ -43,6 +55,14 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 
 ## 🛠️ Tech Stack
 
+### AI & Agents (REAL Implementation - August 2025)
+- **OpenAI Agents SDK** (`@openai/agents` v0.0.17) - INSTALLED AND WORKING
+- **GPT-5-mini** ($0.25/1M tokens) for complex reasoning
+- **GPT-5-nano** ($0.05/1M tokens) for simple agents
+- **text-embedding-3-large** for vector embeddings
+- **Agent Handoffs** using OpenAI SDK's `Handoff` class
+- **Human-in-the-Loop** using `needsApproval: true` for critical decisions
+
 ### Backend
 - **Node.js** with Express.js
 - **TiDB Serverless** with vector columns
@@ -54,10 +74,11 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 
 ### Frontend
 - **React 18** with React Router
+- **OpenAI Agents SDK** for conversational UI
 - **Mapbox GL** for interactive maps
 - **Recharts** for data visualization
 - **Turf.js** for geospatial calculations
-- **Axios** for API calls
+- **Zod** for schema validation
 
 ### Algorithms
 - **Gaussian Plume Model** for smoke dispersion
@@ -69,6 +90,7 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 - Node.js 16+ and npm
 - TiDB Serverless account (free tier works)
 - API Keys:
+  - **OpenAI API key** (REQUIRED - for GPT-5-mini/nano agents)
   - OpenWeatherMap API key (required)
   - Mapbox token (required)
   - Twilio credentials (optional, for SMS)
@@ -96,6 +118,9 @@ TIDB_USER=your-username
 TIDB_PASSWORD=your-password
 TIDB_DATABASE=burnwise
 TIDB_PORT=4000
+
+# OpenAI API (REQUIRED for agents)
+OPENAI_API_KEY=your-openai-api-key
 
 # Weather API
 OPENWEATHERMAP_API_KEY=your-api-key

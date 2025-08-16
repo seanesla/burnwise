@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@mapbox/mapbox-gl-draw": "^1.4.3",
+    "@openai/agents": "^0.0.17",
     "@react-three/drei": "^9.88.0",
     "@react-three/fiber": "^8.15.0",
     "@tsparticles/engine": "^3.9.1",
@@ -27,7 +28,8 @@
     "recharts": "^2.10.3",
     "three": "^0.160.0",
     "three-nebula": "^10.0.3",
-    "tsparticles": "^3.9.1"
+    "tsparticles": "^3.9.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "compression-webpack-plugin": "^10.0.0",

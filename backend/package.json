@@ -24,6 +24,7 @@
   "author": "BURNWISE Team",
   "license": "MIT",
   "dependencies": {
+    "@openai/agents": "^0.0.17",
     "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
@@ -48,7 +49,8 @@
     "twilio": "^4.23.0",
     "uuid": "^9.0.1",
     "winston": "^3.11.0",
-    "winston-daily-rotate-file": "^4.7.1"
+    "winston-daily-rotate-file": "^4.7.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",
