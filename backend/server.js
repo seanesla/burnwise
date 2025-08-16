@@ -9,47 +9,49 @@ const socketIo = require('socket.io');
 const path = require('path');
 require('dotenv').config();
 
-console.log('🔥 Starting BURNWISE backend server...');
+console.log('Starting BURNWISE backend server...');
 
 const logger = require('./middleware/logger');
-console.log('✅ Logger initialized');
+console.log('Logger initialized');
 
 const rateLimiter = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initializeDatabase, query } = require('./db/connection');
 const { smartCache, conditionalRequests } = require('./middleware/cacheHeaders');
 const { authenticateToken, optionalAuth } = require('./middleware/auth');
-console.log('✅ Database module loaded');
+console.log('Database module loaded');
 
 // Import API routes
 console.log('Loading API routes...');
 const authRoutes = require('./api/auth');
-console.log('✅ Auth routes loaded');
+console.log('Auth routes loaded');
 const burnRequestsRoutes = require('./api/burnRequests');
-console.log('✅ Burn requests routes loaded');
+console.log('Burn requests routes loaded');
 const weatherRoutes = require('./api/weather');
-console.log('✅ Weather routes loaded');
+console.log('Weather routes loaded');
 const scheduleRoutes = require('./api/schedule');
-console.log('✅ Schedule routes loaded');
+console.log('Schedule routes loaded');
 const alertsRoutes = require('./api/alerts');
-console.log('✅ Alerts routes loaded');
+console.log('Alerts routes loaded');
 const farmsRoutes = require('./api/farms');
-console.log('✅ Farms routes loaded');
+console.log('Farms routes loaded');
 const analyticsRoutes = require('./api/analytics');
-console.log('✅ Analytics routes loaded');
+console.log('Analytics routes loaded');
+const agentsRoutes = require('./api/agents');
+console.log('Agents routes loaded');
 
 // Import agents for initialization
 console.log('Loading agents...');
 const coordinatorAgent = require('./agents/coordinator');
-console.log('✅ Coordinator agent loaded');
+console.log('Coordinator agent loaded');
 const weatherAgent = require('./agents/weather');
-console.log('✅ Weather agent loaded');
+console.log('Weather agent loaded');
 const predictorAgent = require('./agents/predictor');
-console.log('✅ Predictor agent loaded');
+console.log('Predictor agent loaded');
 const optimizerAgent = require('./agents/optimizer');
-console.log('✅ Optimizer agent loaded');
+console.log('Optimizer agent loaded');
 const alertsAgent = require('./agents/alerts');
-console.log('✅ Alerts agent loaded');
+console.log('Alerts agent loaded');
 
 const app = express();
 const server = http.createServer(app);
@@ -62,7 +64,7 @@ const io = socketIo(server, {
 
 const PORT = process.env.PORT || 5001;
 
-console.log('🚀 Express app created');
+console.log('Express app created');
 
 // Security middleware with enhanced configuration
 app.use(helmet({
@@ -114,12 +116,12 @@ app.use(cors({
 }));
 
 // Logging
-console.log('📍 Setting up morgan logging...');
+console.log('Setting up morgan logging...');
 app.use(morgan('combined', { stream: logger.stream }));
-console.log('✅ Morgan configured');
+console.log('Morgan configured');
 
 // Body parsing with size limits for security
-console.log('📍 Setting up body parsing...');
+console.log('Setting up body parsing...');
 app.use(express.json({ limit: '1mb' })); // Reduced limit for security
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
@@ -127,13 +129,13 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.set('trust proxy', 1);
 
 // Rate limiting - properly apply array of middlewares
-console.log('📍 Setting up rate limiter...');
+console.log('Setting up rate limiter...');
 // Apply simplified rate limiter
 app.use(rateLimiter);
-console.log('✅ Rate limiter configured');
+console.log('Rate limiter configured');
 
 // Health check endpoint
-console.log('📍 Setting up routes...');
+console.log('Setting up routes...');
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -150,7 +152,13 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-console.log('📍 Setting up API routes...');
+console.log('Setting up API routes...');
+
+// Attach io to req for agent routes to use
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 // Public auth routes (no authentication required)
 app.use('/api/auth', authRoutes);
@@ -162,9 +170,10 @@ app.use('/api/schedule', optionalAuth, scheduleRoutes);
 app.use('/api/alerts', optionalAuth, alertsRoutes);
 app.use('/api/farms', optionalAuth, farmsRoutes);
 app.use('/api/analytics', optionalAuth, analyticsRoutes); // Analytics can be public
+app.use('/api/agents', optionalAuth, agentsRoutes); // Agent API for 5-agent system
 
 // Socket.io setup for real-time updates
-console.log('📍 Setting up Socket.io...');
+console.log('Setting up Socket.io...');
 io.on('connection', (socket) => {
   logger.info(`Client connected: ${socket.id}`);
   
@@ -251,55 +260,91 @@ io.on('connection', (socket) => {
     });
   });
 });
-console.log('✅ Socket.io configured with enhanced real-time features');
+console.log('Socket.io configured with enhanced real-time features');
 
 // Make io available to routes
 app.set('io', io);
 
 // Error handling middleware
-console.log('📍 Setting up error handler...');
+console.log('Setting up error handler...');
 app.use(errorHandler);
 
 // 404 handler
-console.log('📍 Setting up 404 handler...');
+console.log('Setting up 404 handler...');
 app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Route not found',
     message: `${req.method} ${req.originalUrl} not found`
   });
 });
-console.log('✅ All middleware configured');
+console.log('All middleware configured');
 
 // Initialize database and start server
 async function startServer() {
   try {
     // Initialize database connection
-    console.log('🔗 Connecting to TiDB...');
+    console.log('Connecting to TiDB...');
     logger.info('Starting database initialization...');
     await initializeDatabase();
-    console.log('✅ Database initialized');
+    console.log('Database initialized');
     logger.info('Database initialized successfully');
     
-    // Initialize agents
+    // Initialize agents with granular logging
+    console.log('Starting agent initialization sequence...');
+    
+    console.log('Step 1: Initializing Coordinator Agent...');
     logger.info('Initializing Coordinator Agent...');
     await coordinatorAgent.initialize();
+    console.log('Coordinator Agent initialized');
+    logger.info('Coordinator Agent initialized successfully');
+    
+    console.log('Step 2: Initializing Weather Agent...');
     logger.info('Initializing Weather Agent...');
     await weatherAgent.initialize();
+    console.log('Weather Agent initialized');
+    logger.info('Weather Agent initialized successfully');
+    
+    console.log('Step 3: Initializing Predictor Agent...');
     logger.info('Initializing Predictor Agent...');
     await predictorAgent.initialize();
+    console.log('Predictor Agent initialized');
+    logger.info('Predictor Agent initialized successfully');
+    
+    console.log('Step 4: Initializing Optimizer Agent...');
     logger.info('Initializing Optimizer Agent...');
     await optimizerAgent.initialize();
+    console.log('Optimizer Agent initialized');
+    logger.info('Optimizer Agent initialized successfully');
+    
+    console.log('Step 5: Initializing Alerts Agent...');
     logger.info('Initializing Alerts Agent...');
     await alertsAgent.initialize();
+    console.log('Alerts Agent initialized');
+    logger.info('Alerts Agent initialized successfully');
+    
+    console.log('All agents initialized successfully');
     logger.info('All agents initialized successfully');
     
-    // Start server
-    server.listen(PORT, () => {
-      logger.info(`🔥 BURNWISE Backend Server running on port ${PORT}`);
-      logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`🔌 Socket.io enabled for real-time updates`);
-      logger.info(`🤖 5-Agent System: Coordinator | Weather | Predictor | Optimizer | Alerts`);
+    // Start server with detailed logging
+    console.log('About to start HTTP server on port', PORT);
+    
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log('Server.listen() callback called successfully!');
+      logger.info(`BURNWISE Backend Server running on port ${PORT}`);
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`Socket.io enabled for real-time updates`);
+      logger.info(`5-Agent System: Coordinator | Weather | Predictor | Optimizer | Alerts`);
+      console.log('='.repeat(60));
+      console.log('SERVER FULLY READY FOR PLAYWRIGHT MCP TESTING');
+      console.log('='.repeat(60));
     });
+    
+    server.on('error', (error) => {
+      console.error('Server error:', error);
+      logger.error('Server error:', error);
+    });
+    
+    console.log('Server.listen() call initiated, waiting for callback...');
     
   } catch (error) {
     logger.error('Failed to start server:', error);
@@ -337,7 +382,7 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-console.log('🏁 Calling startServer()...');
+console.log('Calling startServer()...');
 startServer();
 
 module.exports = { app, server, io };
