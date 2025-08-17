@@ -78,11 +78,11 @@ const tools = [
       const humidity = result.current?.humidity || 0;
       
       if (windSpeed > 15) {
-        return { ...result, decision: 'UNSAFE', reason: 'Wind speed exceeds 15 mph safety limit' };
+        return { ...result, decision: 'UNSAFE', reason: 'Wind speed exceeds 15 mph safety limit', needsApproval: false };
       } else if (windSpeed > 10 || humidity < 30) {
-        return { ...result, decision: 'MARGINAL', reason: 'Conditions are borderline - requires approval' };
+        return { ...result, decision: 'MARGINAL', reason: 'Conditions are borderline - requires approval', needsApproval: true };
       } else {
-        return { ...result, decision: 'SAFE', reason: 'Weather conditions are within safe parameters' };
+        return { ...result, decision: 'SAFE', reason: 'Weather conditions are within safe parameters', needsApproval: false };
       }
     }
   }),
@@ -112,6 +112,9 @@ const tools = [
       if (result.conflicts && result.conflicts.length > 0) {
         result.requiresResolution = true;
         result.conflictCount = result.conflicts.length;
+        result.needsApproval = true; // Conflicts require human review
+      } else {
+        result.needsApproval = false;
       }
       
       return result;
@@ -186,6 +189,9 @@ const tools = [
           items: optimized.schedule.items.length 
         });
       }
+      
+      // Add needsApproval based on conflict severity
+      optimized.needsApproval = optimized.conflicts && optimized.conflicts.length > 0;
       
       return optimized;
     }

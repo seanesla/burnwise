@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
+import ApprovalModal from './ApprovalModal';
 import './AgentChat.css';
 
 const AgentChat = () => {
@@ -16,6 +17,7 @@ const AgentChat = () => {
   const [currentAgent, setCurrentAgent] = useState('BurnwiseOrchestrator');
   const [socket, setSocket] = useState(null);
   const [conversationId] = useState(() => Date.now().toString());
+  const [approvalModal, setApprovalModal] = useState({ isOpen: false, request: null });
   const messagesEndRef = useRef(null);
 
   // Real agent definitions from backend
@@ -102,6 +104,40 @@ const AgentChat = () => {
         from: data.from,
         to: data.to,
         reason: data.reason,
+        timestamp: new Date()
+      });
+    });
+
+    // Listen for approval requests
+    newSocket.on('approval.required', (data) => {
+      setApprovalModal({
+        isOpen: true,
+        request: {
+          id: data.requestId,
+          type: data.type || 'MARGINAL_WEATHER',
+          severity: data.severity || 'MARGINAL',
+          description: data.description || 'Weather conditions are marginal and require human approval',
+          burnData: data.burnData,
+          weatherData: data.weatherData,
+          riskFactors: data.riskFactors || [],
+          aiRecommendation: data.aiRecommendation
+        }
+      });
+      
+      addMessage({
+        type: 'approval_request',
+        agent: data.agent || 'WeatherAnalyst',
+        content: `⚠️ Human approval required: ${data.description}`,
+        timestamp: new Date()
+      });
+    });
+
+    // Listen for approval results
+    newSocket.on('approval.result', (data) => {
+      addMessage({
+        type: 'approval_result',
+        decision: data.decision,
+        content: `✓ Burn ${data.decision === 'approved' ? 'approved' : 'rejected'} by human operator${data.reasoning ? `: ${data.reasoning}` : ''}`,
         timestamp: new Date()
       });
     });
@@ -202,6 +238,32 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
 
   const handleExamplePrompt = (prompt) => {
     setInputMessage(prompt);
+  };
+
+  const handleApprove = async (response) => {
+    if (socket) {
+      socket.emit('approval.response', {
+        requestId: response.approvalData.requestId,
+        decision: 'approved',
+        reasoning: response.reasoning,
+        timestamp: response.timestamp,
+        conversationId
+      });
+    }
+    setApprovalModal({ isOpen: false, request: null });
+  };
+
+  const handleReject = async (response) => {
+    if (socket) {
+      socket.emit('approval.response', {
+        requestId: response.approvalData.requestId,
+        decision: 'rejected',
+        reasoning: response.reasoning,
+        timestamp: response.timestamp,
+        conversationId
+      });
+    }
+    setApprovalModal({ isOpen: false, request: null });
   };
 
   const renderMessage = (message) => {
@@ -321,7 +383,15 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
   };
 
   return (
-    <div className="agent-chat">
+    <>
+      <ApprovalModal
+        isOpen={approvalModal.isOpen}
+        onClose={() => setApprovalModal({ isOpen: false, request: null })}
+        approvalRequest={approvalModal.request}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
+      <div className="agent-chat">
       <div className="chat-header">
         <div className="current-agent">
           <div 
@@ -403,6 +473,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
         </button>
       </div>
     </div>
+    </>
   );
 };
 

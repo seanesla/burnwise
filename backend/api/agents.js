@@ -112,8 +112,8 @@ router.post('/weather-analysis', async (req, res) => {
     
     logger.info('Weather analysis request', { location, burnDate });
     
-    // Analyze with WeatherAnalyst
-    const analysis = await analyzeWeatherSafety(location, burnDate, burnDetails);
+    // Analyze with WeatherAnalyst, pass Socket.io for approval events
+    const analysis = await analyzeWeatherSafety(location, burnDate, burnDetails, req.io);
     
     res.json({
       success: true,

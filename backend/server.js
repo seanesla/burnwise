@@ -245,6 +245,58 @@ io.on('connection', (socket) => {
     }
   });
   
+  // Handle approval responses from human operators
+  socket.on('approval.response', async (data) => {
+    try {
+      logger.info('Received approval response', {
+        requestId: data.requestId,
+        decision: data.decision,
+        conversationId: data.conversationId
+      });
+      
+      // Store approval decision in database
+      await query(`
+        UPDATE weather_analyses 
+        SET approved_by = 1,
+            approved_at = NOW(),
+            approval_notes = ?
+        WHERE id = ?
+      `, [
+        `${data.decision}: ${data.reasoning}`,
+        data.requestId
+      ]);
+      
+      // Emit result back to all connected clients
+      io.emit('approval.result', {
+        requestId: data.requestId,
+        decision: data.decision,
+        reasoning: data.reasoning,
+        timestamp: data.timestamp
+      });
+      
+      // If approved, update burn request status
+      if (data.decision === 'approved') {
+        await query(`
+          UPDATE burn_requests 
+          SET status = 'approved',
+              approved_at = NOW()
+          WHERE id = ?
+        `, [data.requestId]);
+      } else {
+        await query(`
+          UPDATE burn_requests 
+          SET status = 'rejected',
+              rejection_reason = ?
+          WHERE id = ?
+        `, [data.reasoning, data.requestId]);
+      }
+      
+    } catch (error) {
+      logger.error('Failed to process approval response', { error: error.message });
+      socket.emit('approval.error', { error: error.message });
+    }
+  });
+  
   socket.on('disconnect', () => {
     logger.info(`Client disconnected: ${socket.id}`);
     

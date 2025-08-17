@@ -10,6 +10,7 @@ const OpenAI = require('openai');
 const weatherAgent = require('../agents/weather');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
+const embeddingService = require('../services/embeddingService');
 
 // Initialize OpenAI with GPT-5-nano for cost efficiency
 const openai = new OpenAI({
@@ -256,8 +257,12 @@ const weatherAnalystAgent = new Agent({
 
 /**
  * Analyze weather conditions and make autonomous safety decision
+ * @param {Object} location - Coordinates {lat, lng}
+ * @param {string} burnDate - Date for burn request
+ * @param {Object} burnDetails - Burn request details
+ * @param {Object} io - Socket.io instance for real-time events
  */
-async function analyzeWeatherSafety(location, burnDate, burnDetails = {}) {
+async function analyzeWeatherSafety(location, burnDate, burnDetails = {}, io = null) {
   const startTime = Date.now();
   
   try {
@@ -332,12 +337,34 @@ async function analyzeWeatherSafety(location, burnDate, burnDetails = {}) {
       }
     }
     
-    // Store the analysis in database
-    await query(`
+    // Generate embeddings for pattern matching
+    const weatherEmbedding = await embeddingService.generateWeatherEmbedding({
+      temperature,
+      wind_speed: windSpeed,
+      wind_direction: currentWeather.wind_direction || 0,
+      humidity,
+      pressure: currentWeather.pressure || 1013,
+      visibility,
+      conditions: currentWeather.conditions || 'Unknown',
+      cloud_coverage: currentWeather.cloud_coverage || 0
+    });
+    
+    const decisionEmbedding = await embeddingService.generateDecisionEmbedding({
+      decision: overallDecision,
+      confidence: overallDecision === 'UNSAFE' ? 1.0 : 
+                 overallDecision === 'MARGINAL' ? 0.7 : 0.9,
+      reasons,
+      requires_approval: requiresApproval,
+      weather_impact: `Wind: ${windSafety}, Humidity: ${humiditySafety}, Temp: ${tempSafety}, Visibility: ${visSafety}`
+    });
+    
+    // Store the analysis in database with embeddings
+    const result = await query(`
       INSERT INTO weather_analyses 
       (burn_date, latitude, longitude, wind_speed, humidity, temperature, 
-       visibility, decision, requires_approval, reasons, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+       visibility, decision, requires_approval, reasons, confidence,
+       weather_embedding, decision_embedding, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `, [
       burnDate,
       location.lat,
@@ -348,13 +375,51 @@ async function analyzeWeatherSafety(location, burnDate, burnDetails = {}) {
       visibility,
       overallDecision,
       requiresApproval,
-      JSON.stringify(reasons)
+      JSON.stringify(reasons),
+      overallDecision === 'UNSAFE' ? 1.0 : 
+        overallDecision === 'MARGINAL' ? 0.7 : 0.9,
+      JSON.stringify(weatherEmbedding),
+      JSON.stringify(decisionEmbedding)
     ]);
+    
+    const analysisId = result.insertId;
+    
+    // Emit approval request if needed
+    if (requiresApproval && io) {
+      io.emit('approval.required', {
+        requestId: analysisId,
+        type: 'MARGINAL_WEATHER',
+        severity: 'MARGINAL',
+        description: `Weather conditions are marginal: ${reasons.join(', ')}`,
+        burnData: burnDetails,
+        weatherData: {
+          wind_speed: windSpeed,
+          wind_direction: currentWeather.wind_direction || 0,
+          humidity,
+          temperature,
+          visibility,
+          conditions: currentWeather.conditions || 'Unknown'
+        },
+        riskFactors: reasons.map(r => ({
+          severity: 'MARGINAL',
+          description: r
+        })),
+        aiRecommendation: {
+          decision: overallDecision,
+          confidence: Math.round((overallDecision === 'MARGINAL' ? 0.7 : 0.9) * 100),
+          reasoning: `Based on weather analysis: ${reasons.join('. ')}`
+        },
+        agent: 'WeatherAnalyst'
+      });
+      
+      logger.info('REAL: Approval request emitted', { analysisId, requiresApproval });
+    }
     
     logger.info('REAL: Weather safety decision made', {
       decision: overallDecision,
       requiresApproval,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
+      analysisId
     });
     
     return {
