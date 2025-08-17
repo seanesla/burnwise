@@ -15,7 +15,7 @@ const logger = require('../middleware/logger');
 // Initialize OpenAI with GPT-5-nano for cost efficiency
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v2'
+  baseURL: 'https://api.openai.com/v1'
 });
 
 // Optimization parameters
@@ -51,7 +51,7 @@ const optimizationTools = [
           start: z.string().default('06:00'),
           end: z.string().default('18:00')
         })
-      }).optional()
+      })
     }),
     execute: async (params) => {
       logger.info('REAL: Running simulated annealing', {
@@ -120,8 +120,7 @@ const optimizationTools = [
           }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: 400,
-        temperature: 0.3
+        max_completion_tokens: 400,
       });
       
       return JSON.parse(completion.choices[0].message.content);
@@ -205,8 +204,8 @@ const optimizationTools = [
         requestId: z.number(),
         assignedStart: z.string(),
         assignedEnd: z.string(),
-        priority: z.number().optional(),
-        conflictScore: z.number().optional()
+        priority: z.number(),
+        conflictScore: z.number()
       })),
       overallScore: z.number()
     }),
@@ -371,10 +370,10 @@ function calculateDownwindDistance(source, target, windDirection, windSpeed) {
   return Infinity; // Not downwind
 }
 
-// The REAL ScheduleOptimizer Agent
+// The REAL ScheduleOptimizer Agent - Handoff Target
 const scheduleOptimizerAgent = new Agent({
   name: 'ScheduleOptimizer',
-  model: 'gpt-5-nano', // Cost-efficient for optimization guidance
+  model: 'gpt-5-nano', // Cost-efficient for optimization guidance, text-only output
   instructions: `You optimize agricultural burn schedules using simulated annealing.
                  
                  Your goals:
@@ -393,9 +392,9 @@ const scheduleOptimizerAgent = new Agent({
                  
                  Always create REAL schedules in the database.
                  Never return placeholder or mock schedules.`,
+  handoffDescription: 'I optimize burn schedules using AI-enhanced simulated annealing. I balance safety, efficiency, and fairness while creating real database schedules that minimize smoke conflicts.',
   tools: optimizationTools,
-  temperature: 0.3,
-  max_tokens: 400
+  max_completion_tokens: 1500 // Updated per CLAUDE.md token budgets
 });
 
 /**

@@ -121,8 +121,8 @@ router.get('/calendar', asyncHandler(async (req, res) => {
         s.optimization_score,
         s.total_conflicts,
         si.burn_request_id,
-        si.scheduled_start_time,
-        si.scheduled_end_time,
+        si.scheduled_start,
+        si.scheduled_end,
         br.farm_id,
         br.field_id,
         br.acreage,
@@ -136,7 +136,7 @@ router.get('/calendar', asyncHandler(async (req, res) => {
       LEFT JOIN burn_requests br ON si.burn_request_id = br.request_id
       LEFT JOIN farms f ON br.farm_id = f.farm_id
       WHERE s.date BETWEEN ? AND ?
-      ORDER BY s.date, si.scheduled_start_time
+      ORDER BY s.date, si.scheduled_start
     `, [startDate, endDate]);
     
     // Get unscheduled burn requests in date range
@@ -192,7 +192,7 @@ router.get('/calendar', asyncHandler(async (req, res) => {
           field_id: item.field_id,
           acres: item.acreage,
           crop_type: item.crop_type,
-          scheduled_time: `${item.scheduled_start_time} - ${item.scheduled_end_time}`,
+          scheduled_time: `${item.scheduled_start} - ${item.scheduled_end}`,
           status: item.status,
           priority_score: item.priority_score
         });
@@ -293,20 +293,17 @@ router.get('/:date', asyncHandler(async (req, res) => {
         s.id as schedule_id,
         s.optimization_score,
         s.total_conflicts,
-        s.optimization_algorithm,
         s.created_at as schedule_created,
         si.id as item_id,
         si.burn_request_id,
-        si.scheduled_start_time,
-        si.scheduled_end_time,
-        si.time_slot,
-        si.assigned_resources,
-        br.field_name,
+        si.scheduled_start,
+        si.scheduled_end,
+        bf.field_name,
         br.acreage as acres,
         br.crop_type,
         br.priority_score,
         br.status as burn_status,
-        f.name as farm_name,
+        f.farm_name,
         f.owner_name,
         bf.field_geometry as field_boundary
       FROM schedules s
@@ -339,17 +336,14 @@ router.get('/:date', asyncHandler(async (req, res) => {
       date,
       optimization_score: scheduleData[0].optimization_score,
       total_conflicts: scheduleData[0].total_conflicts,
-      optimization_algorithm: scheduleData[0].optimization_algorithm,
       created_at: scheduleData[0].schedule_created
     };
     
     const burnItems = scheduleData.map(item => ({
       item_id: item.item_id,
       burn_request_id: item.burn_request_id,
-      scheduled_start_time: item.scheduled_start_time,
-      scheduled_end_time: item.scheduled_end_time,
-      time_slot: item.time_slot,
-      assigned_resources: item.assigned_resources ? JSON.parse(item.assigned_resources) : null,
+      scheduled_start: item.scheduled_start,
+      scheduled_end: item.scheduled_end,
       burn_details: {
         field_name: item.field_name,
         acres: item.acres,
@@ -679,8 +673,8 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
     const timelineData = await query(`
       SELECT 
         si.time_slot,
-        si.scheduled_start_time,
-        si.scheduled_end_time,
+        si.scheduled_start,
+        si.scheduled_end,
         br.id as burn_request_id,
         br.field_name,
         br.acres,
@@ -709,8 +703,8 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
       if (!timeline[item.time_slot]) {
         timeline[item.time_slot] = {
           slot: item.time_slot,
-          start_time: item.scheduled_start_time,
-          end_time: item.scheduled_end_time,
+          start_time: item.scheduled_start,
+          end_time: item.scheduled_end,
           burns: [],
           total_acres: 0,
           avg_priority: 0
@@ -822,8 +816,8 @@ router.put('/update', asyncHandler(async (req, res) => {
       UPDATE schedule_items
       SET 
         time_slot = ?,
-        scheduled_start_time = ?,
-        scheduled_end_time = ?,
+        scheduled_start = ?,
+        scheduled_end = ?,
         updated_at = NOW()
       WHERE burn_request_id = ?
       AND schedule_id = ?
@@ -847,8 +841,8 @@ router.put('/update', asyncHandler(async (req, res) => {
       'time_slot_update',
       JSON.stringify({
         old_slot: scheduleItem.time_slot,
-        old_start: scheduleItem.scheduled_start_time,
-        old_end: scheduleItem.scheduled_end_time
+        old_start: scheduleItem.scheduled_start,
+        old_end: scheduleItem.scheduled_end
       }),
       JSON.stringify({
         new_slot: conflictCheck.timeSlot,
@@ -884,8 +878,8 @@ router.put('/update', asyncHandler(async (req, res) => {
         burn_request_id,
         previous_time_slot: {
           slot: scheduleItem.time_slot,
-          start: scheduleItem.scheduled_start_time,
-          end: scheduleItem.scheduled_end_time
+          start: scheduleItem.scheduled_start,
+          end: scheduleItem.scheduled_end
         },
         new_time_slot: {
           slot: conflictCheck.timeSlot,
@@ -1335,8 +1329,8 @@ async function checkTimeSlotConflicts(scheduleDate, newTimeSlot, excludeBurnRequ
     SELECT 
       si.burn_request_id,
       si.time_slot,
-      si.scheduled_start_time,
-      si.scheduled_end_time,
+      si.scheduled_start,
+      si.scheduled_end,
       br.field_name,
       f.name as farm_name
     FROM schedule_items si
@@ -1347,9 +1341,9 @@ async function checkTimeSlotConflicts(scheduleDate, newTimeSlot, excludeBurnRequ
     AND si.burn_request_id != ?
     AND s.status = 'active'
     AND (
-      (si.scheduled_start_time <= ? AND si.scheduled_end_time > ?) OR
-      (si.scheduled_start_time < ? AND si.scheduled_end_time >= ?) OR
-      (si.scheduled_start_time >= ? AND si.scheduled_end_time <= ?)
+      (si.scheduled_start <= ? AND si.scheduled_end > ?) OR
+      (si.scheduled_start < ? AND si.scheduled_end >= ?) OR
+      (si.scheduled_start >= ? AND si.scheduled_end <= ?)
     )
   `, [
     scheduleDate,

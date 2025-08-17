@@ -71,8 +71,8 @@ router.get('/metrics', asyncHandler(async (req, res) => {
       SELECT 
         COUNT(*) as total_alerts,
         COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_alerts,
-        COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_alerts,
-        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_alerts
+        COUNT(CASE WHEN severity = 'warning' THEN 1 END) as high_alerts,
+        COUNT(CASE WHEN delivery_status = 'pending' THEN 1 END) as pending_alerts
       FROM alerts
       WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
     `);
@@ -81,10 +81,10 @@ router.get('/metrics', asyncHandler(async (req, res) => {
     const smokeMetrics = await query(`
       SELECT 
         COUNT(*) as total_predictions,
-        AVG(dispersion_radius_km) as avg_dispersion_radius,
+        AVG(affected_area_km2) as avg_dispersion_radius,
         AVG(confidence_score) as avg_confidence,
-        COUNT(CASE WHEN affected_population_estimate > 0 THEN 1 END) as predictions_with_conflicts
-      FROM smoke_predictions
+        COUNT(CASE WHEN affected_area_km2 > 10 THEN 1 END) as predictions_with_conflicts
+      FROM burn_smoke_predictions
       WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
     `);
 
@@ -283,7 +283,7 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     analytics.vector_operations = await query(`
       SELECT 
         COUNT(CASE WHEN weather_pattern_embedding IS NOT NULL THEN 1 END) as weather_vectors,
-        (SELECT COUNT(*) FROM smoke_predictions WHERE plume_vector IS NOT NULL 
+        (SELECT COUNT(*) FROM burn_smoke_predictions WHERE plume_vector IS NOT NULL 
          AND created_at > DATE_SUB(NOW(), INTERVAL ? DAY)) as smoke_vectors,
         (SELECT COUNT(*) FROM burn_requests WHERE terrain_vector IS NOT NULL 
          AND created_at > DATE_SUB(NOW(), INTERVAL ? DAY)) as burn_vectors
@@ -378,7 +378,7 @@ router.get('/efficiency', asyncHandler(async (req, res) => {
         COUNT(CASE WHEN sp.id IS NOT NULL THEN 1 END) / COUNT(*) as prediction_completion_rate,
         COUNT(CASE WHEN si.id IS NOT NULL THEN 1 END) / COUNT(*) as scheduling_completion_rate
       FROM burn_requests br
-      LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id
+      LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
       LEFT JOIN schedule_items si ON br.request_id = si.burn_request_id
       WHERE br.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays, periodDays]);
@@ -400,7 +400,7 @@ router.get('/efficiency', asyncHandler(async (req, res) => {
         COUNT(*) as total_operations,
         COUNT(CASE WHEN sp.id IS NULL THEN 1 END) as failed_operations
       FROM burn_requests br
-      LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id
+      LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
       WHERE br.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
       
       UNION ALL
@@ -464,7 +464,7 @@ router.get('/safety', asyncHandler(async (req, res) => {
         AVG(predicted_pm25) as avg_predicted_pm25,
         MAX(predicted_pm25) as max_predicted_pm25,
         AVG(confidence_score) as avg_prediction_confidence
-      FROM smoke_predictions sp
+      FROM burn_smoke_predictions sp
       WHERE sp.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays]);
     
@@ -564,7 +564,7 @@ router.get('/predictions', asyncHandler(async (req, res) => {
         COUNT(CASE WHEN confidence_score >= 0.8 THEN 1 END) as high_confidence_predictions,
         AVG(max_dispersion_radius) as avg_dispersion_radius,
         COUNT(CASE WHEN predicted_pm25 > 35 THEN 1 END) as air_quality_exceedances
-      FROM smoke_predictions sp
+      FROM burn_smoke_predictions sp
       WHERE sp.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays]);
     
@@ -834,7 +834,7 @@ async function getPredictorMetrics(periodDays) {
       COUNT(*) as predictions_made,
       AVG(confidence_score) as avg_confidence,
       COUNT(CASE WHEN plume_vector IS NOT NULL THEN 1 END) as vectors_generated
-    FROM smoke_predictions
+    FROM burn_smoke_predictions
     WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
   `, [periodDays]);
   

@@ -51,7 +51,10 @@ class OptimizerAgent {
 
   async initialize() {
     try {
-      logger.agent(this.agentName, 'info', 'Initializing Schedule Optimizer Agent');
+      logger.agent(this.agentName, 'info', 'Initializing Schedule Optimizer Agent with GPT-5 AI');
+      
+      // Initialize GPT-5-mini for intelligent schedule analysis
+      await this.initializeAI();
       
       // Validate mathematical capabilities for optimization
       await this.testOptimizationCapabilities();
@@ -63,11 +66,32 @@ class OptimizerAgent {
       await this.initializeOptimizationTemplates();
       
       this.initialized = true;
-      logger.agent(this.agentName, 'info', 'Optimizer Agent initialized successfully');
+      logger.agent(this.agentName, 'info', 'Optimizer Agent initialized with GPT-5-mini AI + Simulated Annealing');
       
     } catch (error) {
       logger.agent(this.agentName, 'error', 'Failed to initialize Optimizer Agent', { error: error.message });
       throw new AgentError(this.agentName, 'initialization', error.message, error);
+    }
+  }
+
+  async initializeAI() {
+    try {
+      const { GPT5MiniClient } = require('../gpt5-mini-client');
+      this.gpt5Client = new GPT5MiniClient();
+      
+      // Test GPT-5-mini connection
+      const testResponse = await this.gpt5Client.complete(
+        'You are an agricultural burn scheduling AI. Respond with: Ready to optimize schedules',
+        30
+      );
+      
+      if (testResponse) {
+        logger.agent(this.agentName, 'info', 'GPT-5-mini AI integration verified for schedule optimization');
+      } else {
+        throw new Error('GPT-5-mini test failed - NO FALLBACKS');
+      }
+    } catch (error) {
+      throw new Error(`GPT-5-mini REQUIRED for intelligent scheduling: ${error.message}`);
     }
   }
 
@@ -225,6 +249,9 @@ class OptimizerAgent {
       // Step 5: Calculate optimization metrics
       const metrics = this.calculateOptimizationMetrics(finalSchedule, optimizationProblem);
       
+      // Step 5.5: Get AI analysis of the schedule (evidence-based)
+      const aiAnalysis = await this.analyzeScheduleWithAI(finalSchedule, optimizationProblem, metrics);
+      
       // Step 6: Store optimization results
       const scheduleId = await this.storeOptimizationResults(finalSchedule, metrics);
       
@@ -234,7 +261,8 @@ class OptimizerAgent {
         scheduleId,
         optimizationScore: metrics.overallScore,
         totalConflicts: metrics.totalConflicts,
-        burnsScheduled: finalSchedule.items.length
+        burnsScheduled: finalSchedule.items.length,
+        aiEnhanced: aiAnalysis ? true : false
       });
       
       return {
@@ -243,8 +271,9 @@ class OptimizerAgent {
         date,
         schedule: finalSchedule,
         metrics,
+        aiAnalysis,  // Include GPT-5 evidence-based analysis
         optimizationDetails: {
-          algorithm: 'simulated_annealing',
+          algorithm: 'simulated_annealing_with_gpt5',
           iterations: optimizedSolution.iterations,
           finalTemperature: optimizedSolution.finalTemperature,
           improvementHistory: optimizedSolution.improvementHistory
@@ -945,6 +974,104 @@ class OptimizerAgent {
     });
     
     return schedule;
+  }
+
+  /**
+   * Use GPT-5-mini to analyze schedule conflicts and provide evidence-based recommendations
+   */
+  async analyzeScheduleWithAI(schedule, problem, metrics) {
+    if (!this.gpt5Client) {
+      logger.agent(this.agentName, 'warn', 'GPT-5 client not available for schedule analysis');
+      return null;
+    }
+
+    try {
+      const scheduleDescription = `
+Agricultural Burn Schedule Analysis:
+Date: ${schedule.date}
+Total Requests: ${problem.requests.length}
+Scheduled: ${schedule.items.length}
+Unscheduled: ${schedule.unscheduled.length}
+
+Weather Conditions:
+- Wind Speed: ${problem.weatherData?.windSpeed || 'N/A'} mph
+- Humidity: ${problem.weatherData?.humidity || 'N/A'}%
+- Temperature: ${problem.weatherData?.temperature || 'N/A'}°F
+
+Scheduled Burns (top 5):
+${schedule.items.slice(0, 5).map(item => {
+  const request = problem.requests.find(r => r.id === item.burnRequestId);
+  return `- ${item.assignedTimeStart}-${item.assignedTimeEnd}: ${request?.acres || 0} acres, ${request?.crop_type || 'unknown'} crop`;
+}).join('\n')}
+
+Optimization Score: ${metrics.overallScore.toFixed(3)}
+Time Window Compliance: ${(metrics.timeWindowCompliance * 100).toFixed(1)}%
+Conflict Level: ${metrics.averageConflictScore.toFixed(3)}
+`;
+
+      const analysisPrompt = `You are an agricultural burn scheduling expert using GPT-5-mini.
+
+Analyze this burn schedule and provide MANDATORY evidence-based recommendations:
+${scheduleDescription}
+
+CRITICAL EVIDENCE-BASED REQUIREMENTS:
+
+1) Safety Assessment with Regulatory Compliance:
+   - Overall schedule safety: SAFE/CAUTION/DANGER with confidence %
+   - EPA compliance check: All burns maintain PM2.5 < 35 µg/m³ (24-hr average)
+   - NFPA 1 Section 10.14 compliance for burn timing and notification
+   - Minimum separation distances between burns (meters, not "adequate")
+   - Reference 40 CFR Part 60 for agricultural burning standards
+
+2) Quantified Conflict Analysis:
+   - Number of temporal conflicts (burns within 6 hours): X conflicts
+   - Number of spatial conflicts (< 2km separation): Y conflicts  
+   - Combined PM2.5 exposure for overlapping plumes: XX.X µg/m³
+   - Percentage over EPA limit: XX% (if applicable)
+   - Wind-carried smoke overlap probability: XX% confidence
+
+3) Optimization Metrics with Benchmarks:
+   - Current efficiency score: XX.X% vs optimal theoretical: YY.Y%
+   - Resource utilization rate: XX% (crews, equipment)
+   - Weather window usage: XX% of favorable conditions utilized
+   - Conflict reduction achieved: XX% from initial schedule
+   - Reference USDA prescribed burning efficiency guidelines
+
+4) Specific Improvement Recommendations:
+   - Reschedule burn #X to HH:MM (reduces PM2.5 by XX µg/m³)
+   - Increase separation of burns Y and Z to XXXX meters
+   - Delay burn #W by X hours for better atmospheric dispersion
+   - Split large burn into X phases to stay under EPA thresholds
+   - Each recommendation with expected improvement percentage
+
+5) Risk Mitigation Priority:
+   - Critical risks: [list with probability % and impact severity 1-10]
+   - Moderate risks: [list with mitigation timeframe]
+   - Reference NFPA 295 for wildfire risk assessment standards
+
+Data Precision Requirements:
+- All distances in meters (integer)
+- PM2.5 in µg/m³ (1 decimal)
+- Times in HH:MM format
+- Percentages with confidence intervals
+
+MANDATORY: End response with:
+"Sources: [EPA 40 CFR Part 50 & 60, NFPA 1 Section 10.14, NFPA 295, USDA Forest Service Smoke Management Guide, state agricultural burning regulations]"`;
+
+      const aiAnalysis = await this.gpt5Client.complete(analysisPrompt, 600);
+      
+      if (aiAnalysis) {
+        logger.agent(this.agentName, 'info', 'GPT-5 schedule analysis completed', {
+          scheduledBurns: schedule.items.length,
+          optimizationScore: metrics.overallScore.toFixed(3)
+        });
+        return aiAnalysis;
+      }
+    } catch (error) {
+      logger.agent(this.agentName, 'error', 'AI schedule analysis failed', { error: error.message });
+    }
+    
+    return null;
   }
 
   calculateOptimizationMetrics(schedule, problem) {

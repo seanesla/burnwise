@@ -14,7 +14,7 @@ const logger = require('../middleware/logger');
 // Initialize OpenAI with GPT-5-nano for cost efficiency
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v2'
+  baseURL: 'https://api.openai.com/v1'
 });
 
 // Safety thresholds based on EPA and agricultural standards
@@ -222,10 +222,10 @@ async function getWeatherEmbedding(weatherData) {
   }
 }
 
-// The REAL WeatherAnalyst Agent
+// The REAL WeatherAnalyst Agent - Handoff Target
 const weatherAnalystAgent = new Agent({
   name: 'WeatherAnalyst',
-  model: 'gpt-5-nano', // Cost-efficient for weather analysis
+  model: 'gpt-5-nano', // Text-only analysis, nano compatible
   instructions: `You are a weather safety analyst for agricultural burns.
                  
                  Your PRIMARY responsibility is SAFETY. You make autonomous decisions:
@@ -249,9 +249,9 @@ const weatherAnalystAgent = new Agent({
                  You MUST make a clear decision. Never say "maybe" or "possibly".
                  If ANY factor is UNSAFE, the overall decision is UNSAFE.
                  If ANY factor is MARGINAL and none are UNSAFE, decision is MARGINAL.`,
+  handoffDescription: 'I analyze weather conditions and make autonomous SAFE/UNSAFE/MARGINAL decisions for burn safety. I check wind, humidity, temperature, and visibility against agricultural burning standards.',
   tools: weatherTools,
-  temperature: 0.3, // Lower temperature for consistent safety decisions
-  max_tokens: 300
+  max_completion_tokens: 1500 // Updated per CLAUDE.md token budgets
 });
 
 /**

@@ -14,7 +14,7 @@ const logger = require('../middleware/logger');
 // Initialize OpenAI with GPT-5-mini for complex reasoning
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v2'
+  baseURL: 'https://api.openai.com/v1'
 });
 
 // Conflict resolution strategies
@@ -331,8 +331,7 @@ const conflictTools = [
           }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: 1000, // More tokens for complex reasoning
-        temperature: 0.4,
+        max_completion_tokens: 1000, // More tokens for complex reasoning
         reasoning: { effort: 'high' } // Deep reasoning for fairness
       });
       
@@ -384,10 +383,10 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// The REAL ConflictResolver Agent
+// The REAL ConflictResolver Agent - Handoff Target
 const conflictResolverAgent = new Agent({
   name: 'ConflictResolver',
-  model: 'gpt-5-mini', // Need complex reasoning for multi-party negotiation
+  model: 'gpt-5-mini', // Need complex reasoning for multi-party negotiation + JSON output
   instructions: `You are a conflict resolution specialist for agricultural burns.
                  
                  Your role is to:
@@ -415,9 +414,9 @@ const conflictResolverAgent = new Agent({
                  - Safety-first (no dangerous overlaps)
                  - Practical and implementable
                  - Respectful to all parties`,
+  handoffDescription: 'I resolve conflicts between overlapping burn requests using multi-party negotiation. I analyze priorities, suggest fair alternatives, and ensure safety while respecting all farmers needs.',
   tools: conflictTools,
-  temperature: 0.4, // Balanced for creative solutions
-  max_tokens: 1000 // Need more tokens for complex negotiations
+  max_completion_tokens: 1000 // Per CLAUDE.md: complex reasoning + JSON output
 });
 
 /**
@@ -626,8 +625,7 @@ async function mediateFarms(farmIds, issue) {
           content: JSON.stringify({ farms, issue })
         }
       ],
-      max_tokens: 500,
-      temperature: 0.5
+      max_completion_tokens: 500,
     });
     
     const mediation = completion.choices[0].message.content;

@@ -19,6 +19,7 @@ const Navigation = () => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard' },
+    { path: '/agent-chat', label: 'AI Assistant' },
     { path: '/request', label: 'Burn Request' },
     { path: '/map', label: 'Map' },
     { path: '/schedule', label: 'Schedule' },

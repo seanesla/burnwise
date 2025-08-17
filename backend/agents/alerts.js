@@ -93,7 +93,10 @@ class AlertsAgent {
 
   async initialize() {
     try {
-      logger.agent(this.agentName, 'info', 'Initializing Alert System Agent');
+      logger.agent(this.agentName, 'info', 'Initializing Alert System Agent with GPT-5 AI');
+      
+      // Initialize GPT-5-mini for intelligent alert generation
+      await this.initializeAI();
       
       // Initialize Twilio client if credentials available
       await this.initializeTwilioClient();
@@ -108,11 +111,32 @@ class AlertsAgent {
       this.initializeRateLimiting();
       
       this.initialized = true;
-      logger.agent(this.agentName, 'info', 'Alerts Agent initialized successfully');
+      logger.agent(this.agentName, 'info', 'Alerts Agent initialized with GPT-5-mini intelligence');
       
     } catch (error) {
       logger.agent(this.agentName, 'error', 'Failed to initialize Alerts Agent', { error: error.message });
       throw new AgentError(this.agentName, 'initialization', error.message, error);
+    }
+  }
+
+  async initializeAI() {
+    try {
+      const { GPT5MiniClient } = require('../gpt5-mini-client');
+      this.gpt5Client = new GPT5MiniClient();
+      
+      // Test GPT-5-mini connection
+      const testResponse = await this.gpt5Client.complete(
+        'You are an agricultural alert system AI. Respond with: Ready to generate intelligent notifications',
+        30
+      );
+      
+      if (testResponse) {
+        logger.agent(this.agentName, 'info', 'GPT-5-mini AI verified for intelligent alert generation');
+      } else {
+        throw new Error('GPT-5-mini test failed - NO FALLBACKS');
+      }
+    } catch (error) {
+      throw new Error(`GPT-5-mini REQUIRED for intelligent alerts: ${error.message}`);
     }
   }
 
@@ -265,8 +289,8 @@ class AlertsAgent {
         throw new AgentError(this.agentName, 'rate_limiting', 'Alert rate limit exceeded');
       }
       
-      // Step 3: Generate alert message
-      const alertMessage = this.generateAlertMessage(validatedAlert);
+      // Step 3: Generate alert message (now with AI enhancement)
+      const alertMessage = await this.generateAlertMessage(validatedAlert);
       
       // Step 4: Determine recipients
       const recipients = await this.determineRecipients(validatedAlert);
@@ -400,7 +424,7 @@ class AlertsAgent {
     return true;
   }
 
-  generateAlertMessage(alertData) {
+  async generateAlertMessage(alertData) {
     const template = this.alertTypes[alertData.type].template;
     let content = template;
     
@@ -412,6 +436,12 @@ class AlertsAgent {
           content = content.replace(new RegExp(placeholder, 'g'), alertData.data[key]);
         }
       });
+    }
+    
+    // Enhance with GPT-5 AI for intelligent, evidence-based alerts
+    const aiEnhancedContent = await this.enhanceAlertWithAI(alertData, content);
+    if (aiEnhancedContent) {
+      content = aiEnhancedContent;
     }
     
     // Add timestamp and alert ID
@@ -429,6 +459,92 @@ class AlertsAgent {
         socket: this.formatForSocket(alertData, content)
       }
     };
+  }
+
+  /**
+   * Use GPT-5-mini to enhance alerts with intelligent, evidence-based content
+   */
+  async enhanceAlertWithAI(alertData, baseContent) {
+    if (!this.gpt5Client) {
+      return null;
+    }
+
+    try {
+      const alertContext = `
+Alert Type: ${alertData.type}
+Severity: ${alertData.severity}
+Farm: ${alertData.data?.farmName || 'N/A'}
+Location: ${alertData.data?.fieldName || 'N/A'}
+Date/Time: ${alertData.data?.date || 'N/A'} ${alertData.data?.time || ''}
+
+Base Message: ${baseContent}
+
+Additional Context:
+${JSON.stringify(alertData.data || {}, null, 2)}
+`;
+
+      const enhancementPrompt = `You are an agricultural alert system AI using GPT-5-mini.
+
+Enhance this alert message with MANDATORY evidence-based information:
+${alertContext}
+
+CRITICAL REQUIREMENTS BY ALERT TYPE:
+
+For SMOKE_WARNING alerts:
+- State exact PM2.5 level detected (µg/m³)
+- Reference EPA AQI category: Good (0-50), Moderate (51-100), USG (101-150), Unhealthy (151-200)
+- Cite CDC exposure limits: 35 µg/m³ (24-hr), 12 µg/m³ (annual)
+- Specify affected radius in meters
+- Include "Shelter indoors if >55 µg/m³" per EPA guidelines
+
+For BURN_SCHEDULED/BURN_STARTING alerts:
+- Wind speed/direction with safety threshold (4-15 mph per NFPA)
+- Humidity level vs optimal range (30-60% per USDA)
+- Reference NFPA 1 Section 10.14.3 for notification requirements
+- Include setback distance from structures (min 50ft per most codes)
+
+For CONFLICT_DETECTED alerts:
+- Combined PM2.5 estimate with % over EPA limit
+- Minimum separation distance needed (meters)
+- Reference EPA cumulative exposure guidelines
+- Suggest rescheduling window (HH:MM format)
+
+For WEATHER_ALERT:
+- Specific parameter changed (exact values before/after)
+- Impact on burn safety (SAFE/CAUTION/DANGER)
+- Reference NWS Red Flag criteria if applicable
+- Provide go/no-go decision with confidence %
+
+DATA PRECISION REQUIREMENTS:
+- Distances: meters (integer)
+- Concentrations: µg/m³ (1 decimal)
+- Percentages: include confidence level
+- Times: HH:MM format
+- SMS limit: 160 chars max
+
+MANDATORY for severity "critical" or "high":
+End with: "Ref: [EPA AQI/NFPA 1-10.14/CDC Guidelines/NWS]"
+
+For all alerts, prioritize:
+1. Immediate action needed
+2. Specific threshold exceeded
+3. Regulatory reference
+4. Time-bound recommendation`;
+
+      const enhancedMessage = await this.gpt5Client.complete(enhancementPrompt, 200);
+      
+      if (enhancedMessage) {
+        logger.agent(this.agentName, 'info', 'Alert enhanced with GPT-5 intelligence', {
+          alertType: alertData.type,
+          severity: alertData.severity
+        });
+        return enhancedMessage;
+      }
+    } catch (error) {
+      logger.agent(this.agentName, 'error', 'AI alert enhancement failed', { error: error.message });
+    }
+    
+    return null;
   }
 
   formatForSMS(content, alertData) {
@@ -774,17 +890,16 @@ class AlertsAgent {
       
       const result = await query(`
         INSERT INTO alerts (
-          alert_type, farm_id, burn_request_id, message,
-          severity, status, delivery_method, recipient_contact, 
+          alert_type, farm_id, request_id, message,
+          severity, delivery_method, recipient_email, 
           delivery_status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `, [
         alertData.type,
         alertData.farm_id,
         alertData.burn_request_id,
         `${alertData.title || 'Alert'}: ${alertMessage.content}`,
         dbSeverity,
-        'pending',  // For 'status' column
         primaryMethod,  // Single enum value for delivery_method
         primaryRecipient,
         'pending'  // For 'delivery_status' column

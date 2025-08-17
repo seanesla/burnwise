@@ -20,6 +20,7 @@ const AlertsPanel = lazy(() => import('./components/AlertsPanel'));
 const ImprovedBurnRequestForm = lazy(() => import('./components/ImprovedBurnRequestForm'));
 const Analytics = lazy(() => import('./components/Analytics'));
 const Settings = lazy(() => import('./components/Settings'));
+const AgentChat = lazy(() => import('./components/AgentChat'));
 
 // Debug system (disabled for production)
 const DEBUG = false;
@@ -84,6 +85,11 @@ function AppContent() {
               <Route path="/request" element={
                 <ProtectedRoute>
                   <ImprovedBurnRequestForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/agent-chat" element={
+                <ProtectedRoute>
+                  <AgentChat />
                 </ProtectedRoute>
               } />
               <Route path="/analytics" element={

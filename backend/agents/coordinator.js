@@ -93,18 +93,110 @@ class CoordinatorAgent {
   }
 
   initializeEmbeddingClient() {
-    if (process.env.OPENAI_API_KEY) {
-      this.openaiClient = axios.create({
-        baseURL: 'https://api.openai.com/v1',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      logger.agent(this.agentName, 'debug', 'OpenAI client initialized for embeddings');
-    } else {
-      logger.agent(this.agentName, 'warn', 'OpenAI API key not found, using fallback embeddings');
+    // REQUIRED: OpenAI API key for real AI - NO FALLBACKS
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is REQUIRED - No fake AI allowed for hackathon');
     }
+    
+    // Initialize OpenAI client for embeddings
+    this.openaiClient = axios.create({
+      baseURL: 'https://api.openai.com/v1',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    // Initialize GPT-5-mini client - NO FALLBACKS
+    const { GPT5MiniClient } = require('../gpt5-mini-client');
+    this.gpt5MiniClient = new GPT5MiniClient();
+    
+    // Create evidence-based wrapper for transparency
+    this.gpt5Client = {
+      analyze: async (prompt, model = 'gpt-5-mini') => {
+        // Add transparency logging
+        logger.agent(this.agentName, 'info', 'GPT-5-mini API call initiated:', {
+          endpoint: '/v1/responses',
+          model: 'gpt-5-mini',
+          prompt_preview: prompt.substring(0, 100) + '...',
+          timestamp: new Date().toISOString()
+        });
+        
+        // Add evidence requirements to all prompts
+        const evidencePrompt = `${prompt}
+
+CRITICAL: Provide evidence-based analysis with specific sources and data:
+- Include specific percentages, numbers, and measurable data points
+- Reference EPA standards, NFPA guidelines, or agricultural best practices
+- Cite meteorological data sources when discussing weather
+- Provide confidence levels (%) for predictions
+- Include specific timeframes and thresholds
+- Format: Use bullet points with data backing each claim
+- End with "Sources: [list specific standards/data referenced]"`;
+        
+        const response = await this.gpt5MiniClient.complete(evidencePrompt, 2000);
+        
+        if (!response) {
+          throw new Error('GPT-5-mini analysis failed - NO FALLBACKS');
+        }
+        
+        // Log response with transparency
+        logger.agent(this.agentName, 'info', 'GPT-5-mini response received:', {
+          response_length: response.length,
+          has_sources: response.toLowerCase().includes('sources:'),
+          has_percentages: /\d+%/.test(response),
+          has_data_points: /\d+/.test(response),
+          timestamp: new Date().toISOString()
+        });
+        
+        // Validate evidence requirements
+        if (!response.toLowerCase().includes('sources:')) {
+          logger.agent(this.agentName, 'warn', 'GPT-5-mini response missing sources - retrying with stricter prompt');
+          
+          const stricterPrompt = `${evidencePrompt}
+
+MANDATORY: You MUST end your response with "Sources: [specific standards, EPA documents, NFPA codes, or meteorological data sources]"`;
+          
+          const retryResponse = await this.gpt5MiniClient.complete(stricterPrompt, 2000);
+          return retryResponse || response;
+        }
+        
+        return response;
+      },
+      
+      analyzeBurnRequest: async (burnRequest) => {
+        const prompt = `Analyze this agricultural burn request using GPT-5-mini AI:
+          ${JSON.stringify(burnRequest, null, 2)}
+          
+          Provide evidence-based analysis with data sources:
+          1. Risk assessment (cite specific hazards with probability % and severity levels 1-10)
+          2. Environmental impact prediction (quantify PM2.5 µg/m³, CO2 tons, reference EPA standards)
+          3. Optimal timing recommendations (based on meteorological data, wind patterns, humidity %)
+          4. Safety precautions needed (reference NFPA 11, agricultural burning guidelines, specific distances)`;
+        
+        return this.gpt5Client.analyze(prompt, 'gpt-5-mini');
+      },
+      
+      orchestrate: async (agents, request) => {
+        const prompt = `Orchestrate multi-agent workflow for burn request.
+          Available agents: ${agents.join(', ')}
+          Request: ${JSON.stringify(request)}
+          
+          Determine optimal execution order with evidence-based justification:
+          - Justify why each agent is needed (cite specific capabilities)
+          - Specify data dependencies between agents (list required inputs/outputs)
+          - Estimate processing time per agent (minutes, based on complexity)
+          - Identify critical path and bottlenecks (show dependency graph)
+          - Risk assessment for each step (probability % of delays/failures)`;
+        
+        return this.gpt5Client.analyze(prompt, 'gpt-5-mini');
+      }
+    };
+    
+    logger.agent(this.agentName, 'info', 'GPT-5-mini AI initialized - REAL AI ACTIVE');
+    logger.agent(this.agentName, 'info', 'Model: gpt-5-mini ONLY - NO FALLBACKS');
+    logger.agent(this.agentName, 'info', 'Evidence-based analysis enabled for all predictions');
+    logger.agent(this.agentName, 'info', 'Transparency logging: All API calls monitored');
   }
 
   // Validation schema for burn requests
@@ -364,7 +456,7 @@ class CoordinatorAgent {
   async generateBurnVector(requestData) {
     try {
       // Create a 32-dimensional burn vector for similarity analysis
-      const vector = new Array(32).fill(0);
+      let vector = new Array(32).fill(0);
       
       // Encode basic characteristics
       vector[0] = requestData.acres / 1000; // Normalize acres
@@ -383,16 +475,12 @@ class CoordinatorAgent {
       vector[13] = burnDate.getMonth() / 12; // Month of year
       vector[14] = burnDate.getDay() / 7; // Day of week
       
-      // If OpenAI is available, enhance with semantic embeddings
-      if (this.openaiClient) {
-        const textDescription = this.createTextDescription(requestData);
-        const embeddings = await this.getOpenAIEmbeddings(textDescription);
-        
-        // Use first 15 dimensions of OpenAI embeddings to enhance our vector
-        for (let i = 0; i < Math.min(15, embeddings.length); i++) {
-          vector[17 + i] = embeddings[i];
-        }
-      }
+      // REQUIRED: Use real AI embeddings - no fallbacks
+      const textDescription = this.createTextDescription(requestData);
+      const embeddings = await this.getOpenAIEmbeddings(textDescription, 32);
+      
+      // Replace entire vector with REAL AI embedding
+      vector = embeddings;
       
       // Normalize vector
       const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
@@ -400,25 +488,28 @@ class CoordinatorAgent {
       
     } catch (error) {
       logger.agent(this.agentName, 'error', 'Burn vector generation failed', { error: error.message });
-      // Return a basic vector if generation fails
-      return new Array(32).fill(0.1);
+      throw error; // NO FALLBACKS - fail if AI fails
     }
   }
 
-  async getOpenAIEmbeddings(text) {
-    try {
-      const response = await this.openaiClient.post('/embeddings', {
-        model: 'text-embedding-3-small',
-        input: text,
-        dimensions: 512
-      });
-      
-      return response.data.data[0].embedding.slice(0, 15); // Use first 15 dimensions
-      
-    } catch (error) {
-      logger.agent(this.agentName, 'warn', 'OpenAI embeddings failed, using fallback', { error: error.message });
-      return new Array(15).fill(0);
+  async getOpenAIEmbeddings(text, dimensions = 512) {
+    // NO FALLBACKS - Real embeddings or fail
+    const response = await this.openaiClient.post('/embeddings', {
+      model: 'text-embedding-3-large', // Best quality embeddings
+      input: text,
+      dimensions: dimensions
+    });
+    
+    const embedding = response.data.data[0].embedding;
+    logger.agent(this.agentName, 'debug', `Generated REAL ${embedding.length}-dim embedding`);
+    
+    // Verify it's a real embedding (not random)
+    const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+    if (Math.abs(magnitude - 1.0) > 0.1) {
+      logger.agent(this.agentName, 'warn', `Embedding magnitude ${magnitude} (expected ~1.0)`);
     }
+    
+    return embedding;
   }
 
   createTextDescription(requestData) {

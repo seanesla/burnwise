@@ -247,31 +247,54 @@ async function findNearestNeighbors(tableName, vectorColumn, queryVector, k = 5,
 }
 
 /**
- * Generate embedding vector (placeholder - would use actual embedding service)
+ * Generate REAL embedding vector using OpenAI GPT-5 API
+ * NO FALLBACKS - Real AI or fail (Hackathon requirement)
  * @param {string} text - Text to embed
- * @param {number} dimensions - Vector dimensions
- * @returns {Array} Embedding vector
+ * @param {number} dimensions - Vector dimensions (128, 256, 512, 1024, etc.)
+ * @returns {Array} REAL embedding vector from OpenAI
  */
-function generateEmbedding(text, dimensions = 128) {
-  // This is a placeholder implementation
-  // In production, this would call OpenAI, HuggingFace, or another embedding service
+async function generateEmbedding(text, dimensions = 128) {
+  const axios = require('axios');
+  const logger = require('../middleware/logger');
   
-  // Simple hash-based pseudo-embedding for testing
-  const vector = [];
-  const hash = text.split('').reduce((acc, char) => {
-    return ((acc << 5) - acc) + char.charCodeAt(0);
-  }, 0);
-  
-  for (let i = 0; i < dimensions; i++) {
-    // Generate deterministic pseudo-random values based on hash
-    const seed = hash + i;
-    const value = (Math.sin(seed) * 10000) % 1;
-    vector.push(value);
+  // REQUIRED: OpenAI API key - NO FALLBACKS
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is REQUIRED for real AI embeddings - No fake vectors allowed');
   }
   
-  // Normalize vector
-  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-  return vector.map(val => val / magnitude);
+  // Call OpenAI embeddings API with text-embedding-3-large for best quality
+  const response = await axios.post('https://api.openai.com/v1/embeddings', {
+    model: 'text-embedding-3-large', // Best quality model (better than text-embedding-3-small)
+    input: text,
+    dimensions: dimensions // Custom dimensions supported
+  }, {
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    timeout: 15000
+  });
+  
+  if (!response.data?.data?.[0]?.embedding) {
+    throw new Error('Invalid OpenAI response - no embedding received');
+  }
+  
+  const embedding = response.data.data[0].embedding;
+  
+  // Verify it's a real embedding (normalized vectors have magnitude ~1.0)
+  const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+  if (Math.abs(magnitude - 1.0) > 0.2) {
+    logger.warn(`Embedding magnitude ${magnitude.toFixed(4)} (expected ~1.0)`);
+  }
+  
+  logger.info('✅ Generated REAL OpenAI embedding', { 
+    model: 'text-embedding-3-large',
+    textLength: text.length, 
+    dimensions: embedding.length,
+    magnitude: magnitude.toFixed(4)
+  });
+  
+  return embedding;
 }
 
 /**

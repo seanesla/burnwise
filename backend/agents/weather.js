@@ -1,5 +1,5 @@
 const logger = require('../middleware/logger');
-const { query } = require('../db/connection');  // Removed vector operations - overengineered
+const { query } = require('../db/connection');
 const { AgentError, ExternalServiceError } = require('../middleware/errorHandler');
 const axios = require('axios');
 const moment = require('moment');
@@ -7,25 +7,23 @@ const moment = require('moment');
 /**
  * AGENT 2: WEATHER ANALYSIS AGENT
  * 
- * Responsibilities:
- * - Fetches real-time weather data from OpenWeatherMap API
- * - Generates 128-dimensional weather pattern vectors
- * - Stores weather data with vector embeddings in TiDB
- * - Searches for similar historical weather patterns
- * - Provides weather suitability analysis for burns
- * - Predicts weather stability for burn windows
+ * Uses REAL weather data from OpenWeatherMap API
+ * Then analyzes it with GPT-5 AI for intelligent insights
+ * NO FAKE DATA - Real weather or fail
  */
 class WeatherAgent {
   constructor() {
     this.agentName = 'weather';
-    this.version = '1.0.0';
+    this.version = '2.0.0'; // Updated for real AI
     this.initialized = false;
-    // No demo mode - real API only
-    this.apiKey = process.env.OPENWEATHERMAP_API_KEY;
-    this.baseUrl = 'https://api.openweathermap.org/data/2.5';
-    this.oneCallUrl = 'https://api.openweathermap.org/data/3.0/onecall';
     
-    // Weather pattern analysis configuration
+    // REQUIRED: Real OpenWeatherMap API key (checked in initialize)
+    this.apiKey = null;
+    
+    // OpenWeatherMap API endpoints
+    this.baseUrl = 'https://api.openweathermap.org/data/2.5';
+    
+    // Weather thresholds for burn safety
     this.optimalConditions = {
       windSpeed: { min: 2, max: 15 }, // mph
       humidity: { min: 30, max: 70 }, // percentage
@@ -40,804 +38,448 @@ class WeatherAgent {
 
   async initialize() {
     try {
-      logger.agent(this.agentName, 'info', 'Initializing Weather Analysis Agent');
+      logger.agent(this.agentName, 'info', 'Initializing Weather Agent with REAL data');
       
+      // Check for API key now that env is loaded
+      this.apiKey = process.env.OPENWEATHERMAP_API_KEY;
       if (!this.apiKey) {
-        throw new Error('OpenWeatherMap API key not configured');
+        throw new Error('OPENWEATHERMAP_API_KEY is REQUIRED for real weather data');
       }
       
-      // Test API connection
+      // Test that we can get REAL weather data
       await this.testWeatherAPI();
       
-      // Initialize weather data cache
-      this.initializeCache();
-      
-      // Load historical weather patterns
-      await this.loadHistoricalPatterns();
+      // Verify GPT-5 is available for AI analysis
+      await this.testAIConnection();
       
       this.initialized = true;
-      logger.agent(this.agentName, 'info', 'Weather Agent initialized successfully');
+      logger.agent(this.agentName, 'info', 'Weather Agent ready with REAL weather + AI');
       
     } catch (error) {
-      logger.agent(this.agentName, 'error', 'Failed to initialize Weather Agent', { error: error.message });
+      logger.agent(this.agentName, 'error', 'Failed to initialize', { error: error.message });
       throw new AgentError(this.agentName, 'initialization', error.message, error);
     }
   }
 
   async testWeatherAPI() {
     try {
-      // Require real API key - no mocks or demo mode allowed
-      if (!this.apiKey || this.apiKey.length < 10) {
-        throw new Error('Valid OpenWeatherMap API key required - no mock/demo mode allowed');
-      }
-      
+      // Test with a real location to verify we get real weather
       const testResponse = await axios.get(`${this.baseUrl}/weather`, {
         params: {
-          q: 'Davis,CA,US', // Test location in agricultural area
+          q: 'Davis,CA,US', // Real agricultural area in California
           appid: this.apiKey,
-          units: 'imperial'
+          units: 'imperial' // Fahrenheit for US
         },
         timeout: 10000
       });
       
-      if (testResponse.status === 200) {
-        logger.agent(this.agentName, 'debug', 'OpenWeatherMap API connection verified');
+      if (testResponse.status === 200 && testResponse.data.main) {
+        const temp = testResponse.data.main.temp;
+        logger.agent(this.agentName, 'info', `Real weather API working - Current temp in Davis: ${temp}°F`);
+      } else {
+        throw new Error('Invalid weather response');
       }
       
     } catch (error) {
       if (error.response?.status === 401) {
-        throw new Error('Invalid OpenWeatherMap API key - real API key required');
-      } else if (error.response?.status === 429) {
-        throw new Error('OpenWeatherMap API rate limit exceeded');
-      } else {
-        throw new Error(`OpenWeatherMap API test failed: ${error.message}`);
+        throw new Error('Invalid OpenWeatherMap API key - need REAL key for real weather');
       }
+      throw new Error(`OpenWeatherMap test failed: ${error.message}`);
     }
   }
 
-  initializeCache() {
-    // Clear expired cache entries every 5 minutes
-    setInterval(() => {
-      const now = Date.now();
-      for (const [key, value] of this.weatherCache.entries()) {
-        if (now - value.timestamp > this.cacheTimeout) {
-          this.weatherCache.delete(key);
-        }
-      }
-    }, 5 * 60 * 1000);
-    
-    logger.agent(this.agentName, 'debug', 'Weather cache initialized');
-  }
-
-  async loadHistoricalPatterns() {
+  async testAIConnection() {
     try {
-      const patterns = await query(`
-        SELECT 
-          weather_condition,
-          AVG(temperature) as avg_temp,
-          AVG(humidity) as avg_humidity,
-          AVG(wind_speed) as avg_wind_speed,
-          COUNT(*) as pattern_count
-        FROM weather_data 
-        WHERE timestamp > DATE_SUB(NOW(), INTERVAL 1 YEAR)
-        GROUP BY weather_condition
-        HAVING pattern_count > 10
-        ORDER BY pattern_count DESC
-      `);
+      // Test GPT-5-mini using the working client
+      const { GPT5MiniClient } = require('../gpt5-mini-client');
+      this.gpt5Client = new GPT5MiniClient();
       
-      this.historicalPatterns = {};
-      patterns.forEach(pattern => {
-        this.historicalPatterns[pattern.weather_condition] = {
-          avgTemp: pattern.avg_temp,
-          avgHumidity: pattern.avg_humidity,
-          avgWindSpeed: pattern.avg_wind_speed,
-          frequency: pattern.pattern_count
-        };
-      });
+      // Test the connection
+      const response = await this.gpt5Client.complete('Respond with: AI ready', 20);
       
-      logger.agent(this.agentName, 'debug', `Loaded ${patterns.length} historical weather patterns`);
-      
+      if (response) {
+        logger.agent(this.agentName, 'info', 'GPT-5-mini AI connection verified');
+        logger.agent(this.agentName, 'info', 'Model: gpt-5-mini | Endpoint: /v1/responses');
+      } else {
+        throw new Error('GPT-5-mini test failed - no response');
+      }
     } catch (error) {
-      logger.agent(this.agentName, 'warn', 'Could not load historical patterns', { error: error.message });
-      this.historicalPatterns = {};
+      throw new Error(`GPT-5-mini REQUIRED - NO FALLBACKS: ${error.message}`);
     }
   }
 
   /**
-   * Main weather analysis method for burn requests
+   * Fetch REAL current weather data from OpenWeatherMap
+   * This is ACTUAL weather happening right now, not fake data
    */
-  async analyzeWeatherForBurn(burnRequestId, location, burnDate, timeWindow) {
-    if (!this.initialized) {
-      throw new AgentError(this.agentName, 'analysis', 'Agent not initialized');
-    }
-
-    const startTime = Date.now();
-    
+  async fetchCurrentWeather(location) {
     try {
-      logger.agent(this.agentName, 'info', 'Analyzing weather for burn request', {
-        burnRequestId,
-        location,
-        burnDate
-      });
+      logger.agent(this.agentName, 'info', `Fetching REAL weather for ${location.city || location.lat + ',' + location.lng}`);
       
-      // Step 1: Get current weather conditions
-      const currentWeather = await this.getCurrentWeather(location);
-      
-      // Step 2: Get detailed forecast for burn date
-      const forecast = await this.getWeatherForecast(location, burnDate, timeWindow);
-      
-      // Step 3: Generate weather pattern vector
-      const weatherVector = await this.generateWeatherVector(currentWeather, forecast);
-      
-      // Step 4: Find similar historical weather patterns
-      // Removed similar pattern search - overengineered vector operation
-      const similarPatterns = []; // Empty array for now to prevent undefined errors
-      
-      // Step 5: Analyze burn suitability
-      const suitabilityAnalysis = this.analyzeBurnSuitability(forecast, timeWindow);
-      
-      // Step 6: Store weather data with vector
-      const weatherDataId = await this.storeWeatherData({
-        location,
-        currentWeather,
-        forecast,
-        weatherVector,
-        burnRequestId
-      });
-      
-      // Step 7: Generate weather recommendations
-      const recommendations = await this.generateWeatherRecommendations(
-        suitabilityAnalysis, 
-        similarPatterns, 
-        forecast
-      );
-      
-      const duration = Date.now() - startTime;
-      logger.performance('weather_analysis', duration, {
-        burnRequestId,
-        weatherDataId,
-        suitabilityScore: suitabilityAnalysis.overallScore
-      });
-      
-      return {
-        success: true,
-        burnRequestId,
-        weatherDataId,
-        currentWeather,
-        forecast: forecast.slice(0, 24), // Next 24 hours
-        suitabilityAnalysis,
-        similarPatterns: similarPatterns.slice(0, 5),
-        recommendations,
-        weatherVector,
-        nextAgent: 'predictor',
-        confidence: this.calculateConfidence(currentWeather, forecast)
+      // Build API request based on location type
+      const params = {
+        appid: this.apiKey,
+        units: 'imperial' // Get temperature in Fahrenheit
       };
       
-    } catch (error) {
-      logger.agent(this.agentName, 'error', 'Weather analysis failed', {
-        burnRequestId,
-        error: error.message,
-        duration: Date.now() - startTime
-      });
-      throw error;
-    }
-  }
-
-  async getCurrentWeather(location) {
-    try {
-      const cacheKey = `current_${location.lat}_${location.lon}`;
-      const cached = this.weatherCache.get(cacheKey);
-      
-      if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-        logger.agent(this.agentName, 'debug', 'Using cached current weather data');
-        return cached.data;
+      if (location.city) {
+        params.q = `${location.city},${location.state || ''},${location.country || 'US'}`;
+      } else if (location.lat && location.lng) {
+        params.lat = location.lat;
+        params.lon = location.lng;
+      } else {
+        throw new Error('Invalid location format');
       }
       
-      // Always use real weather data - no demo/mock mode
-      
+      // Call REAL weather API
       const response = await axios.get(`${this.baseUrl}/weather`, {
-        params: {
-          lat: location.lat,
-          lon: location.lon,
-          appid: this.apiKey,
-          units: 'imperial'
-        },
+        params,
         timeout: 10000
       });
       
-      const weatherData = this.processCurrentWeatherData(response.data);
+      if (!response.data || !response.data.main) {
+        throw new Error('Invalid weather data received');
+      }
       
-      // Cache the result
-      this.weatherCache.set(cacheKey, {
-        data: weatherData,
-        timestamp: Date.now()
-      });
+      // Parse REAL weather data
+      const weather = response.data;
+      const currentWeather = {
+        temperature: Math.round(weather.main.temp),
+        feels_like: Math.round(weather.main.feels_like),
+        humidity: weather.main.humidity,
+        pressure: weather.main.pressure * 0.02953, // Convert to inHg
+        windSpeed: Math.round(weather.wind.speed),
+        windDirection: weather.wind.deg,
+        windGust: weather.wind.gust || null,
+        cloudCover: weather.clouds.all,
+        visibility: weather.visibility ? weather.visibility / 1609.34 : null, // Convert to miles
+        condition: weather.weather[0].main,
+        description: weather.weather[0].description,
+        uvIndex: null, // Will fetch separately if needed
+        sunrise: weather.sys.sunrise,
+        sunset: weather.sys.sunset,
+        timestamp: new Date(),
+        location: {
+          name: weather.name,
+          lat: weather.coord.lat,
+          lng: weather.coord.lon
+        }
+      };
       
-      logger.weather('Current weather fetched', {
-        location: `${location.lat}, ${location.lon}`,
-        condition: weatherData.condition,
-        temperature: weatherData.temperature,
-        windSpeed: weatherData.windSpeed
-      });
+      logger.agent(this.agentName, 'info', `Got REAL weather: ${currentWeather.temperature}°F, ${currentWeather.humidity}% humidity, ${currentWeather.windSpeed}mph wind`);
       
-      return weatherData;
+      return currentWeather;
       
     } catch (error) {
-      if (error.response?.status === 429) {
-        throw new ExternalServiceError('OpenWeatherMap', 'Rate limit exceeded', 429);
-      } else if (error.response?.status >= 400) {
-        throw new ExternalServiceError('OpenWeatherMap', `API error: ${error.response.status}`, error.response.status);
-      } else {
-        throw new ExternalServiceError('OpenWeatherMap', error.message);
-      }
+      logger.agent(this.agentName, 'error', 'Failed to fetch real weather', { error: error.message });
+      throw new ExternalServiceError('OpenWeatherMap', `Failed to get real weather: ${error.message}`);
     }
   }
 
-  async getWeatherForecast(location, burnDate, timeWindow) {
+  /**
+   * Fetch REAL weather forecast from OpenWeatherMap
+   * This is the actual forecast from meteorologists, not made up
+   */
+  async fetchWeatherForecast(location) {
     try {
-      const cacheKey = `forecast_${location.lat}_${location.lon}_${burnDate}`;
-      const cached = this.weatherCache.get(cacheKey);
+      const params = {
+        appid: this.apiKey,
+        units: 'imperial',
+        cnt: 40 // Get 40 data points (5 days, every 3 hours)
+      };
       
-      if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-        logger.agent(this.agentName, 'debug', 'Using cached forecast data');
-        return cached.data;
+      if (location.city) {
+        params.q = `${location.city},${location.state || ''},${location.country || 'US'}`;
+      } else if (location.lat && location.lng) {
+        params.lat = location.lat;
+        params.lon = location.lng;
       }
       
-      // Always use real forecast data - no demo/mock mode
-      
-      // Use free 5-day forecast API instead of paid One Call API
+      // Get REAL forecast data
       const response = await axios.get(`${this.baseUrl}/forecast`, {
-        params: {
-          lat: location.lat,
-          lon: location.lon,
-          appid: this.apiKey,
-          units: 'imperial',
-          cnt: 40  // Get max 40 data points (5 days * 8 three-hour intervals)
-        },
-        timeout: 15000
+        params,
+        timeout: 10000
       });
       
-      const forecast = this.processForecastData(response.data, burnDate, timeWindow);
+      if (!response.data || !response.data.list) {
+        throw new Error('Invalid forecast data');
+      }
       
-      // Cache the result
-      this.weatherCache.set(cacheKey, {
-        data: forecast,
-        timestamp: Date.now()
-      });
+      // Parse REAL forecast
+      const forecast = response.data.list.map(item => ({
+        datetime: item.dt_txt,
+        timestamp: item.dt * 1000,
+        temperature: Math.round(item.main.temp),
+        feels_like: Math.round(item.main.feels_like),
+        humidity: item.main.humidity,
+        pressure: item.main.pressure * 0.02953,
+        windSpeed: Math.round(item.wind.speed),
+        windDirection: item.wind.deg,
+        windGust: item.wind.gust || null,
+        cloudCover: item.clouds.all,
+        precipitationProb: item.pop * 100, // Probability of precipitation
+        rain: item.rain ? item.rain['3h'] : 0,
+        condition: item.weather[0].main,
+        description: item.weather[0].description
+      }));
       
-      logger.weather('Weather forecast fetched', {
-        location: `${location.lat}, ${location.lon}`,
-        forecastHours: forecast.length,
-        burnDate
-      });
+      logger.agent(this.agentName, 'info', `Got REAL forecast: ${forecast.length} data points over next 5 days`);
       
       return forecast;
       
     } catch (error) {
-      logger.agent(this.agentName, 'error', 'Forecast fetch failed', { error: error.message });
-      throw new ExternalServiceError('OpenWeatherMap', `Forecast fetch failed: ${error.message}`);
+      logger.agent(this.agentName, 'error', 'Failed to fetch real forecast', { error: error.message });
+      throw new ExternalServiceError('OpenWeatherMap', `Failed to get real forecast: ${error.message}`);
     }
   }
 
-  processCurrentWeatherData(data) {
-    return {
-      temperature: data.main.temp,
-      humidity: data.main.humidity,
-      pressure: data.main.pressure * 0.02953, // Convert hPa to inHg
-      windSpeed: data.wind.speed,
-      windDirection: data.wind.deg,
-      visibility: data.visibility ? data.visibility * 0.000621371 : null, // Convert m to miles
-      condition: data.weather[0].main,
-      description: data.weather[0].description,
-      cloudCover: data.clouds.all,
-      uvIndex: data.uvi || null,
-      timestamp: new Date(data.dt * 1000),
-      sunrise: new Date(data.sys.sunrise * 1000),
-      sunset: new Date(data.sys.sunset * 1000)
-    };
-  }
-
-  processForecastData(data, burnDate, timeWindow) {
-    const forecast = [];
-    const burnDateObj = new Date(burnDate);
-    const targetDate = burnDateObj.toDateString();
-    
-    // Process 5-day forecast data (3-hour intervals)
-    const forecastList = data.list || data.hourly || [];
-    
-    forecastList.forEach(item => {
-      const itemDate = new Date(item.dt * 1000);
-      
-      if (itemDate.toDateString() === targetDate) {
-        const forecastData = {
-          timestamp: itemDate,
-          temperature: item.main?.temp || item.temp,
-          humidity: item.main?.humidity || item.humidity,
-          pressure: (item.main?.pressure || item.pressure) * 0.02953,
-          windSpeed: item.wind?.speed || item.wind_speed,
-          windDirection: item.wind?.deg || item.wind_deg,
-          windGust: item.wind?.gust || item.wind_gust || 0,
-          visibility: item.visibility ? item.visibility * 0.000621371 : null,
-          condition: item.weather?.[0]?.main || 'Clear',
-          description: item.weather?.[0]?.description || 'clear sky',
-          cloudCover: item.clouds?.all || item.clouds || 0,
-          uvIndex: item.uvi || 0,
-          precipitationProb: (item.pop || 0) * 100,
-          precipitationAmount: (item.rain?.['3h'] || item.rain?.['1h'] || 0) + 
-                             (item.snow?.['3h'] || item.snow?.['1h'] || 0)
-        };
-        
-        forecast.push(forecastData);
-      }
-    });
-    
-    // If no forecast data for the specific date, return a basic forecast
-    if (forecast.length === 0) {
-      logger.agent(this.agentName, 'warn', 'No forecast data for burn date, using current weather');
-      return [{
-        timestamp: burnDateObj,
-        temperature: 75,
-        humidity: 50,
-        pressure: 30.0,
-        windSpeed: 5,
-        windDirection: 180,
-        windGust: 8,
-        visibility: 10,
-        condition: 'Clear',
-        description: 'clear sky',
-        cloudCover: 10,
-        uvIndex: 5,
-        precipitationProb: 0,
-        precipitationAmount: 0
-      }];
-    }
-    
-    return forecast;
-  }
-
+  /**
+   * Generate AI-powered weather vector using REAL weather data
+   * Combines real weather with GPT-5 analysis for intelligent insights
+   */
   async generateWeatherVector(currentWeather, forecast) {
+    // Create comprehensive weather description from REAL data
+    const weatherDescription = `
+      REAL Current Weather Conditions (from OpenWeatherMap):
+      Location: ${currentWeather.location?.name || 'Unknown'}
+      Temperature: ${currentWeather.temperature}°F (feels like ${currentWeather.feels_like}°F)
+      Humidity: ${currentWeather.humidity}%
+      Wind: ${currentWeather.windSpeed}mph from ${currentWeather.windDirection}°
+      Pressure: ${currentWeather.pressure.toFixed(2)} inHg
+      Condition: ${currentWeather.condition} - ${currentWeather.description}
+      Visibility: ${currentWeather.visibility ? currentWeather.visibility.toFixed(1) : 'N/A'} miles
+      Cloud Cover: ${currentWeather.cloudCover}%
+      
+      REAL Weather Forecast (next 24 hours):
+      ${forecast.slice(0, 8).map((f, i) => 
+        `${moment(f.timestamp).format('HH:mm')}: ${f.temperature}°F, ${f.windSpeed}mph, ${f.humidity}%, ${f.precipitationProb.toFixed(0)}% rain chance`
+      ).join('\n      ')}
+      
+      Agricultural Burn Safety Analysis Required:
+      Evaluate these REAL conditions for safe agricultural burning.
+      Consider smoke dispersion, fire spread risk, and air quality impact.
+    `;
+    
     try {
-      // Create 128-dimensional weather pattern vector
-      const vector = new Array(128).fill(0);
-      
-      // Current conditions (dimensions 0-19)
-      vector[0] = (currentWeather.temperature - 32) / 100; // Normalize temperature (F to scaled)
-      vector[1] = currentWeather.humidity / 100;
-      vector[2] = currentWeather.pressure / 35; // Normalize pressure
-      vector[3] = currentWeather.windSpeed / 50; // Normalize wind speed
-      vector[4] = currentWeather.windDirection / 360; // Normalize wind direction
-      vector[5] = currentWeather.cloudCover / 100;
-      vector[6] = currentWeather.visibility ? currentWeather.visibility / 10 : 0.5;
-      vector[7] = currentWeather.uvIndex ? currentWeather.uvIndex / 11 : 0;
-      
-      // Weather condition encoding (one-hot style)
-      const conditions = ['Clear', 'Clouds', 'Rain', 'Snow', 'Thunderstorm', 'Drizzle', 'Mist', 'Fog'];
-      const conditionIndex = conditions.indexOf(currentWeather.condition);
-      if (conditionIndex !== -1) {
-        vector[8 + conditionIndex] = 1;
+      // Use GPT-5-mini to analyze the REAL weather data - NO FALLBACKS
+      if (!this.gpt5Client) {
+        throw new Error('GPT-5-mini client not initialized - NO FALLBACKS');
       }
       
-      // Forecast trends (dimensions 20-79)
-      if (forecast.length > 0) {
-        // Temperature trend
-        const temps = forecast.slice(0, 12).map(f => f.temperature); // Next 12 hours
-        vector[20] = (Math.max(...temps) - Math.min(...temps)) / 50; // Temperature range
-        vector[21] = this.calculateTrend(temps); // Temperature trend
-        
-        // Humidity trend
-        const humidity = forecast.slice(0, 12).map(f => f.humidity);
-        vector[22] = (Math.max(...humidity) - Math.min(...humidity)) / 100;
-        vector[23] = this.calculateTrend(humidity);
-        
-        // Wind pattern
-        const windSpeeds = forecast.slice(0, 12).map(f => f.windSpeed);
-        const windDirs = forecast.slice(0, 12).map(f => f.windDirection);
-        vector[24] = (Math.max(...windSpeeds) - Math.min(...windSpeeds)) / 30;
-        vector[25] = this.calculateWindDirectionStability(windDirs);
-        
-        // Precipitation probability
-        const precipProbs = forecast.slice(0, 12).map(f => f.precipitationProb || 0);
-        vector[26] = Math.max(...precipProbs) / 100;
-        vector[27] = precipProbs.reduce((sum, p) => sum + p, 0) / (precipProbs.length * 100);
-        
-        // Hourly features (dimensions 28-79)
-        for (let i = 0; i < Math.min(forecast.length, 24); i++) {
-          if (28 + i * 2 < 79) {
-            vector[28 + i * 2] = forecast[i].temperature / 100;
-            vector[29 + i * 2] = forecast[i].windSpeed / 30;
-          }
+      const analysisPrompt = `You are an agricultural burn safety AI expert using GPT-5-mini. 
+      
+Analyze this REAL weather data for agricultural burn safety:
+${weatherDescription}
+
+CRITICAL REQUIREMENTS - Provide evidence-based analysis with specific sources:
+1) Safety Assessment: SAFE/CAUTION/DANGER with justification
+   - Include wind speed thresholds (EPA recommends 4-15 mph for burning)
+   - Reference humidity levels (NFPA suggests 30-60% optimal)
+   - Cite visibility requirements (minimum 3 miles per EPA guidelines)
+
+2) Best Burn Window: Specific time range with meteorological reasoning
+   - Include atmospheric stability class (Pasquill-Gifford A-F)
+   - Reference mixing height data
+   - Provide confidence percentage (e.g., "85% confidence based on...")
+
+3) Risk Factors: Quantified risks with regulatory context
+   - PM2.5 exposure levels vs EPA NAAQS (35 µg/m³ daily)
+   - Fire spread risk based on Keetch-Byram Drought Index
+   - Smoke dispersion radius estimate in meters
+
+4) Regulatory Compliance:
+   - EPA air quality standards applicable
+   - NFPA 1 Fire Code sections relevant to agricultural burning
+   - State/local burn permit requirements
+
+Format: Use bullet points with specific data backing each claim.
+End with "Sources: [list specific EPA documents, NFPA codes, NWS data, meteorological standards referenced]"`;
+      
+      const aiAnalysis = await this.gpt5Client.complete(analysisPrompt, 500);
+      
+      if (!aiAnalysis) {
+        throw new Error('GPT-5-mini analysis failed - NO FALLBACKS');
+      }
+      
+      // Generate semantic embedding from REAL weather + AI analysis
+      const embeddingResponse = await axios.post('https://api.openai.com/v1/embeddings', {
+        model: 'text-embedding-3-large',
+        input: weatherDescription + '\n\nAI Safety Analysis: ' + aiAnalysis,
+        dimensions: 128 // 128-dimensional weather vector
+      }, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
         }
-      }
-      
-      // Seasonal and temporal features (dimensions 80-99)
-      const now = new Date();
-      vector[80] = now.getMonth() / 12; // Month of year
-      vector[81] = now.getHours() / 24; // Hour of day
-      vector[82] = now.getDay() / 7; // Day of week
-      vector[83] = (now.getDate() - 1) / 31; // Day of month
-      
-      // Stability metrics (dimensions 100-119)
-      if (forecast.length > 0) {
-        vector[100] = this.calculateWeatherStability(forecast);
-        vector[101] = this.calculateBurnSuitabilityScore(forecast) / 10;
-        vector[102] = this.calculateWindConsistency(forecast);
-        vector[103] = this.calculateTemperatureStability(forecast);
-      }
-      
-      // Historical pattern matching (dimensions 120-127)
-      const patternScores = this.calculateHistoricalPatternScores(currentWeather);
-      for (let i = 0; i < Math.min(patternScores.length, 8); i++) {
-        vector[120 + i] = patternScores[i];
-      }
-      
-      // Normalize the vector
-      const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-      const normalizedVector = magnitude > 0 ? vector.map(val => val / magnitude) : vector;
-      
-      logger.vector('weather_vector_generation', 'weather_pattern', 128, {
-        currentTemp: currentWeather.temperature,
-        forecastHours: forecast.length,
-        magnitude
       });
       
-      return normalizedVector;
+      const weatherVector = embeddingResponse.data.data[0].embedding;
+      
+      logger.agent(this.agentName, 'info', 'Generated AI weather vector from REAL data', {
+        realTemp: currentWeather.temperature,
+        realHumidity: currentWeather.humidity,
+        realWind: currentWeather.windSpeed,
+        aiInsights: aiAnalysis.substring(0, 100) + '...'
+      });
+      
+      // Store the analysis for later use
+      this.lastAnalysis = {
+        weather: currentWeather,
+        forecast: forecast.slice(0, 8),
+        aiAnalysis: aiAnalysis,
+        vector: weatherVector,
+        timestamp: new Date()
+      };
+      
+      return weatherVector;
       
     } catch (error) {
-      logger.agent(this.agentName, 'error', 'Weather vector generation failed', { error: error.message });
-      return new Array(128).fill(0.1);
+      logger.agent(this.agentName, 'error', 'Failed to generate AI weather vector', { error: error.message });
+      throw error; // NO FALLBACKS - Real AI or fail
     }
   }
 
-  calculateTrend(values) {
-    if (values.length < 2) return 0;
-    
-    const n = values.length;
-    const sumX = (n * (n - 1)) / 2;
-    const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, i) => sum + val * i, 0);
-    const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
-    
-    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    return Math.max(-1, Math.min(1, slope / 10)); // Normalize slope
-  }
-
-  calculateWindDirectionStability(directions) {
-    if (directions.length < 2) return 1;
-    
-    // Calculate circular variance for wind direction
-    const radians = directions.map(d => d * Math.PI / 180);
-    const sinSum = radians.reduce((sum, rad) => sum + Math.sin(rad), 0);
-    const cosSum = radians.reduce((sum, rad) => sum + Math.cos(rad), 0);
-    
-    const r = Math.sqrt(sinSum * sinSum + cosSum * cosSum) / directions.length;
-    return r; // 1 = very stable, 0 = very unstable
-  }
-
-  calculateWeatherStability(forecast) {
-    if (forecast.length < 6) return 0.5;
-    
-    const tempStability = this.calculateTemperatureStability(forecast);
-    const windStability = this.calculateWindConsistency(forecast);
-    const humidityStability = this.calculateHumidityStability(forecast);
-    
-    return (tempStability + windStability + humidityStability) / 3;
-  }
-
-  calculateTemperatureStability(forecast) {
-    const temps = forecast.map(f => f.temperature);
-    const mean = temps.reduce((sum, t) => sum + t, 0) / temps.length;
-    const variance = temps.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / temps.length;
-    const stdDev = Math.sqrt(variance);
-    
-    return Math.max(0, 1 - stdDev / 20); // Lower std dev = higher stability
-  }
-
-  calculateWindConsistency(forecast) {
-    const windSpeeds = forecast.map(f => f.windSpeed);
-    const windDirs = forecast.map(f => f.windDirection);
-    
-    const speedStability = this.calculateTemperatureStability({ map: () => windSpeeds });
-    const directionStability = this.calculateWindDirectionStability(windDirs);
-    
-    return (speedStability + directionStability) / 2;
-  }
-
-  calculateHumidityStability(forecast) {
-    const humidity = forecast.map(f => f.humidity);
-    const mean = humidity.reduce((sum, h) => sum + h, 0) / humidity.length;
-    const variance = humidity.reduce((sum, h) => sum + Math.pow(h - mean, 2), 0) / humidity.length;
-    const stdDev = Math.sqrt(variance);
-    
-    return Math.max(0, 1 - stdDev / 30);
-  }
-
-  calculateBurnSuitabilityScore(forecast) {
-    let totalScore = 0;
-    let validHours = 0;
-    
-    forecast.forEach(hour => {
-      let hourScore = 0;
-      let factors = 0;
-      
-      // Wind speed factor
-      if (hour.windSpeed >= this.optimalConditions.windSpeed.min &&
-          hour.windSpeed <= this.optimalConditions.windSpeed.max) {
-        hourScore += 2;
-      } else if (hour.windSpeed < 2 || hour.windSpeed > 20) {
-        hourScore -= 1;
-      }
-      factors++;
-      
-      // Humidity factor
-      if (hour.humidity >= this.optimalConditions.humidity.min &&
-          hour.humidity <= this.optimalConditions.humidity.max) {
-        hourScore += 2;
-      } else if (hour.humidity > 80 || hour.humidity < 20) {
-        hourScore -= 1;
-      }
-      factors++;
-      
-      // Temperature factor
-      if (hour.temperature >= this.optimalConditions.temperature.min &&
-          hour.temperature <= this.optimalConditions.temperature.max) {
-        hourScore += 1;
-      }
-      factors++;
-      
-      // Precipitation factor
-      if (hour.precipitationProb < 20) {
-        hourScore += 1;
-      } else if (hour.precipitationProb > 50) {
-        hourScore -= 2;
-      }
-      factors++;
-      
-      if (factors > 0) {
-        totalScore += hourScore / factors;
-        validHours++;
-      }
-    });
-    
-    return validHours > 0 ? (totalScore / validHours) * 2.5 + 5 : 5; // Scale to 0-10
-  }
-
-  calculateHistoricalPatternScores(currentWeather) {
-    const scores = [];
-    
-    Object.keys(this.historicalPatterns).forEach(condition => {
-      const pattern = this.historicalPatterns[condition];
-      let similarity = 0;
-      
-      // Temperature similarity
-      const tempDiff = Math.abs(currentWeather.temperature - pattern.avgTemp);
-      similarity += Math.max(0, 1 - tempDiff / 30) * 0.4;
-      
-      // Humidity similarity
-      const humidityDiff = Math.abs(currentWeather.humidity - pattern.avgHumidity);
-      similarity += Math.max(0, 1 - humidityDiff / 50) * 0.3;
-      
-      // Wind speed similarity
-      const windDiff = Math.abs(currentWeather.windSpeed - pattern.avgWindSpeed);
-      similarity += Math.max(0, 1 - windDiff / 20) * 0.3;
-      
-      scores.push(similarity);
-    });
-    
-    // Pad with zeros if needed
-    while (scores.length < 8) {
-      scores.push(0);
-    }
-    
-    return scores.slice(0, 8);
-  }
-
-  // Removed findSimilarWeatherPatterns - overengineered vector operation
-
-  analyzeBurnSuitability(forecast, timeWindow) {
-    const analysis = {
-      overallScore: 0,
-      hourlyScores: [],
-      recommendations: [],
-      risks: [],
-      optimalHours: []
-    };
-    
-    forecast.forEach((hour, index) => {
-      const hourScore = this.calculateBurnSuitabilityScore([hour]);
-      analysis.hourlyScores.push({
-        hour: hour.timestamp,
-        score: hourScore,
-        factors: this.analyzeHourlyFactors(hour)
-      });
-      
-      if (hourScore >= 7) {
-        analysis.optimalHours.push(hour.timestamp);
-      }
-    });
-    
-    // Calculate overall score
-    analysis.overallScore = analysis.hourlyScores.reduce((sum, h) => sum + h.score, 0) / analysis.hourlyScores.length;
-    
-    // Generate recommendations
-    if (analysis.overallScore >= 7) {
-      analysis.recommendations.push('Weather conditions are favorable for burning');
-    } else if (analysis.overallScore >= 5) {
-      analysis.recommendations.push('Weather conditions are marginal - proceed with caution');
-    } else {
-      analysis.recommendations.push('Weather conditions are not suitable for burning');
-    }
-    
-    return analysis;
-  }
-
-  analyzeHourlyFactors(hour) {
-    const factors = {};
-    
-    factors.windSpeed = {
-      value: hour.windSpeed,
-      suitable: hour.windSpeed >= 2 && hour.windSpeed <= 15,
-      description: hour.windSpeed < 2 ? 'Too calm' : hour.windSpeed > 15 ? 'Too windy' : 'Good'
-    };
-    
-    factors.humidity = {
-      value: hour.humidity,
-      suitable: hour.humidity >= 30 && hour.humidity <= 70,
-      description: hour.humidity < 30 ? 'Too dry' : hour.humidity > 70 ? 'Too humid' : 'Good'
-    };
-    
-    factors.precipitation = {
-      value: hour.precipitationProb,
-      suitable: hour.precipitationProb < 20,
-      description: hour.precipitationProb > 50 ? 'High rain chance' : 'Low rain chance'
-    };
-    
-    factors.temperature = {
-      value: hour.temperature,
-      suitable: hour.temperature >= 45 && hour.temperature <= 85,
-      description: hour.temperature < 45 ? 'Too cold' : hour.temperature > 85 ? 'Too hot' : 'Good'
-    };
-    
-    return factors;
-  }
-
-  async generateWeatherRecommendations(suitabilityAnalysis, similarPatterns, forecast) {
-    const recommendations = [];
-    
-    // Based on suitability score
-    if (suitabilityAnalysis.overallScore >= 8) {
-      recommendations.push({
-        type: 'positive',
-        message: 'Excellent weather conditions for controlled burning',
-        confidence: 'high'
-      });
-    } else if (suitabilityAnalysis.overallScore >= 6) {
-      recommendations.push({
-        type: 'caution',
-        message: 'Good conditions with some monitoring required',
-        confidence: 'medium'
-      });
-    } else {
-      recommendations.push({
-        type: 'warning',
-        message: 'Weather conditions not recommended for burning',
-        confidence: 'high'
-      });
-    }
-    
-    // Wind-specific recommendations
-    const avgWindSpeed = forecast.reduce((sum, f) => sum + f.windSpeed, 0) / forecast.length;
-    if (avgWindSpeed < 2) {
-      recommendations.push({
-        type: 'caution',
-        message: 'Low wind speeds may cause poor smoke dispersion',
-        confidence: 'medium'
-      });
-    } else if (avgWindSpeed > 15) {
-      recommendations.push({
-        type: 'warning',
-        message: 'High wind speeds increase fire spread risk',
-        confidence: 'high'
-      });
-    }
-    
-    // Humidity recommendations
-    const avgHumidity = forecast.reduce((sum, f) => sum + f.humidity, 0) / forecast.length;
-    if (avgHumidity < 30) {
-      recommendations.push({
-        type: 'warning',
-        message: 'Low humidity increases fire intensity risk',
-        confidence: 'high'
-      });
-    }
-    
-    return recommendations;
-  }
-
-  async storeWeatherData(data) {
+  /**
+   * Analyze burn conditions using REAL weather and AI
+   */
+  async analyzeBurnConditions(location, requestedDate) {
     try {
-      const result = await query(`
-        INSERT INTO weather_data (
-          location_lon, location_lat, timestamp, temperature, humidity, pressure,
-          wind_speed, wind_direction, visibility, weather_condition,
-          weather_pattern_embedding, created_at
-        ) VALUES (
-          ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, NOW()
-        )
-      `, [
-        data.location.lon,
-        data.location.lat,
-        data.currentWeather.temperature,
-        data.currentWeather.humidity,
-        data.currentWeather.pressure,
-        data.currentWeather.windSpeed,
-        data.currentWeather.windDirection,
-        data.currentWeather.visibility,
-        data.currentWeather.condition,
-        JSON.stringify(data.weatherVector)
-      ]);
+      // Get REAL current weather
+      const currentWeather = await this.fetchCurrentWeather(location);
       
-      return result.insertId;
+      // Get REAL forecast
+      const forecast = await this.fetchWeatherForecast(location);
+      
+      // Generate AI-powered analysis
+      const weatherVector = await this.generateWeatherVector(currentWeather, forecast);
+      
+      // Check against safety thresholds
+      const isSafe = this.checkWeatherSafety(currentWeather);
+      
+      // Find optimal burn windows in forecast
+      const burnWindows = this.findBurnWindows(forecast);
+      
+      // Create comprehensive analysis structure
+      const analysisResult = {
+        currentWeather,
+        forecast: forecast.slice(0, 16), // Next 48 hours
+        weatherVector,
+        suitabilityAnalysis: {
+          overallScore: isSafe.score,
+          optimalHours: burnWindows.reduce((hours, window) => {
+            return hours.concat(window.conditions.map(c => ({
+              time: new Date(c.timestamp).toISOString(),
+              score: 8 // Good conditions score
+            })));
+          }, []),
+          issues: isSafe.issues,
+          isSafe: isSafe.safe
+        },
+        confidence: isSafe.safe ? 0.85 : 0.5,
+        similarPatterns: [], // Would need vector search to populate
+        recommendations: isSafe.issues.map(issue => ({
+          type: 'warning',
+          message: issue
+        })),
+        aiAnalysis: this.lastAnalysis?.aiAnalysis,
+        dataSource: 'REAL OpenWeatherMap + GPT-5 AI'
+      };
+      
+      return analysisResult;
       
     } catch (error) {
-      throw new AgentError(this.agentName, 'storage', `Failed to store weather data: ${error.message}`, error);
+      logger.agent(this.agentName, 'error', 'Burn condition analysis failed', { error: error.message });
+      throw error;
     }
   }
 
-  calculateConfidence(currentWeather, forecast) {
-    let confidence = 0.8; // Base confidence
+  /**
+   * Check if current REAL weather is safe for burning
+   */
+  checkWeatherSafety(weather) {
+    const issues = [];
     
-    // Reduce confidence for extreme conditions
-    if (currentWeather.windSpeed > 20 || currentWeather.windSpeed < 1) confidence -= 0.1;
-    if (currentWeather.humidity > 90 || currentWeather.humidity < 10) confidence -= 0.1;
-    if (forecast.some(f => f.precipitationProb > 70)) confidence -= 0.2;
-    
-    // Increase confidence for stable conditions
-    if (forecast.length > 12) {
-      const stability = this.calculateWeatherStability(forecast);
-      confidence += stability * 0.2;
+    if (weather.windSpeed < this.optimalConditions.windSpeed.min) {
+      issues.push(`Wind too calm (${weather.windSpeed}mph) - smoke won't disperse`);
+    }
+    if (weather.windSpeed > this.optimalConditions.windSpeed.max) {
+      issues.push(`Wind too strong (${weather.windSpeed}mph) - fire spread risk`);
+    }
+    if (weather.humidity < this.optimalConditions.humidity.min) {
+      issues.push(`Humidity too low (${weather.humidity}%) - fire spread risk`);
+    }
+    if (weather.humidity > this.optimalConditions.humidity.max) {
+      issues.push(`Humidity too high (${weather.humidity}%) - poor combustion`);
+    }
+    if (weather.temperature > this.optimalConditions.temperature.max) {
+      issues.push(`Temperature too high (${weather.temperature}°F) - fire risk`);
     }
     
-    return Math.max(0.3, Math.min(1.0, confidence));
+    return {
+      safe: issues.length === 0,
+      issues,
+      score: Math.max(0, 10 - issues.length * 2)
+    };
   }
 
+  /**
+   * Get agent status and health
+   */
   async getStatus() {
-    if (!this.initialized) {
-      return { status: 'not_initialized' };
-    }
+    return {
+      agentName: this.agentName,
+      version: this.version,
+      initialized: this.initialized,
+      apiKeyConfigured: !!this.apiKey,
+      cacheSize: this.weatherCache.size,
+      lastAnalysis: this.lastAnalysis ? {
+        timestamp: this.lastAnalysis.timestamp,
+        location: this.lastAnalysis.weather.location,
+        temperature: this.lastAnalysis.weather.temperature
+      } : null,
+      health: this.initialized ? 'healthy' : 'not initialized'
+    };
+  }
 
-    try {
-      const cacheStats = {
-        entriesCount: this.weatherCache.size,
-        cacheTimeout: this.cacheTimeout / 1000 / 60 // in minutes
-      };
+  /**
+   * Find optimal burn windows in REAL forecast data
+   */
+  findBurnWindows(forecast) {
+    const windows = [];
+    let currentWindow = null;
+    
+    for (const period of forecast) {
+      const isSuitable = 
+        period.windSpeed >= this.optimalConditions.windSpeed.min &&
+        period.windSpeed <= this.optimalConditions.windSpeed.max &&
+        period.humidity >= this.optimalConditions.humidity.min &&
+        period.humidity <= this.optimalConditions.humidity.max &&
+        period.precipitationProb < 20;
       
-      const dbStats = await query(`
-        SELECT 
-          COUNT(*) as total_records,
-          COUNT(CASE WHEN timestamp > DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 END) as last_24h,
-          AVG(temperature) as avg_temp,
-          AVG(wind_speed) as avg_wind_speed
-        FROM weather_data
-        WHERE timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
-      `);
-      
-      return {
-        status: 'active',
-        agent: this.agentName,
-        version: this.version,
-        initialized: this.initialized,
-        apiKey: this.apiKey ? 'configured' : 'missing',
-        cache: cacheStats,
-        database: dbStats[0],
-        historicalPatterns: Object.keys(this.historicalPatterns).length
-      };
-      
-    } catch (error) {
-      return {
-        status: 'error',
-        error: error.message
-      };
+      if (isSuitable) {
+        if (!currentWindow) {
+          currentWindow = {
+            start: period.timestamp,
+            end: period.timestamp,
+            conditions: [period]
+          };
+        } else {
+          currentWindow.end = period.timestamp;
+          currentWindow.conditions.push(period);
+        }
+      } else if (currentWindow) {
+        if (currentWindow.conditions.length >= 2) { // At least 6 hours
+          windows.push(currentWindow);
+        }
+        currentWindow = null;
+      }
     }
+    
+    if (currentWindow && currentWindow.conditions.length >= 2) {
+      windows.push(currentWindow);
+    }
+    
+    return windows;
   }
 }
 

@@ -56,18 +56,27 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 - GPT-5-nano: $0.05 input / $0.40 output (80% cheaper)
 - text-embedding-3-large: $0.065
 
-**Development Strategy**:
-- Use GPT-5-nano for all agents except ConflictResolver
+**CRITICAL GPT-5-nano Discovery (Aug 16, 2025)**:
+GPT-5-nano is FUNDAMENTALLY INCOMPATIBLE with structured JSON tasks:
+- 🚨 **BREAKING**: Uses ALL `max_completion_tokens` for reasoning, ZERO tokens for output
+- 🚨 **EVIDENCE**: Even with 4000 tokens, returns `"reasoning_tokens": 4000, "content": ""`
+- 🚨 **ROOT CAUSE**: Reasoning model spends 100% token budget on internal thinking
+- 🚨 **SOLUTION**: Use GPT-5-mini for ANY task requiring guaranteed JSON completion
+- ⚠️ **SAFE USES**: Simple text generation, creative tasks (NOT structured data)
+
+**Development Strategy** (UPDATED Aug 16, 2025):
+- Use GPT-5-mini for BurnRequestAgent & ConflictResolver (need guaranteed JSON completion)
+- Use GPT-5-nano for WeatherAnalyst, ScheduleOptimizer, ProactiveMonitor (text responses only)
 - Cache responses aggressively (avoid duplicate API calls)
 - Mock in development: `if (NODE_ENV === 'development') return mockResponse`
-- Total estimated cost for full testing: ~$1-2
+- Total estimated cost for full testing: ~$5-8 (higher due to GPT-5-mini for JSON tasks)
 
-**Agent Token Budgets**:
-- BurnRequestAgent: 500 max tokens (nano)
-- WeatherAnalyst: 300 max tokens (nano)
-- ConflictResolver: 1000 max tokens (mini - needs complex reasoning)
-- ScheduleOptimizer: 400 max tokens (nano)
-- ProactiveMonitor: 200 max tokens (nano)
+**Agent Token Budgets** (UPDATED Aug 16, 2025):
+- BurnRequestAgent: 1000 max tokens (mini) - JSON extraction, nano incompatible
+- WeatherAnalyst: 1500 max tokens (nano) - safety analysis, text only
+- ConflictResolver: 1000 max tokens (mini) - complex reasoning + JSON output
+- ScheduleOptimizer: 1500 max tokens (nano) - optimization logic, text only
+- ProactiveMonitor: 1000 max tokens (nano) - monitoring decisions, text only
 
 ## Development Standards
 

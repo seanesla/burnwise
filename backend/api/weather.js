@@ -27,8 +27,8 @@ const weatherAnalysisSchema = Joi.object({
 router.get('/current', asyncHandler(async (req, res) => {
   try {
     // Default to Davis, California agricultural region if no location specified
-    const location = { lat: 38.544, lon: -121.740 };
-    const currentWeather = await weatherAgent.getCurrentWeather(location);
+    const location = { lat: 38.544, lng: -121.740 };
+    const currentWeather = await weatherAgent.fetchCurrentWeather(location);
     
     res.json({
       success: true,
@@ -67,8 +67,8 @@ router.get('/current/:lat/:lon', asyncHandler(async (req, res) => {
       throw new ValidationError('Invalid coordinates', 'location', error.details);
     }
     
-    const location = { lat: parseFloat(lat), lon: parseFloat(lon) };
-    const currentWeather = await weatherAgent.getCurrentWeather(location);
+    const location = { lat: parseFloat(lat), lng: parseFloat(lon) };
+    const currentWeather = await weatherAgent.fetchCurrentWeather(location);
     
     res.json({
       success: true,
@@ -119,7 +119,7 @@ router.get('/forecast', asyncHandler(async (req, res) => {
     }
     
     // Get weather forecast from OpenWeatherMap via weather agent
-    const forecast = await weatherAgent.getWeatherForecast(
+    const forecast = await weatherAgent.fetchWeatherForecast(
       location, 
       burnDate.toISOString().split('T')[0],
       { start: '06:00', end: '18:00' }
@@ -194,7 +194,7 @@ router.get('/forecast/:lat/:lon', asyncHandler(async (req, res) => {
       throw new ValidationError('Date cannot be in the past', 'date');
     }
     
-    const forecast = await weatherAgent.getWeatherForecast(
+    const forecast = await weatherAgent.fetchWeatherForecast(
       location, 
       burnDate.toISOString().split('T')[0],
       { start: '06:00', end: '18:00' } // Default daylight hours
@@ -252,14 +252,12 @@ router.post('/analyze', asyncHandler(async (req, res) => {
     }
     
     const farm = farmData[0];
-    const location = { lat: farm.lat, lon: farm.lon };
+    const location = { lat: farm.lat, lng: farm.lon };
     
     // Perform comprehensive weather analysis
-    const analysisResult = await weatherAgent.analyzeWeatherForBurn(
-      null, // No burn request ID for standalone analysis
+    const analysisResult = await weatherAgent.analyzeBurnConditions(
       location,
-      burn_date,
-      { start: time_window_start, end: time_window_end }
+      burn_date
     );
     
     const duration = Date.now() - startTime;
@@ -317,11 +315,11 @@ router.get('/patterns/similar', asyncHandler(async (req, res) => {
       throw new ValidationError('Latitude and longitude are required', 'location');
     }
     
-    const location = { lat: parseFloat(lat), lon: parseFloat(lon) };
+    const location = { lat: parseFloat(lat), lng: parseFloat(lon) };
     
     // Get current weather and generate vector
-    const currentWeather = await weatherAgent.getCurrentWeather(location);
-    const forecast = await weatherAgent.getWeatherForecast(
+    const currentWeather = await weatherAgent.fetchCurrentWeather(location);
+    const forecast = await weatherAgent.fetchWeatherForecast(
       location, 
       new Date().toISOString().split('T')[0],
       { start: '06:00', end: '18:00' }
@@ -530,11 +528,9 @@ router.get('/suitability', asyncHandler(async (req, res) => {
       
       for (const date of dates) {
         try {
-          const analysis = await weatherAgent.analyzeWeatherForBurn(
-            null,
+          const analysis = await weatherAgent.analyzeBurnConditions(
             location,
-            date,
-            { start: '06:00', end: '18:00' }
+            date
           );
           
           farmSuitability.daily_suitability.push({

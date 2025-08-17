@@ -23,15 +23,15 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 ### 🤖 REAL Autonomous Multi-Agent System (OpenAI Agents SDK)
 **Implementation Status**: Phase 2 of 3 (Agents SDK installed, building agents)
 
-1. **BurnRequestAgent** - Natural language → structured data using GPT-5-nano
-2. **WeatherAnalyst** - Autonomous SAFE/UNSAFE/MARGINAL decisions (not just weather fetching)
-3. **ConflictResolver** - Multi-farm negotiation using GPT-5-mini for complex reasoning
-4. **ScheduleOptimizer** - AI-enhanced simulated annealing with GPT-5-nano
-5. **ProactiveMonitor** - 24/7 autonomous monitoring without user triggers
+1. **BurnRequestAgent** - Natural language → structured JSON using GPT-5-mini (nano incompatible with JSON)
+2. **WeatherAnalyst** - Autonomous SAFE/UNSAFE/MARGINAL decisions using GPT-5-nano
+3. **ConflictResolver** - Multi-farm negotiation using GPT-5-mini for complex reasoning + JSON
+4. **ScheduleOptimizer** - AI-enhanced simulated annealing using GPT-5-nano
+5. **ProactiveMonitor** - 24/7 autonomous monitoring using GPT-5-nano
 
 **Key Innovation**: Real agent handoffs using OpenAI SDK - agents delegate to specialists autonomously. Human-in-the-loop for safety-critical decisions (burns >100 acres or near populated areas).
 
-**Cost Optimized**: Uses GPT-5-nano ($0.05/1M tokens) for most agents, GPT-5-mini ($0.25/1M) only for complex reasoning. Total API cost: ~$1-2 for complete testing.
+**Cost Optimized**: Uses GPT-5-nano ($0.05/1M) for text-only agents, GPT-5-mini ($0.25/1M) for JSON tasks (nano incompatible). Total API cost: ~$5-8 for complete testing.
 
 ### 💬 Natural Language Interface (NEW)
 - **Conversational UI** - Chat with agents instead of filling forms
@@ -57,8 +57,8 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 
 ### AI & Agents (REAL Implementation - August 2025)
 - **OpenAI Agents SDK** (`@openai/agents` v0.0.17) - INSTALLED AND WORKING
-- **GPT-5-mini** ($0.25/1M tokens) for complex reasoning
-- **GPT-5-nano** ($0.05/1M tokens) for simple agents
+- **GPT-5-mini** ($0.25/1M tokens) for JSON tasks (BurnRequestAgent, ConflictResolver)
+- **GPT-5-nano** ($0.05/1M tokens) for text-only agents (WeatherAnalyst, ScheduleOptimizer, ProactiveMonitor)
 - **text-embedding-3-large** for vector embeddings
 - **Agent Handoffs** using OpenAI SDK's `Handoff` class
 - **Human-in-the-Loop** using `needsApproval: true` for critical decisions
@@ -90,7 +90,7 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 - Node.js 16+ and npm
 - TiDB Serverless account (free tier works)
 - API Keys:
-  - **OpenAI API key** (REQUIRED - for GPT-5-mini/nano agents)
+  - **OpenAI API key** (CRITICAL - GPT-5-mini for JSON tasks, GPT-5-nano for text agents)
   - OpenWeatherMap API key (required)
   - Mapbox token (required)
   - Twilio credentials (optional, for SMS)

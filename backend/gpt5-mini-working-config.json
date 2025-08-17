@@ -1,0 +1,12 @@
+{
+  "model": "gpt-5-mini",
+  "endpoint": "/v1/responses",
+  "method": "responses-api",
+  "parameters": {
+    "input": "string or array",
+    "max_output_tokens": "number",
+    "temperature": "optional",
+    "reasoning": "optional"
+  },
+  "timestamp": "2025-08-15T23:15:01.058Z"
+}

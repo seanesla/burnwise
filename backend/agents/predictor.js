@@ -55,7 +55,10 @@ class PredictorAgent {
 
   async initialize() {
     try {
-      logger.agent(this.agentName, 'info', 'Initializing Smoke Dispersion Predictor Agent');
+      logger.agent(this.agentName, 'info', 'Initializing Smoke Dispersion Predictor with GPT-5 AI');
+      
+      // Initialize GPT-5-mini for intelligent dispersion analysis
+      await this.initializeAI();
       
       // Validate mathematical capabilities
       await this.testMathCapabilities();
@@ -67,11 +70,32 @@ class PredictorAgent {
       await this.initializeWindRoseData();
       
       this.initialized = true;
-      logger.agent(this.agentName, 'info', 'Predictor Agent initialized successfully');
+      logger.agent(this.agentName, 'info', 'Predictor Agent initialized with GPT-5-mini + Gaussian Plume');
       
     } catch (error) {
       logger.agent(this.agentName, 'error', 'Failed to initialize Predictor Agent', { error: error.message });
       throw new AgentError(this.agentName, 'initialization', error.message, error);
+    }
+  }
+
+  async initializeAI() {
+    try {
+      const { GPT5MiniClient } = require('../gpt5-mini-client');
+      this.gpt5Client = new GPT5MiniClient();
+      
+      // Test GPT-5-mini connection
+      const testResponse = await this.gpt5Client.complete(
+        'You are a smoke dispersion expert AI. Respond with: Ready to analyze dispersion patterns',
+        30
+      );
+      
+      if (testResponse) {
+        logger.agent(this.agentName, 'info', 'GPT-5-mini AI verified for smoke dispersion analysis');
+      } else {
+        throw new Error('GPT-5-mini test failed - NO FALLBACKS');
+      }
+    } catch (error) {
+      throw new Error(`GPT-5-mini REQUIRED for intelligent dispersion analysis: ${error.message}`);
     }
   }
 
@@ -103,7 +127,7 @@ class PredictorAgent {
           wd.wind_direction,
           wd.temperature,
           wd.weather_condition
-        FROM smoke_predictions pm
+        FROM burn_smoke_predictions pm
         JOIN burn_requests br ON pm.burn_request_id = br.request_id
         JOIN weather_data wd ON DATE(pm.created_at) = DATE(wd.timestamp)
         WHERE pm.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
@@ -218,6 +242,15 @@ class PredictorAgent {
         burnData
       );
       
+      // Step 9.5: Get AI analysis of dispersion safety (evidence-based)
+      const aiSafetyAnalysis = await this.analyzeDispersionWithAI(
+        concentrationMap,
+        maxDispersionRadius,
+        conflicts,
+        weatherData,
+        burnData
+      );
+      
       // Step 10: Store prediction results
       const predictionId = await this.storePredictionResults({
         burnRequestId,
@@ -249,6 +282,7 @@ class PredictorAgent {
         plumeVector,
         conflicts,
         confidenceScore,
+        aiSafetyAnalysis,  // Include GPT-5 evidence-based analysis
         recommendations: this.generateSafetyRecommendations(concentrationMap, conflicts),
         nextAgent: 'optimizer'
       };
@@ -778,7 +812,7 @@ class PredictorAgent {
       
       // Find burns with similar plume characteristics using vector search
       const vectorConflicts = await vectorSimilaritySearch(
-        'smoke_predictions',
+        'burn_smoke_predictions',
         'plume_vector',
         plumeVector,
         5
@@ -857,6 +891,96 @@ class PredictorAgent {
     return Math.max(0.3, Math.min(1.0, confidence));
   }
 
+  /**
+   * Use GPT-5-mini to analyze dispersion safety and provide evidence-based assessments
+   */
+  async analyzeDispersionWithAI(concentrationMap, maxDispersionRadius, conflicts, weatherData, burnData) {
+    if (!this.gpt5Client) {
+      logger.agent(this.agentName, 'warn', 'GPT-5 client not available for dispersion analysis');
+      return null;
+    }
+
+    try {
+      const dispersionDescription = `
+Smoke Dispersion Analysis (Gaussian Plume Model):
+Burn Area: ${burnData.acres} acres of ${burnData.crop_type}
+Max Dispersion Radius: ${maxDispersionRadius} meters
+Wind Speed: ${weatherData.windSpeed} mph, Direction: ${weatherData.windDirection}°
+
+PM2.5 Concentration Levels:
+- Maximum: ${concentrationMap.maxConcentration?.toFixed(2) || 'N/A'} µg/m³
+- At 500m: ${concentrationMap.at500m?.toFixed(2) || 'N/A'} µg/m³
+- At 1km: ${concentrationMap.at1km?.toFixed(2) || 'N/A'} µg/m³
+- At 2km: ${concentrationMap.at2km?.toFixed(2) || 'N/A'} µg/m³
+
+EPA PM2.5 Standards:
+- Daily (24-hr): 35 µg/m³
+- Unhealthy for sensitive: 55 µg/m³
+- Hazardous: 250 µg/m³
+
+Conflicts Detected: ${conflicts.length}
+${conflicts.slice(0, 3).map(c => `- ${c.type}: ${c.distance}m away, severity: ${c.severity}`).join('\n')}
+`;
+
+      const analysisPrompt = `You are a smoke dispersion safety expert using GPT-5-mini.
+
+Analyze this Gaussian plume dispersion model output:
+${dispersionDescription}
+
+MANDATORY EVIDENCE-BASED REQUIREMENTS:
+
+1) EPA Compliance Assessment:
+   - Compare PM2.5 levels to EPA NAAQS: 35 µg/m³ (24-hr), 12 µg/m³ (annual)
+   - Reference 40 CFR Part 50 for particulate matter standards
+   - Calculate exceedance percentage and duration
+   - Specify Air Quality Index (AQI) category with numeric value
+
+2) Health Impact Analysis:
+   - Quantify exposure risk for sensitive groups (% population affected)
+   - Reference CDC PM2.5 health thresholds: 
+     * Good: 0-12 µg/m³
+     * Moderate: 12.1-35.4 µg/m³
+     * Unhealthy for Sensitive: 35.5-55.4 µg/m³
+   - Cite specific health effects at detected concentrations
+   - Include exposure duration limits from OSHA/NIOSH
+
+3) Safe Distance Calculations:
+   - Minimum setback: ___ meters (based on 35 µg/m³ threshold)
+   - Buffer zone for sensitive receptors: ___ meters
+   - Reference NFPA 1 Chapter 10.14 for outdoor burning distances
+   - Include confidence interval (e.g., "95% CI: 500-750m")
+
+4) Risk Mitigation Measures:
+   - Specific burn timing adjustments (hour:minute precision)
+   - Acreage reduction percentage to meet standards
+   - Required atmospheric conditions (exact values)
+   - Reference USDA Forest Service smoke management guidelines
+
+Data Requirements:
+- All concentrations in µg/m³ with 2 decimal precision
+- Distances in meters (not "approximately")
+- Percentages with confidence levels
+- Time windows in HH:MM format
+
+MANDATORY: End response with:
+"Sources: [List specific documents - EPA 40 CFR Part 50, CDC Air Quality Guidelines, NFPA 1 Section 10.14, NIOSH REL for PM2.5, USDA Smoke Management Guide, state regulations if applicable]"`;
+
+      const aiAnalysis = await this.gpt5Client.complete(analysisPrompt, 700);
+      
+      if (aiAnalysis) {
+        logger.agent(this.agentName, 'info', 'GPT-5 dispersion safety analysis completed', {
+          maxRadius: maxDispersionRadius,
+          maxPM25: concentrationMap.maxConcentration?.toFixed(2)
+        });
+        return aiAnalysis;
+      }
+    } catch (error) {
+      logger.agent(this.agentName, 'error', 'AI dispersion analysis failed', { error: error.message });
+    }
+    
+    return null;
+  }
+
   generateSafetyRecommendations(concentrationMap, conflicts) {
     const recommendations = [];
     
@@ -917,17 +1041,17 @@ class PredictorAgent {
   async storePredictionResults(data) {
     try {
       const result = await query(`
-        INSERT INTO smoke_predictions (
-          burn_request_id, prediction_time, plume_geometry,
-          plume_vector, max_pm25_ugm3, dispersion_radius_km, 
-          confidence_score, created_at
+        INSERT INTO burn_smoke_predictions (
+          request_id, prediction_time, smoke_density,
+          affected_area_km2, max_concentration_pm25, 
+          wind_adjusted, confidence_score, created_at
         ) VALUES (?, NOW(), ?, ?, ?, ?, ?, NOW())
       `, [
         data.burnRequestId,
-        JSON.stringify(data.affectedArea),
-        JSON.stringify(data.plumeVector),
+        JSON.stringify(data.affectedArea || {}),
+        (data.maxDispersionRadius / 1000) * Math.PI * (data.maxDispersionRadius / 1000), // Area in km²
         data.maxConcentration || 0,
-        data.maxDispersionRadius / 1000, // Convert m to km
+        1, // wind_adjusted = true
         data.confidenceScore
       ]);
       
@@ -949,7 +1073,7 @@ class PredictorAgent {
           COUNT(*) as total_predictions,
           AVG(confidence_score) as avg_confidence,
           AVG(max_dispersion_radius) as avg_dispersion_radius
-        FROM smoke_predictions
+        FROM burn_smoke_predictions
         WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
       `);
       

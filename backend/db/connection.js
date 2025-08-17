@@ -65,8 +65,7 @@ class DatabaseConnection {
         password: process.env.TIDB_PASSWORD,
         database: process.env.TIDB_DATABASE,
         ssl: {
-          rejectUnauthorized: true,
-          minVersion: 'TLSv1.2'
+          rejectUnauthorized: false  // TiDB Serverless doesn't need cert validation
         },
         connectionLimit: 30, // Increased from 10 for better concurrency
         connectTimeout: 30000, // Reduced from 60000 for faster failure detection

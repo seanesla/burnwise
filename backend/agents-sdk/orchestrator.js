@@ -7,18 +7,24 @@
 const { Agent, tool, run } = require('@openai/agents');
 const { z } = require('zod');
 const OpenAI = require('openai');
+// Legacy function agents (wrapped as tools)
 const coordinatorAgent = require('../agents/coordinator');
 const weatherAgent = require('../agents/weather');
 const predictorAgent = require('../agents/predictor');
 const optimizerAgent = require('../agents/optimizer');
 const alertsAgent = require('../agents/alerts');
+// REAL Handoff Agents
+const { burnRequestAgent } = require('./BurnRequestAgent');
+const { weatherAnalystAgent } = require('./WeatherAnalyst');
+const { conflictResolverAgent } = require('./ConflictResolver');
+const { scheduleOptimizerAgent } = require('./ScheduleOptimizer');
+const { proactiveMonitorAgent } = require('./ProactiveMonitor');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 
-// Initialize OpenAI client with GPT-5-mini
+// Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v2' // GPT-5 endpoint
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 // Tool Schemas
@@ -34,8 +40,8 @@ const burnRequestSchema = z.object({
   burn_date: z.string(),
   time_window_start: z.string(),
   time_window_end: z.string(),
-  urgency: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-  reason: z.string().optional()
+  urgency: z.enum(['low', 'medium', 'high', 'critical']),
+  reason: z.string()
 });
 
 // REAL tools that execute REAL functions
@@ -117,9 +123,22 @@ const tools = [
     description: 'Optimize burn schedule and CREATE REAL SCHEDULE ITEMS',
     parameters: z.object({
       date: z.string(),
-      burnRequests: z.array(z.any()),
-      weatherData: z.any(),
-      predictions: z.array(z.any())
+      burnRequests: z.array(z.object({
+        request_id: z.number(),
+        farm_id: z.number(),
+        requested_date: z.string(),
+        acreage: z.number()
+      })),
+      weatherData: z.object({
+        wind_speed: z.number(),
+        wind_direction: z.number(),
+        temperature: z.number(),
+        humidity: z.number()
+      }),
+      predictions: z.array(z.object({
+        burn_request_id: z.number(),
+        plume_coordinates: z.array(z.array(z.number()))
+      }))
     }),
     execute: async (params) => {
       logger.info('REAL: Optimizing and creating schedule', { date: params.date });
@@ -178,7 +197,7 @@ const tools = [
     parameters: z.object({
       type: z.string(),
       farm_id: z.number(),
-      burn_request_id: z.number().optional(),
+      burn_request_id: z.number(),
       title: z.string(),
       message: z.string(),
       severity: z.enum(['low', 'medium', 'high', 'critical'])
@@ -195,7 +214,7 @@ const tools = [
     description: 'Query TiDB database for real data',
     parameters: z.object({
       sql: z.string(),
-      params: z.array(z.any()).optional()
+      params: z.array(z.union([z.string(), z.number(), z.boolean(), z.null()]))
     }),
     execute: async (params) => {
       logger.info('REAL: Database query', { sql: params.sql.substring(0, 50) + '...' });
@@ -209,7 +228,7 @@ const tools = [
     description: 'Extract structured burn request from natural language',
     parameters: z.object({
       text: z.string(),
-      farmId: z.number().optional()
+      farmId: z.number()
     }),
     execute: async (params) => {
       logger.info('REAL: Extracting burn request from text');
@@ -231,8 +250,7 @@ const tools = [
           }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: 500,
-        temperature: 0.3
+        max_completion_tokens: 500,
       });
       
       const extracted = JSON.parse(completion.choices[0].message.content);
@@ -255,27 +273,35 @@ const tools = [
   })
 ];
 
-// REAL Main Orchestrator Agent using OpenAI SDK
-const orchestratorAgent = new Agent({
+// REAL Main Orchestrator Agent with Handoffs using OpenAI SDK
+const orchestratorAgent = Agent.create({
   name: 'BurnwiseOrchestrator',
   model: 'gpt-5-mini',
   instructions: `You are the main orchestrator for BURNWISE agricultural burn coordination.
-                 You coordinate between farmers who need to burn their fields safely.
+                 You coordinate farmers who need to burn their fields safely by delegating to specialist agents.
                  
-                 Your responsibilities:
-                 1. Understand farmer requests in natural language
-                 2. Validate and store burn requests
-                 3. Check weather safety (wind < 15mph, humidity > 30%)
-                 4. Predict smoke dispersion to prevent conflicts
-                 5. Optimize schedules across multiple farms
-                 6. Send alerts to affected farmers
+                 CRITICAL: You MUST delegate tasks to specialist agents. DO NOT handle requests yourself.
                  
-                 ALWAYS:
-                 - Make real decisions, not placeholders
-                 - Create actual schedules in the database
-                 - Send real alerts when needed
-                 - Require human approval for MARGINAL conditions
-                 - Prioritize safety over efficiency`,
+                 When farmers ask about burning:
+                 1. ALWAYS start by handing off to BurnRequestAgent for natural language processing
+                 2. Let specialists handle their domains - you are the coordinator only
+                 
+                 Handoff decision tree:
+                 - Natural language burn requests → Hand off to BurnRequestAgent
+                 - Weather safety questions → Hand off to WeatherAnalyst  
+                 - Schedule conflicts → Hand off to ConflictResolver
+                 - Schedule optimization → Hand off to ScheduleOptimizer
+                 - Monitoring setup → Hand off to ProactiveMonitor
+                 
+                 ALWAYS prioritize safety over efficiency.
+                 Your role is coordination and delegation, not direct processing.`,
+  handoffs: [
+    burnRequestAgent,
+    weatherAnalystAgent,
+    conflictResolverAgent,
+    scheduleOptimizerAgent,
+    proactiveMonitorAgent
+  ],
   tools: tools,
   reasoning: { effort: 'high' } // Deep reasoning for safety-critical decisions
 });
@@ -303,18 +329,17 @@ async function processUserRequest(userInput, userId, conversationId, io) {
     }
     
     // Run the agent with real OpenAI SDK
-    const result = await run(orchestratorAgent, {
-      messages: [
-        {
-          role: 'user',
-          content: userInput
-        }
-      ],
-      context: {
-        userId,
-        conversationId,
-        timestamp: new Date().toISOString()
-      }
+    const result = await run(orchestratorAgent, userInput);
+    
+    // Log the actual result structure
+    logger.info('REAL: Agent result details', {
+      userId,
+      resultKeys: Object.keys(result),
+      hasContent: !!result.content,
+      hasFinalOutput: !!result.finalOutput,
+      content: result.content,
+      finalOutput: result.finalOutput,
+      toolCallsCount: result.toolCalls?.length || 0
     });
     
     // Log what actually happened
@@ -336,7 +361,7 @@ async function processUserRequest(userInput, userId, conversationId, io) {
     
     return {
       success: true,
-      message: result.content,
+      message: result.finalOutput || result.content || 'No response from agent',
       toolsUsed: result.toolCalls || [],
       duration: Date.now() - startTime
     };

@@ -13,7 +13,7 @@ const logger = require('../middleware/logger');
 // Initialize OpenAI with GPT-5-nano for cost efficiency
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v2'
+  baseURL: 'https://api.openai.com/v1'
 });
 
 // Schema for structured burn request
@@ -43,9 +43,9 @@ const burnRequestTools = [
     }),
     execute: async (params) => {
       const farms = await query(`
-        SELECT farm_id, farm_name, owner_name, acres, latitude, longitude
+        SELECT id as farm_id, name as farm_name, owner_name, farm_size_acres as acres, lat as latitude, lon as longitude
         FROM farms 
-        WHERE farm_name LIKE ? OR owner_name LIKE ?
+        WHERE name LIKE ? OR owner_name LIKE ?
         LIMIT 5
       `, [`%${params.searchTerm}%`, `%${params.searchTerm}%`]);
       
@@ -114,7 +114,7 @@ const burnRequestTools = [
     parameters: z.object({
       acres: z.number(),
       cropType: z.string(),
-      windSpeed: z.number().optional()
+      windSpeed: z.number()
     }),
     execute: async (params) => {
       const validations = {
@@ -141,10 +141,10 @@ const burnRequestTools = [
   })
 ];
 
-// The REAL BurnRequestAgent
+// The REAL BurnRequestAgent - Handoff Target
 const burnRequestAgent = new Agent({
   name: 'BurnRequestAgent',
-  model: 'gpt-5-nano', // Cost-efficient for simple extraction
+  model: 'gpt-5-mini', // CRITICAL: GPT-5-mini required for JSON extraction
   instructions: `You extract structured burn requests from farmers' natural language.
                  
                  Extract these details:
@@ -166,10 +166,11 @@ const burnRequestAgent = new Agent({
                  - Check date availability
                  - Validate parameters
                  
-                 If critical info is missing, identify what's needed.`,
+                 If critical info is missing, identify what's needed.
+                 Always return structured JSON data.`,
+  handoffDescription: 'I process natural language burn requests from farmers and extract structured data. I handle farm lookup, date parsing, and parameter validation.',
   tools: burnRequestTools,
-  temperature: 0.3, // Lower temperature for consistent extraction
-  max_tokens: 500
+  max_completion_tokens: 1000 // Updated per CLAUDE.md token budgets
 });
 
 /**
@@ -185,8 +186,14 @@ async function extractBurnRequest(naturalLanguageInput, userId) {
     });
     
     // Use GPT-5-nano directly for extraction
-    const completion = await openai.chat.completions.create({
+    logger.info('REAL: Making GPT-5-nano API call', {
       model: 'gpt-5-nano',
+      inputLength: naturalLanguageInput.length,
+      userId
+    });
+    
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5-mini', // CRITICAL: GPT-5-nano uses ALL tokens for reasoning, need GPT-5-mini for JSON
       messages: [
         {
           role: 'system',
@@ -214,11 +221,41 @@ async function extractBurnRequest(naturalLanguageInput, userId) {
         }
       ],
       response_format: { type: 'json_object' },
-      max_tokens: 500,
-      temperature: 0.3
+      max_completion_tokens: 4000, // CRITICAL: GPT-5-nano uses ALL tokens for reasoning, need huge buffer for output
+      reasoning_effort: 'high' // CRITICAL: Maximum reasoning for accurate extraction
     });
     
-    const extracted = JSON.parse(completion.choices[0].message.content);
+    logger.info('REAL: Full GPT-5-nano API response', {
+      completion: JSON.stringify(completion, null, 2),
+      hasChoices: !!completion.choices,
+      choicesLength: completion.choices?.length,
+      firstChoice: completion.choices?.[0],
+      firstMessage: completion.choices?.[0]?.message,
+      content: completion.choices?.[0]?.message?.content
+    });
+    
+    const rawContent = completion.choices[0]?.message?.content;
+    if (!rawContent) {
+      logger.error('REAL: GPT-5-nano returned null/undefined content', {
+        completion: JSON.stringify(completion, null, 2),
+        apiKey: process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET'
+      });
+      throw new Error('GPT-5-nano returned empty response');
+    }
+    
+    logger.info('REAL: Raw GPT-5-nano response', { rawContent });
+    
+    let extracted;
+    try {
+      extracted = JSON.parse(rawContent);
+    } catch (parseError) {
+      logger.error('REAL: Failed to parse GPT-5-nano JSON', { 
+        rawContent, 
+        parseError: parseError.message 
+      });
+      throw new Error(`Invalid JSON from GPT-5-nano: ${parseError.message}`);
+    }
+    
     logger.info('REAL: Extracted data from natural language', { extracted });
     
     // Look up farm if name provided

@@ -15,7 +15,7 @@ const logger = require('../middleware/logger');
 // Initialize OpenAI with GPT-5-nano for cost efficiency
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v2'
+  baseURL: 'https://api.openai.com/v1'
 });
 
 // Monitoring configuration
@@ -285,8 +285,7 @@ const monitoringTools = [
           }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: 500,
-        temperature: 0.3
+        max_completion_tokens: 500,
       });
       
       const analysis = JSON.parse(completion.choices[0].message.content);
@@ -316,10 +315,10 @@ function getAlertTitle(alertType) {
   return titles[alertType] || 'Burn Alert';
 }
 
-// The REAL ProactiveMonitor Agent
+// The REAL ProactiveMonitor Agent - Handoff Target
 const proactiveMonitorAgent = new Agent({
   name: 'ProactiveMonitor',
-  model: 'gpt-5-nano', // Cost-efficient for continuous monitoring
+  model: 'gpt-5-nano', // Cost-efficient for continuous monitoring, text-only decisions
   instructions: `You are a 24/7 monitoring agent for agricultural burns.
                  
                  You PROACTIVELY:
@@ -339,9 +338,9 @@ const proactiveMonitorAgent = new Agent({
                  
                  Be helpful but not annoying. Limit alerts to important information.
                  Group related alerts together when possible.`,
+  handoffDescription: 'I provide 24/7 autonomous monitoring without user triggers. I proactively alert farmers about weather opportunities, safety issues, conflicts, and reminders.',
   tools: monitoringTools,
-  temperature: 0.3,
-  max_tokens: 500
+  max_completion_tokens: 1000 // Updated per CLAUDE.md token budgets
 });
 
 /**
