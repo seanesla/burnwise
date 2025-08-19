@@ -672,27 +672,27 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
   try {
     const timelineData = await query(`
       SELECT 
-        si.time_slot,
-        si.scheduled_start,
-        si.scheduled_end,
+        COALESCE(DATE_FORMAT(br.requested_start_time, '%H:%i'), 'morning') as time_slot,
+        br.requested_date as scheduled_start,
+        br.requested_date as scheduled_end,
         br.request_id as burn_request_id,
-        br.field_name,
-        br.acres,
+        COALESCE(bf.field_name, 'Field') as field_name,
+        COALESCE(br.acreage, 0) as acres,
         br.crop_type,
         br.priority_score,
         f.name as farm_name,
         f.owner_name,
         f.longitude as farm_lon,
         f.latitude as farm_lat,
-        sp.max_dispersion_radius,
-        sp.confidence_score as smoke_confidence
-      FROM schedule_items si
-      JOIN schedules s ON si.schedule_id = s.id
-      JOIN burn_requests br ON si.burn_request_id = br.request_id
+        COALESCE(sp.max_dispersion_radius, 0) as max_dispersion_radius,
+        COALESCE(sp.confidence_score, 0) as smoke_confidence
+      FROM burn_requests br
       JOIN farms f ON br.farm_id = f.farm_id
+      LEFT JOIN burn_fields bf ON br.field_id = bf.field_id
       LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
-      WHERE s.schedule_date = ?
-      ORDER BY si.time_slot ASC, br.priority_score DESC
+      WHERE DATE(br.requested_date) = ?
+        AND br.status IN ('pending', 'approved', 'scheduled')
+      ORDER BY br.requested_start_time ASC, br.priority_score DESC
     `, [date]);
     
     // Organize by time slots
