@@ -181,7 +181,7 @@ class AlertsAgent {
           delivery_status as status,
           delivery_method as sent_via,
           COUNT(*) as count,
-          AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(delivered_at, created_at))) as avg_delivery_time
+          AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(sent_at, created_at))) as avg_delivery_time
         FROM alerts
         WHERE created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)
         GROUP BY alert_type, delivery_status, delivery_method
@@ -923,7 +923,7 @@ For all alerts, prioritize:
         UPDATE alerts 
         SET 
           delivery_status = ?,
-          delivered_at = CASE WHEN ? = 'delivered' THEN NOW() ELSE delivered_at END,
+          sent_at = CASE WHEN ? = 'delivered' THEN NOW() ELSE sent_at END,
           delivery_attempts = delivery_attempts + 1
         WHERE alert_id = ?
       `, [deliveryStatus, deliveryStatus, alertId]);
@@ -1081,8 +1081,8 @@ For all alerts, prioritize:
     
     // Check if max retries exceeded
     if (retryCount >= this.maxRetryAttempts) {
-      await query('UPDATE alerts SET delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
-        ['failed', retryCount, alert.id]);
+      await query('UPDATE alerts SET delivery_status = ? WHERE alert_id = ?', 
+        ['failed', alert.id]);
       this.retryAttempts.delete(alertKey);
       logger.agent(this.agentName, 'warn', 'Alert permanently failed after max retries', { 
         alertId: alert.id, 
@@ -1093,8 +1093,8 @@ For all alerts, prioritize:
     
     // Mark as failed if too old (over 1 hour)
     if (Date.now() - new Date(alert.created_at).getTime() > 60 * 60 * 1000) {
-      await query('UPDATE alerts SET delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
-        ['failed', retryCount, alert.id]);
+      await query('UPDATE alerts SET delivery_status = ? WHERE alert_id = ?', 
+        ['failed', alert.id]);
       this.retryAttempts.delete(alertKey);
       return;
     }
@@ -1105,8 +1105,8 @@ For all alerts, prioritize:
     
     // For now, mark as sent since we don't have real SMS setup
     // In production, this would actually retry sending the alert
-    await query('UPDATE alerts SET delivery_status = ?, sent_at = NOW(), retry_count = ? WHERE alert_id = ?', 
-      ['sent', retryCount, alert.id]);
+    await query('UPDATE alerts SET delivery_status = ?, sent_at = NOW() WHERE alert_id = ?', 
+      ['sent', alert.id]);
     
     // Clean up retry tracking after successful send
     this.retryAttempts.delete(alertKey);
