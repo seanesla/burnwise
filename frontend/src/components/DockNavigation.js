@@ -92,10 +92,9 @@ const DockNavigation = ({ onAction, activePanel }) => {
   return (
     <motion.div 
       className="dock-navigation"
-      initial={{ y: 100, x: "-50%" }}
-      animate={{ y: 0, x: "-50%" }}
+      initial={{ y: 100 }}
+      animate={{ y: 0 }}
       transition={{ type: "spring", damping: 20, stiffness: 300 }}
-      style={{ left: "50%" }}
     >
       <div className="dock-container">
         {dockItems.map((item, index) => (

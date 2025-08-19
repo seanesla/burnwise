@@ -193,10 +193,9 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
   return (
     <motion.div 
       className="timeline-scrubber"
-      initial={{ y: 100, x: "-50%" }}
-      animate={{ y: 0, x: "-50%" }}
+      initial={{ y: 100 }}
+      animate={{ y: 0 }}
       transition={{ type: "spring", damping: 20, stiffness: 300 }}
-      style={{ left: "50%" }}
     >
       {/* Controls */}
       <div className="timeline-controls">
