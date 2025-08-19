@@ -1081,8 +1081,8 @@ For all alerts, prioritize:
     
     // Check if max retries exceeded
     if (retryCount >= this.maxRetryAttempts) {
-      await query('UPDATE alerts SET status = ?, delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
-        ['cancelled', 'permanently_failed', retryCount, alert.id]);
+      await query('UPDATE alerts SET delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
+        ['failed', retryCount, alert.id]);
       this.retryAttempts.delete(alertKey);
       logger.agent(this.agentName, 'warn', 'Alert permanently failed after max retries', { 
         alertId: alert.id, 
@@ -1093,8 +1093,8 @@ For all alerts, prioritize:
     
     // Mark as failed if too old (over 1 hour)
     if (Date.now() - new Date(alert.created_at).getTime() > 60 * 60 * 1000) {
-      await query('UPDATE alerts SET status = ?, delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
-        ['cancelled', 'expired', retryCount, alert.id]);
+      await query('UPDATE alerts SET delivery_status = ?, retry_count = ? WHERE alert_id = ?', 
+        ['failed', retryCount, alert.id]);
       this.retryAttempts.delete(alertKey);
       return;
     }
@@ -1105,8 +1105,8 @@ For all alerts, prioritize:
     
     // For now, mark as sent since we don't have real SMS setup
     // In production, this would actually retry sending the alert
-    await query('UPDATE alerts SET status = ?, delivery_status = ?, delivered_at = NOW(), retry_count = ? WHERE alert_id = ?', 
-      ['completed', 'sent', retryCount, alert.id]);
+    await query('UPDATE alerts SET delivery_status = ?, sent_at = NOW(), retry_count = ? WHERE alert_id = ?', 
+      ['sent', retryCount, alert.id]);
     
     // Clean up retry tracking after successful send
     this.retryAttempts.delete(alertKey);

@@ -272,7 +272,7 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         COUNT(CASE WHEN status = 'sent' THEN 1 END) as sent_alerts,
         COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_alerts,
         COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_alerts,
-        AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(delivered_at, created_at))) as avg_delivery_time_seconds,
+        AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(sent_at, created_at))) as avg_delivery_time_seconds,
         COUNT(CASE WHEN type = 'smoke_warning' THEN 1 END) as smoke_warnings,
         COUNT(CASE WHEN type = 'conflict_detected' THEN 1 END) as conflict_alerts
       FROM alerts a
@@ -871,7 +871,7 @@ async function getAlertsMetrics(periodDays) {
     SELECT 
       COUNT(*) as alerts_sent,
       COUNT(CASE WHEN status = 'sent' THEN 1 END) as successful_deliveries,
-      AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(delivered_at, created_at))) as avg_delivery_time
+      AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(sent_at, created_at))) as avg_delivery_time
     FROM alerts
     WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
   `, [periodDays]);
@@ -1097,7 +1097,7 @@ router.get('/dashboard-stats', asyncHandler(async (req, res) => {
         (SELECT COUNT(*) FROM burn_requests WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as totalBurns,
         (SELECT COUNT(DISTINCT farm_id) FROM burn_requests WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as activeFarms,
         (SELECT AVG(air_quality_index) FROM weather_data WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 1 DAY)) as weatherScore,
-        (SELECT COUNT(*) FROM alerts WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) AND status = 'pending') as alerts,
+        (SELECT COUNT(*) FROM alerts WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) AND delivery_status = 'pending') as alerts,
         (SELECT COUNT(*) FROM burn_requests WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as completedBurns,
         (SELECT COUNT(*) FROM burn_requests WHERE status = 'approved' AND requested_date >= CURDATE()) as upcomingBurns
     `);
