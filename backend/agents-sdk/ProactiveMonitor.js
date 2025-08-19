@@ -53,13 +53,15 @@ const monitoringState = {
 
 // Tools for proactive monitoring
 const monitoringTools = [
-  tool({
-    name: 'scan_upcoming_burns',
-    description: 'Scan for burns in the next 72 hours that need monitoring',
-    parameters: z.object({
-      hoursAhead: z.number().default(72)
-    }),
-    execute: async (params) => {
+  tool(
+    {
+      name: 'scan_upcoming_burns',
+      description: 'Scan for burns in the next 72 hours that need monitoring',
+      parameters: z.object({
+        hoursAhead: z.number().default(72)
+      })
+    },
+    async (params) => {
       logger.info('REAL: Scanning upcoming burns', { hoursAhead: params.hoursAhead });
       
       const cutoffDate = new Date();
@@ -83,17 +85,19 @@ const monitoringTools = [
       
       return upcomingBurns;
     }
-  }),
+  ),
 
-  tool({
-    name: 'detect_optimal_windows',
-    description: 'Detect optimal burn windows in weather forecast',
-    parameters: z.object({
-      lat: z.number(),
-      lng: z.number(),
-      hoursAhead: z.number().default(72)
-    }),
-    execute: async (params) => {
+  tool(
+    {
+      name: 'detect_optimal_windows',
+      description: 'Detect optimal burn windows in weather forecast',
+      parameters: z.object({
+        lat: z.number(),
+        lng: z.number(),
+        hoursAhead: z.number().default(72)
+      })
+    },
+    async (params) => {
       logger.info('REAL: Detecting optimal burn windows');
       
       // Get weather forecast
@@ -136,20 +140,22 @@ const monitoringTools = [
       
       return optimalWindows;
     }
-  }),
+  ),
 
-  tool({
-    name: 'check_weather_changes',
-    description: 'Check for significant weather changes affecting scheduled burns',
-    parameters: z.object({
-      burnId: z.number(),
-      location: z.object({
-        lat: z.number(),
-        lng: z.number()
-      }),
-      burnDate: z.string()
-    }),
-    execute: async (params) => {
+  tool(
+    {
+      name: 'check_weather_changes',
+      description: 'Check for significant weather changes affecting scheduled burns',
+      parameters: z.object({
+        burnId: z.number(),
+        location: z.object({
+          lat: z.number(),
+          lng: z.number()
+        }),
+        burnDate: z.string()
+      })
+    },
+    async (params) => {
       logger.info('REAL: Checking weather changes', { burnId: params.burnId });
       
       // Get current forecast
@@ -188,19 +194,21 @@ const monitoringTools = [
       
       return { changed: false };
     }
-  }),
+  ),
 
-  tool({
-    name: 'send_proactive_alert',
-    description: 'Send proactive alert to farmer',
-    parameters: z.object({
-      farmId: z.number(),
-      alertType: z.enum(['optimal_window', 'weather_change', 'reminder', 'safety', 'conflict']),
-      message: z.string(),
-      data: z.any().optional(),
-      severity: z.enum(['low', 'medium', 'high', 'critical'])
-    }),
-    execute: async (params) => {
+  tool(
+    {
+      name: 'send_proactive_alert',
+      description: 'Send proactive alert to farmer',
+      parameters: z.object({
+        farmId: z.number(),
+        alertType: z.enum(['optimal_window', 'weather_change', 'reminder', 'safety', 'conflict']),
+        message: z.string(),
+        data: z.any().optional(),
+        severity: z.enum(['low', 'medium', 'high', 'critical'])
+      })
+    },
+    async (params) => {
       logger.info('REAL: Sending proactive alert', {
         farmId: params.farmId,
         type: params.alertType
@@ -245,17 +253,19 @@ const monitoringTools = [
       
       return { sent: true, result };
     }
-  }),
+  ),
 
-  tool({
-    name: 'analyze_monitoring_data',
-    description: 'Use AI to analyze monitoring data and decide on alerts',
-    parameters: z.object({
-      upcomingBurns: z.array(z.any()),
-      optimalWindows: z.array(z.any()),
-      weatherChanges: z.array(z.any())
-    }),
-    execute: async (params) => {
+  tool(
+    {
+      name: 'analyze_monitoring_data',
+      description: 'Use AI to analyze monitoring data and decide on alerts',
+      parameters: z.object({
+        upcomingBurns: z.array(z.any()),
+        optimalWindows: z.array(z.any()),
+        weatherChanges: z.array(z.any())
+      })
+    },
+    async (params) => {
       logger.info('REAL: Analyzing monitoring data with AI');
       
       // Use GPT-5-nano to analyze and decide on alerts
@@ -291,8 +301,201 @@ const monitoringTools = [
       const analysis = JSON.parse(completion.choices[0].message.content);
       return analysis.alerts || [];
     }
-  })
+  )
 ];
+
+// Create executable functions from tools
+const toolFunctions = {
+  scanUpcomingBurns: async (params) => {
+    logger.info('REAL: Scanning upcoming burns', { hoursAhead: params.hoursAhead });
+    
+    const cutoffDate = new Date();
+    cutoffDate.setHours(cutoffDate.getHours() + params.hoursAhead);
+    
+    const upcomingBurns = await query(`
+      SELECT 
+        br.*,
+        f.farm_name,
+        f.latitude,
+        f.longitude,
+        f.contact_phone,
+        f.contact_email
+      FROM burn_requests br
+      JOIN farms f ON br.farm_id = f.farm_id
+      WHERE br.requested_date <= ?
+      AND br.requested_date >= CURDATE()
+      AND br.status IN ('pending', 'approved', 'scheduled')
+      ORDER BY br.requested_date, br.requested_window_start
+    `, [cutoffDate.toISOString().split('T')[0]]);
+    
+    return upcomingBurns;
+  },
+  
+  detectOptimalWindows: async (params) => {
+    logger.info('REAL: Detecting optimal burn windows');
+    
+    // Get weather forecast
+    const forecast = await weatherAgent.getWeatherForecast(
+      { lat: params.lat, lng: params.lng },
+      params.hoursAhead
+    );
+    
+    const optimalWindows = [];
+    const thresholds = MONITORING_CONFIG.alertThresholds.optimalWindow;
+    
+    if (forecast.hourly) {
+      for (let i = 0; i < forecast.hourly.length - 4; i++) {
+        // Check 4-hour windows
+        const window = forecast.hourly.slice(i, i + 4);
+        const avgWind = window.reduce((sum, h) => sum + h.wind_speed, 0) / 4;
+        const avgHumidity = window.reduce((sum, h) => sum + h.humidity, 0) / 4;
+        const avgTemp = window.reduce((sum, h) => sum + h.temp, 0) / 4;
+        
+        if (avgWind >= thresholds.windSpeed.min && 
+            avgWind <= thresholds.windSpeed.max &&
+            avgHumidity >= thresholds.humidity.min &&
+            avgHumidity <= thresholds.humidity.max &&
+            avgTemp >= thresholds.temperature.min &&
+            avgTemp <= thresholds.temperature.max) {
+          
+          optimalWindows.push({
+            startTime: new Date(window[0].dt * 1000),
+            endTime: new Date(window[3].dt * 1000),
+            conditions: {
+              windSpeed: avgWind,
+              humidity: avgHumidity,
+              temperature: avgTemp
+            },
+            score: calculateWindowScore(avgWind, avgHumidity, avgTemp)
+          });
+        }
+      }
+    }
+    
+    return optimalWindows;
+  },
+  
+  checkWeatherChanges: async (params) => {
+    logger.info('REAL: Checking weather changes', { burnId: params.burnId });
+    
+    // Get stored weather analysis
+    const [storedAnalysis] = await query(`
+      SELECT weather_conditions, analysis_time
+      FROM weather_analyses
+      WHERE burn_request_id = ?
+      ORDER BY analysis_time DESC
+      LIMIT 1
+    `, [params.burnId]);
+    
+    if (!storedAnalysis) {
+      return { changed: false };
+    }
+    
+    // Get current weather
+    const currentWeather = await weatherAgent.analyzeBurnConditions(
+      params.location,
+      params.burnDate
+    );
+    
+    const stored = JSON.parse(storedAnalysis.weather_conditions);
+    const changeAnalysis = {
+      windChange: Math.abs((currentWeather.current?.wind_speed || 0) - (stored.wind_speed || 0)),
+      humidityChange: Math.abs((currentWeather.current?.humidity || 0) - (stored.humidity || 0)),
+      tempChange: Math.abs((currentWeather.current?.temp || 0) - (stored.temp || 0)),
+    };
+    
+    // Determine if change is significant
+    const significantChange = 
+      changeAnalysis.windChange > 5 || // mph
+      changeAnalysis.humidityChange > 20 || // %
+      changeAnalysis.tempChange > 15; // °F
+    
+    return significantChange ? {...changeAnalysis, hasChanged: true} : null;
+  },
+  
+  sendProactiveAlert: async (params) => {
+    logger.info('REAL: Sending proactive alert', {
+      farmId: params.farmId,
+      type: params.alertType
+    });
+    
+    // Check if we've sent this alert recently (avoid spam)
+    const alertKey = `${params.farmId}-${params.alertType}-${new Date().toDateString()}`;
+    if (monitoringState.alertsSent.has(alertKey)) {
+      const lastSent = monitoringState.alertsSent.get(alertKey);
+      const hoursSince = (Date.now() - lastSent) / (1000 * 60 * 60);
+      if (hoursSince < 4) { // Don't repeat within 4 hours
+        logger.info('Alert already sent recently', { alertKey, hoursSince });
+        return { sent: false, reason: 'Duplicate suppressed' };
+      }
+    }
+    
+    // Send the alert
+    const result = await alertsAgent.processAlert({
+      type: params.alertType,
+      farm_id: params.farmId,
+      title: getAlertTitle(params.alertType),
+      message: params.message,
+      severity: params.severity,
+      data: params.data
+    });
+    
+    // Track that we sent it
+    monitoringState.alertsSent.set(alertKey, Date.now());
+    
+    // Store in database
+    await query(`
+      INSERT INTO proactive_alerts
+      (farm_id, alert_type, message, severity, data, sent_at)
+      VALUES (?, ?, ?, ?, ?, NOW())
+    `, [
+      params.farmId,
+      params.alertType,
+      params.message,
+      params.severity,
+      JSON.stringify(params.data || {})
+    ]);
+    
+    return { sent: true, result };
+  },
+  
+  analyzeMonitoringData: async (params) => {
+    logger.info('REAL: Analyzing monitoring data with AI');
+    
+    // Use GPT-5-nano to analyze and decide on alerts
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5-nano',
+      messages: [
+        {
+          role: 'system',
+          content: `Analyze agricultural burn monitoring data and decide on proactive alerts.
+                   Consider: safety, optimal windows, conflicts, reminders.
+                   Output JSON array of alerts to send:
+                   [{
+                     "farmId": number,
+                     "alertType": "optimal_window|weather_change|reminder|safety|conflict",
+                     "message": "specific message to farmer",
+                     "severity": "low|medium|high|critical",
+                     "reason": "why this alert is important"
+                   }]`
+        },
+        {
+          role: 'user',
+          content: JSON.stringify({
+            upcomingBurns: params.upcomingBurns.slice(0, 10), // Limit for token efficiency
+            optimalWindows: params.optimalWindows.slice(0, 5),
+            weatherChanges: params.weatherChanges
+          })
+        }
+      ],
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 500,
+    });
+    
+    const analysis = JSON.parse(completion.choices[0].message.content);
+    return analysis.alerts || [];
+  }
+};
 
 // Helper functions
 function calculateWindowScore(windSpeed, humidity, temperature) {
@@ -362,7 +565,7 @@ async function startMonitoring(io = null) {
       logger.info('REAL: Running monitoring cycle');
       
       // Step 1: Scan upcoming burns
-      const upcomingBurns = await monitoringTools[0].execute({
+      const upcomingBurns = await toolFunctions.scanUpcomingBurns({
         hoursAhead: MONITORING_CONFIG.weatherForecastHours
       });
       
@@ -380,7 +583,7 @@ async function startMonitoring(io = null) {
         const location = { lat: burn.latitude, lng: burn.longitude };
         
         // Check for weather changes
-        const weatherChange = await monitoringTools[2].execute({
+        const weatherChange = await toolFunctions.checkWeatherChanges({
           burnId: burn.request_id,
           location,
           burnDate: burn.requested_date
@@ -392,7 +595,7 @@ async function startMonitoring(io = null) {
         
         // Check for optimal windows (once per farm)
         if (MONITORING_CONFIG.proactiveAlerts.weatherWindow) {
-          const optimalWindows = await monitoringTools[1].execute({
+          const optimalWindows = await toolFunctions.detectOptimalWindows({
             lat: location.lat,
             lng: location.lng,
             hoursAhead: 72
@@ -423,7 +626,7 @@ async function startMonitoring(io = null) {
       }
       
       // Step 3: Analyze with AI
-      const aiAlerts = await monitoringTools[4].execute({
+      const aiAlerts = await toolFunctions.analyzeMonitoringData({
         upcomingBurns,
         optimalWindows: allOptimalWindows,
         weatherChanges
@@ -434,7 +637,7 @@ async function startMonitoring(io = null) {
       
       // Step 4: Send alerts
       for (const alert of alertsToSend) {
-        await monitoringTools[3].execute(alert);
+        await toolFunctions.sendProactiveAlert(alert);
       }
       
       // Update monitoring state
@@ -516,13 +719,13 @@ async function triggerManualCheck() {
   logger.info('REAL: Manual monitoring check triggered');
   
   // Run a single monitoring cycle
-  const upcomingBurns = await monitoringTools[0].execute({ hoursAhead: 72 });
+  const upcomingBurns = await toolFunctions.scanUpcomingBurns({ hoursAhead: 72 });
   
   const alerts = [];
   for (const burn of upcomingBurns.slice(0, 5)) { // Limit for manual check
     const location = { lat: burn.latitude, lng: burn.longitude };
     
-    const optimalWindows = await monitoringTools[1].execute({
+    const optimalWindows = await toolFunctions.detectOptimalWindows({
       lat: location.lat,
       lng: location.lng,
       hoursAhead: 48
