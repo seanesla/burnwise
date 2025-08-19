@@ -265,17 +265,18 @@ async function vectorSimilaritySearch(tableName, vectorColumn, searchVector, lim
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     
     // Use VEC_COSINE_DISTANCE for similarity calculation
+    // Note: LIMIT must be a literal value, not a placeholder in MySQL/TiDB
+    const limitValue = parseInt(limit, 10) || 10;
     const sql = `
       SELECT *, 
              1 - VEC_COSINE_DISTANCE(${vectorColumn}, ?) as similarity
       FROM ${tableName}
       ${whereClause}
       ORDER BY similarity DESC
-      LIMIT ?
+      LIMIT ${limitValue}
     `;
     
-    // Ensure limit is a valid integer
-    params.push(parseInt(limit, 10));
+    // Don't add limit to params since it's now in the SQL string directly
     
     const results = await dbConnection.query(sql, params);
     

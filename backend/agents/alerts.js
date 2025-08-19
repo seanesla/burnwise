@@ -999,7 +999,7 @@ For all alerts, prioritize:
       const result = await query(`
         DELETE FROM alerts
         WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
-        AND (delivery_status IN ('sent', 'delivered') OR status IN ('completed', 'cancelled'))
+        AND status IN ('sent', 'delivered', 'failed')
       `);
       
       logger.agent(this.agentName, 'info', `Cleaned up ${result.affectedRows} old alerts`);

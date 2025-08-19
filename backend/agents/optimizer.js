@@ -351,6 +351,12 @@ class OptimizerAgent {
     // Calculate weather suitability score (0-1) based on current conditions
     let score = 0.5; // Base score
     
+    // Handle null or undefined weatherData
+    if (!weatherData) {
+      logger.agent(this.agentName, 'warn', 'Weather data not available, using default score');
+      return score;
+    }
+    
     if (weatherData.windSpeed >= 2 && weatherData.windSpeed <= 15) {
       score += 0.2; // Good wind conditions
     } else if (weatherData.windSpeed < 1 || weatherData.windSpeed > 20) {
