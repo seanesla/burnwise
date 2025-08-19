@@ -675,7 +675,7 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
         si.time_slot,
         si.scheduled_start,
         si.scheduled_end,
-        br.id as burn_request_id,
+        br.request_id as burn_request_id,
         br.field_name,
         br.acres,
         br.crop_type,
@@ -688,9 +688,9 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
         sp.confidence_score as smoke_confidence
       FROM schedule_items si
       JOIN schedules s ON si.schedule_id = s.id
-      JOIN burn_requests br ON si.burn_request_id = br.id
+      JOIN burn_requests br ON si.burn_request_id = br.request_id
       JOIN farms f ON br.farm_id = f.farm_id
-      LEFT JOIN smoke_predictions sp ON br.id = sp.burn_request_id
+      LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
       WHERE s.schedule_date = ?
       ORDER BY si.time_slot ASC, br.priority_score DESC
     `, [date]);
@@ -782,7 +782,7 @@ router.put('/update', asyncHandler(async (req, res) => {
         f.name as farm_name
       FROM schedule_items si
       JOIN schedules s ON si.schedule_id = s.id
-      JOIN burn_requests br ON si.burn_request_id = br.id
+      JOIN burn_requests br ON si.burn_request_id = br.request_id
       JOIN farms f ON br.farm_id = f.farm_id
       WHERE si.burn_request_id = ?
       ORDER BY si.created_at DESC
@@ -923,7 +923,7 @@ router.get('/efficiency/:date', asyncHandler(async (req, res) => {
         MAX(si.time_slot) as last_slot
       FROM schedules s
       JOIN schedule_items si ON s.id = si.schedule_id
-      JOIN burn_requests br ON si.burn_request_id = br.id
+      JOIN burn_requests br ON si.burn_request_id = br.request_id
       WHERE s.schedule_date = ?
       GROUP BY s.id
       ORDER BY s.created_at DESC
@@ -954,8 +954,8 @@ router.get('/efficiency/:date', asyncHandler(async (req, res) => {
         MAX(sp.max_dispersion_radius) as max_dispersion
       FROM schedule_items si
       JOIN schedules s ON si.schedule_id = s.id
-      JOIN burn_requests br ON si.burn_request_id = br.id
-      LEFT JOIN smoke_predictions sp ON br.id = sp.burn_request_id
+      JOIN burn_requests br ON si.burn_request_id = br.request_id
+      LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
       WHERE s.schedule_date = ?
       AND s.id = ?
       GROUP BY si.time_slot
@@ -1270,7 +1270,7 @@ router.delete('/:schedule_id', asyncHandler(async (req, res) => {
     await query(`
       UPDATE burn_requests br
       SET status = 'pending'
-      WHERE br.id IN (
+      WHERE br.request_id IN (
         SELECT burn_request_id FROM schedule_items WHERE schedule_id = ?
       )
     `, [schedule_id]);
@@ -1335,7 +1335,7 @@ async function checkTimeSlotConflicts(scheduleDate, newTimeSlot, excludeBurnRequ
       f.name as farm_name
     FROM schedule_items si
     JOIN schedules s ON si.schedule_id = s.id
-    JOIN burn_requests br ON si.burn_request_id = br.id
+    JOIN burn_requests br ON si.burn_request_id = br.request_id
     JOIN farms f ON br.farm_id = f.id
     WHERE s.schedule_date = ?
     AND si.burn_request_id != ?

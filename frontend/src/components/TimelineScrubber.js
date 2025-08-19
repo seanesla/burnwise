@@ -59,13 +59,75 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
   
   const loadTimelineData = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/burns/timeline?mode=${viewMode}`);
+      // Get date range based on view mode
+      const startDate = new Date(currentTime);
+      const endDate = new Date(currentTime);
+      
+      if (viewMode === 'day') {
+        endDate.setDate(endDate.getDate() + 1);
+      } else if (viewMode === 'week') {
+        endDate.setDate(endDate.getDate() + 7);
+      } else if (viewMode === 'month') {
+        endDate.setMonth(endDate.getMonth() + 1);
+      }
+      
+      // Load timeline data for date range
+      const dateStr = currentTime.toISOString().split('T')[0];
+      const response = await fetch(`http://localhost:5001/api/schedule/timeline/${dateStr}`);
       const data = await response.json();
-      if (data.success) {
-        setBurns(data.data);
+      
+      if (data.success && data.data.timeline) {
+        // Transform timeline data into burn events
+        const events = [];
+        Object.entries(data.data.timeline).forEach(([timeSlot, slotData]) => {
+          slotData.burns.forEach(burn => {
+            // Parse the scheduled time properly
+            const [startHour, startMin] = burn.scheduled_start.split(':');
+            const burnTime = new Date(currentTime);
+            burnTime.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
+            
+            events.push({
+              id: burn.burn_request_id,
+              time: burnTime,
+              farmName: burn.farm_name,
+              ownerName: burn.owner_name,
+              acres: burn.acres,
+              cropType: burn.crop_type,
+              priorityScore: burn.priority_score,
+              status: determineStatus(burnTime),
+              smokeRadius: burn.max_dispersion_radius,
+              location: {
+                lat: burn.farm_lat,
+                lon: burn.farm_lon
+              }
+            });
+          });
+        });
+        
+        setBurns(events);
+      } else {
+        // No burns scheduled, set empty array
+        setBurns([]);
       }
     } catch (error) {
       console.error('Failed to load timeline data:', error);
+      // Still set empty array on error to avoid undefined state
+      setBurns([]);
+    }
+  };
+  
+  // Determine burn status based on current time
+  const determineStatus = (burnTime) => {
+    const now = new Date();
+    const burnEnd = new Date(burnTime);
+    burnEnd.setHours(burnEnd.getHours() + 2); // Assume 2-hour burn duration
+    
+    if (now < burnTime) {
+      return 'scheduled';
+    } else if (now >= burnTime && now <= burnEnd) {
+      return 'active';
+    } else {
+      return 'completed';
     }
   };
   

@@ -16,6 +16,13 @@ test.describe('Spatial Interface - Map as Application', () => {
     await page.fill('input[type="password"]', 'TestPassword123!');
     await page.click('button:has-text("Sign In")');
     
+    // Handle onboarding if it appears
+    const onboardingUrl = await page.url();
+    if (onboardingUrl.includes('onboarding')) {
+      // Skip onboarding
+      await page.click('button:has-text("Skip Setup")');
+    }
+    
     // Wait for spatial interface to load
     await page.waitForURL('**/spatial');
     await page.waitForLoadState('networkidle');

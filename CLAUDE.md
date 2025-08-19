@@ -1,8 +1,20 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 ## Project: BURNWISE
 Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5-agent workflow with TiDB vector search to prevent smoke conflicts. hackathon link: https://tidb-2025-hackathon.devpost.com/ 
 
 ## Commands
 `npm run dev` (backend:5001+frontend:3000) | `npm run install:all` | `npm run setup:check` | `npm run seed` | `npm test` | `cd e2e-tests && npx playwright test`
+
+### Additional Commands
+- `cd backend && node scripts/create-test-user.js` - Create test user with bcrypt password
+- `cd e2e-tests && npx playwright test --headed` - Run E2E tests with browser visible
+- `cd e2e-tests && npx playwright test 03-spatial-interface.spec.js:24` - Run specific test line
+- `npm run test:backend` - Backend unit tests only
+- `npm run test:frontend` - Frontend tests only
+- `npm run test:workflow` - Test complete 5-agent workflow
 
 ## Navigation: Check `.claude/` directory
 `NAVIGATION.md` (file/function jumps) | `CODEBASE_MAP.md` (file tree) | `TECH_STACK.md` (libs/versions) | `DATABASE_SCHEMA.md` (TiDB/vectors) | `PATTERNS.md` (conventions) | `WORKFLOWS/` (detailed docs) | `QUICK_TASKS/` (step-by-step). Start with NAVIGATION.md.
@@ -51,10 +63,33 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 **Stack**: TiDB+circuit breaker (`db/connection.js`), Mapbox GL JS (3D terrain+fog), Framer Motion (draggable components), Socket.io, OpenAI Agents SDK, GPT-5-mini/nano | **API**: `/api/{burn-requests,weather,schedule,alerts,farms,analytics,agents}`
 **Setup**: TiDB creds in `backend/.env`, OpenWeatherMap key (`OPENWEATHERMAP_API_KEY`), Mapbox token in `frontend/.env` (`REACT_APP_MAPBOX_TOKEN`), OpenAI key (`OPENAI_API_KEY`) REQUIRED
 
+### Authentication & Data Flow
+- **Real bcrypt passwords**: Test user `robert@goldenfields.com` / `TestPassword123!`
+- **NO DEMO MODE**: All authentication is production-ready
+- **Data flow**: TiDB → Backend API → Frontend (no hardcoding)
+- **Seed data**: Robert Wilson is legitimate farm owner in TiDB, not mocked
+
 ## Technical Specs
 **Algorithms**: Gaussian plume (`predictor.js:predictSmokeDispersion()`), simulated annealing (`optimizer.js:simulatedAnnealing()`)
 **Vectors**: Weather 128-dim (text-embedding-3-large), smoke 64-dim, burns 32-dim | **Reliability**: Circuit breaker (5 fail), rate limit (100/15min), pool (max 10)
 **Testing**: Unit (`backend/tests/agents/`), Integration (`five-agent-workflow.test.js`), E2E (Playwright) | **UI**: Spatial map-centric interface, glass morphism, NO TRADITIONAL NAVIGATION, draggable floating panels
+
+### E2E Test Pattern
+```javascript
+test.beforeEach(async ({ page }) => {
+  await page.goto('http://localhost:3000/login');
+  await page.fill('input[type="email"]', 'robert@goldenfields.com');
+  await page.fill('input[type="password"]', 'TestPassword123!');
+  await page.click('button:has-text("Sign In")');
+  
+  // Handle onboarding if it appears
+  if ((await page.url()).includes('onboarding')) {
+    await page.click('button:has-text("Skip Setup")');
+  }
+  
+  await page.waitForURL('**/spatial');
+});
+```
 
 ## Cost Optimization (CRITICAL FOR TESTING)
 **GPT-5 Pricing** (per 1M tokens):
