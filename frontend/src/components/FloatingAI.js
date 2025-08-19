@@ -17,7 +17,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [position, setPosition] = useState({ x: window.innerWidth - 380, y: 80 });
+  const [position, setPosition] = useState({ x: 20, y: 80 });
   
   const dragControls = useDragControls();
   const constraintsRef = useRef(null);

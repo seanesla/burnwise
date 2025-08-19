@@ -68,9 +68,9 @@
   left: 50%;
   min-width: 100%;
   min-height: 100%;
-  width: 100vw;
-  height: 100vh;
-  transform: translate(-50%, -50%) scale(1.2);
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
   opacity: 0;
   transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1), transform 3s cubic-bezier(0.4, 0, 0.2, 1);
   object-fit: cover;
@@ -80,7 +80,7 @@
 
 .background-video.active {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1.05);
+  transform: translate(-50%, -50%);
 }
 
 .video-overlay {
