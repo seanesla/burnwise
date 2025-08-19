@@ -245,7 +245,7 @@ class WeatherAgent {
       Temperature: ${currentWeather.temperature}°F (feels like ${currentWeather.feels_like}°F)
       Humidity: ${currentWeather.humidity}%
       Wind: ${currentWeather.windSpeed}mph from ${currentWeather.windDirection}°
-      Pressure: ${currentWeather.pressure.toFixed(2)} inHg
+      Pressure: ${currentWeather.pressure ? currentWeather.pressure.toFixed(2) : 'N/A'} inHg
       Condition: ${currentWeather.condition} - ${currentWeather.description}
       Visibility: ${currentWeather.visibility ? currentWeather.visibility.toFixed(1) : 'N/A'} miles
       Cloud Cover: ${currentWeather.cloudCover}%
@@ -483,4 +483,6 @@ End with "Sources: [list specific EPA documents, NFPA codes, NWS data, meteorolo
   }
 }
 
+// Export both the class and a singleton instance
 module.exports = new WeatherAgent();
+module.exports.WeatherAgent = WeatherAgent;

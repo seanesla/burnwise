@@ -1155,4 +1155,6 @@ For all alerts, prioritize:
   }
 }
 
+// Export both the class and a singleton instance
 module.exports = new AlertsAgent();
+module.exports.AlertsAgent = AlertsAgent;

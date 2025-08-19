@@ -655,4 +655,6 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
   }
 }
 
+// Export both the class and a singleton instance
 module.exports = new CoordinatorAgent();
+module.exports.CoordinatorAgent = CoordinatorAgent;

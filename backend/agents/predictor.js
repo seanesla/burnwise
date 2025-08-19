@@ -1108,4 +1108,6 @@ MANDATORY: End response with:
   }
 }
 
+// Export both the class and a singleton instance
 module.exports = new PredictorAgent();
+module.exports.PredictorAgent = PredictorAgent;

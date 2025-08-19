@@ -1385,4 +1385,6 @@ MANDATORY: End response with:
   }
 }
 
+// Export both the class and a singleton instance
 module.exports = new OptimizerAgent();
+module.exports.OptimizerAgent = OptimizerAgent;
