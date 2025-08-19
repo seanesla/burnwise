@@ -128,7 +128,7 @@ class PredictorAgent {
           wd.temperature,
           wd.weather_condition
         FROM burn_smoke_predictions pm
-        JOIN burn_requests br ON pm.burn_request_id = br.request_id
+        JOIN burn_requests br ON pm.request_id = br.request_id
         JOIN weather_data wd ON DATE(pm.created_at) = DATE(wd.timestamp)
         WHERE pm.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
         AND pm.confidence_score > 0.7

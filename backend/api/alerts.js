@@ -15,7 +15,7 @@ const alertCreationSchema = Joi.object({
     'emergency_stop', 'air_quality_alert'
   ).required(),
   farm_id: Joi.number().integer().positive().optional(),
-  burn_request_id: Joi.number().integer().positive().optional(),
+  request_id: Joi.number().integer().positive().optional(),
   title: Joi.string().min(1).max(200).required(),
   message: Joi.string().min(1).max(1000).required(),
   severity: Joi.string().valid('low', 'medium', 'high', 'critical').required(),
@@ -104,7 +104,7 @@ router.get('/', asyncHandler(async (req, res) => {
         a.alert_id,
         a.type,
         a.farm_id,
-        a.burn_request_id,
+        a.request_id,
         a.message as title,
         a.message,
         a.severity,
@@ -117,7 +117,7 @@ router.get('/', asyncHandler(async (req, res) => {
         br.field_id
       FROM alerts a
       LEFT JOIN farms f ON a.farm_id = f.farm_id
-      LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
+      LEFT JOIN burn_requests br ON a.request_id = br.request_id
       ${whereClause}
       ORDER BY 
         CASE a.severity 
@@ -190,7 +190,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
         br.requested_date as burn_date
       FROM alerts a
       LEFT JOIN farms f ON a.farm_id = f.farm_id
-      LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
+      LEFT JOIN burn_requests br ON a.request_id = br.request_id
       WHERE a.alert_id = ?
     `, [id]);
     
@@ -610,8 +610,8 @@ router.get('/active', asyncHandler(async (req, res) => {
         TIMESTAMPDIFF(MINUTE, a.created_at, NOW()) as age_minutes
       FROM alerts a
       LEFT JOIN farms f ON a.farm_id = f.farm_id
-      LEFT JOIN burn_requests br ON a.burn_request_id = br.request_id
-      WHERE a.status IN ('pending', 'sent')
+      LEFT JOIN burn_requests br ON a.request_id = br.request_id
+      WHERE a.delivery_status IN ('pending', 'sent')
       AND a.severity IN (${allowedSeverities.map(() => '?').join(',')})
       AND a.created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
       ORDER BY 

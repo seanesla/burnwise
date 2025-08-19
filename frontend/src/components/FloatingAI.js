@@ -165,7 +165,7 @@ const FloatingAI = ({ isOpen, onClose }) => {
         x: position.x, 
         y: position.y,
         position: 'fixed',
-        zIndex: 1000
+        zIndex: 300
       }}
     >
       {/* Header with drag handle */}

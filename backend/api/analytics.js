@@ -259,7 +259,7 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         MAX(optimization_score) as best_score,
         MIN(optimization_score) as worst_score,
         AVG(total_conflicts) as avg_conflicts_per_schedule,
-        COUNT(CASE WHEN optimization_algorithm = 'simulated_annealing' THEN 1 END) as simulated_annealing_count
+        COUNT(*) as total_schedules
       FROM schedules s
       WHERE s.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
       -- AND s.status = 'active' -- schedules table doesn't have status column

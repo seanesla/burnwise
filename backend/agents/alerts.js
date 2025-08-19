@@ -1046,7 +1046,7 @@ For all alerts, prioritize:
       const pendingAlerts = await query(`
         SELECT alert_id as id, alert_type as type, farm_id, message, severity, created_at
         FROM alerts
-        WHERE status = 'pending'
+        WHERE delivery_status = 'pending'
         AND created_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)
         LIMIT 50
       `);
