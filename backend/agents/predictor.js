@@ -228,12 +228,18 @@ class PredictorAgent {
         concentrationMap
       );
       
-      // Step 8: Check for conflicts with other burns
-      const conflicts = await this.detectBurnConflicts(
-        affectedArea,
-        burnData.burn_date,
-        plumeVector
-      );
+      // Step 8: Check for conflicts with other burns (only if we have a date)
+      const burnDate = burnData.burn_date || burnData.requested_date || null;
+      let conflicts = [];
+      if (burnDate) {
+        conflicts = await this.detectBurnConflicts(
+          affectedArea,
+          burnDate,
+          plumeVector
+        );
+      } else {
+        logger.agent(this.agentName, 'info', 'Skipping conflict detection - no burn date provided');
+      }
       
       // Step 9: Calculate confidence score
       const confidenceScore = this.calculatePredictionConfidence(
@@ -251,16 +257,21 @@ class PredictorAgent {
         burnData
       );
       
-      // Step 10: Store prediction results
-      const predictionId = await this.storePredictionResults({
-        burnRequestId,
-        plumeModel,
-        maxDispersionRadius,
-        affectedArea,
-        concentrationMap,
-        plumeVector,
-        confidenceScore
-      });
+      // Step 10: Store prediction results (only if we have a valid request ID)
+      let predictionId = null;
+      if (burnRequestId && burnRequestId > 0) {
+        predictionId = await this.storePredictionResults({
+          burnRequestId,
+          plumeModel,
+          maxDispersionRadius,
+          affectedArea,
+          concentrationMap,
+          plumeVector,
+          confidenceScore
+        });
+      } else {
+        logger.agent(this.agentName, 'info', 'Skipping database storage - no valid request ID');
+      }
       
       const duration = Date.now() - startTime;
       logger.performance('smoke_dispersion_prediction', duration, {

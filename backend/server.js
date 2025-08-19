@@ -171,6 +171,7 @@ app.use('/api/alerts', optionalAuth, alertsRoutes);
 app.use('/api/farms', optionalAuth, farmsRoutes);
 app.use('/api/analytics', optionalAuth, analyticsRoutes); // Analytics can be public
 app.use('/api/agents', optionalAuth, agentsRoutes); // Agent API for 5-agent system
+app.use('/api/predictor', optionalAuth, require('./api/predictor')); // Gaussian plume model API
 
 // Socket.io setup for real-time updates
 console.log('Setting up Socket.io...');
