@@ -81,10 +81,35 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       const data = await response.json();
       
       if (data.success) {
+        // Parse the response if it's JSON
+        let formattedResponse = data.response;
+        try {
+          const parsed = JSON.parse(data.response);
+          
+          // Format the burn request response
+          if (parsed.missingInfo && parsed.nextSteps) {
+            const missingList = parsed.missingInfo.map(item => `• ${item}`).join('\n');
+            const nextList = parsed.nextSteps.map(item => `• ${item}`).join('\n');
+            
+            formattedResponse = `I've processed your burn request for ${parsed.field?.acreage || 'unknown'} acres of ${parsed.cropType || 'crops'} on ${parsed.requestedDate || 'the requested date'}.
+
+**Missing Information:**
+${missingList}
+
+**Next Steps:**
+${nextList}`;
+          } else if (typeof parsed === 'object') {
+            // Generic object formatting
+            formattedResponse = JSON.stringify(parsed, null, 2);
+          }
+        } catch (e) {
+          // Not JSON, use as-is
+        }
+        
         setMessages(prev => [...prev, {
           id: Date.now() + 1,
           type: 'ai',
-          content: data.response,
+          content: formattedResponse,
           timestamp: new Date()
         }]);
       }
