@@ -238,6 +238,14 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
     const startTime = Date.now();
     const requestId = uuidv4();
     
+    // DEBUG: Log exactly what we received
+    logger.agent(this.agentName, 'debug', 'Received burn request data', {
+      requestData,
+      keys: Object.keys(requestData || {}),
+      farmId: requestData?.farm_id,
+      farmIdType: typeof requestData?.farm_id
+    });
+    
     try {
       logger.agent(this.agentName, 'info', 'Processing new burn request', { requestId });
       
@@ -542,11 +550,11 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
 
   async storeBurnRequest(requestData) {
     try {
-      // Format date properly for MySQL
-      const burnDate = requestData.burn_date || requestData.requested_date;
+      // Format date properly for MySQL - ensure we have a date
+      const burnDate = requestData.burn_date || requestData.requested_date || new Date();
       const formattedDate = burnDate instanceof Date ? 
         burnDate.toISOString().split('T')[0] : 
-        burnDate.split('T')[0];  // Handle both Date and string formats
+        (burnDate ? burnDate.split('T')[0] : new Date().toISOString().split('T')[0])
       
       // First, get or create field_id based on farm_id
       let fieldId = requestData.field_id;
@@ -571,10 +579,21 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
       }
       
       // request_id is auto_increment, don't include it in INSERT
+      // NO HARDCODED FALLBACKS - validate properly instead
+      if (!requestData.farm_id) {
+        throw new ValidationError('farm_id is required', 'farm_id');
+      }
+      if (!fieldId) {
+        throw new ValidationError('field_id could not be determined', 'field_id');
+      }
+      if (!requestData.crop_type) {
+        throw new ValidationError('crop_type is required', 'crop_type');
+      }
+      
       const insertData = {
         farm_id: requestData.farm_id,
         field_id: fieldId,
-        acreage: requestData.acres || requestData.acreage || 50,
+        acreage: requestData.acres || requestData.acreage,
         crop_type: requestData.crop_type,
         requested_date: formattedDate,
         requested_window_start: `${formattedDate} ${requestData.time_window_start || requestData.requested_window_start || '08:00'}:00`,

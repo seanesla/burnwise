@@ -395,6 +395,11 @@ async function executeFullWorkflow(burnRequestData, io) {
     logger.info('REAL: Starting 5-agent workflow');
     
     // Step 1: Validate and store with Coordinator
+    logger.info('REAL: Burn request data before coordinator', { 
+      burnRequestData,
+      hasFarmId: !!burnRequestData.farm_id,
+      farmId: burnRequestData.farm_id
+    });
     results.coordinator = await coordinatorAgent.coordinateBurnRequest(burnRequestData);
     if (!results.coordinator.success) {
       throw new Error(`Validation failed: ${results.coordinator.error}`);
@@ -403,12 +408,25 @@ async function executeFullWorkflow(burnRequestData, io) {
     const burnRequestId = results.coordinator.burnRequestId;
     
     // Step 2: Get farm location
+    logger.info('REAL: Getting farm location', {
+      burnRequestDataKeys: Object.keys(burnRequestData || {}),
+      farmId: burnRequestData?.farm_id,
+      farmIdType: typeof burnRequestData?.farm_id,
+      coordinatorResult: results.coordinator
+    });
+    
+    // Ensure we have a farm_id
+    const farmId = burnRequestData?.farm_id || results.coordinator?.farmId;
+    if (!farmId) {
+      throw new Error(`farm_id is missing. burnRequestData: ${JSON.stringify(burnRequestData)}, coordinator result: ${JSON.stringify(results.coordinator)}`);
+    }
+    
     const [farm] = await query(`
       SELECT latitude as lat, longitude as lon 
       FROM farms WHERE farm_id = ?
-    `, [burnRequestData.farm_id]);
+    `, [farmId]);
     
-    if (!farm) throw new Error('Farm not found');
+    if (!farm) throw new Error(`Farm not found for farm_id: ${farmId}`);
     
     // Step 3: Weather Analysis with autonomous decision
     results.weather = await weatherAgent.analyzeBurnConditions(
@@ -432,7 +450,7 @@ async function executeFullWorkflow(burnRequestData, io) {
       // Send alert
       await alertsAgent.processAlert({
         type: 'burn_rejected',
-        farm_id: burnRequestData.farm_id,
+        farm_id: farmId,
         burn_request_id: burnRequestId,
         title: 'Burn Request Rejected',
         message: `Weather conditions are unsafe. Wind speed: ${windSpeed} mph exceeds 15 mph limit.`,

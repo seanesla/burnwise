@@ -318,7 +318,7 @@ class OptimizerAgent {
         if (endTime - startTime < this.constraints.minTimeSlot) {
           logger.agent(this.agentName, 'warn', 'Burn request time window too small', {
             burnRequestId: requestId,
-            timeWindow: `${request.time_window_start}-${request.time_window_end}`
+            timeWindow: `${startTimeStr}-${endTimeStr}`
           });
           continue;
         }

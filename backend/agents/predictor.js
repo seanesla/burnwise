@@ -831,15 +831,37 @@ class PredictorAgent {
       
       const conflicts = [];
       
-      // Process spatial conflicts
+      // Process spatial conflicts - NO HARDCODED DEFAULTS
       spatialConflicts.forEach(conflict => {
+        // Skip if time window data is missing
+        if (!conflict.time_window_start || !conflict.time_window_end) {
+          logger.agent(this.agentName, 'warn', 'Skipping conflict with missing time window', {
+            burnRequestId: conflict.id,
+            hasStart: !!conflict.time_window_start,
+            hasEnd: !!conflict.time_window_end
+          });
+          return;
+        }
+        
+        // Extract time from datetime if needed
+        const startTime = typeof conflict.time_window_start === 'string' ? 
+          (conflict.time_window_start.includes(' ') ? 
+            conflict.time_window_start.split(' ')[1] : 
+            conflict.time_window_start) : 
+          conflict.time_window_start.toString();
+        const endTime = typeof conflict.time_window_end === 'string' ? 
+          (conflict.time_window_end.includes(' ') ? 
+            conflict.time_window_end.split(' ')[1] : 
+            conflict.time_window_end) : 
+          conflict.time_window_end.toString();
+        
         conflicts.push({
           type: 'spatial',
           burnRequestId: conflict.id,
           farmId: conflict.farm_id,
           fieldName: conflict.field_name,
           acres: conflict.acres,
-          timeWindow: `${conflict.time_window_start}-${conflict.time_window_end}`,
+          timeWindow: `${startTime}-${endTime}`,
           distance: conflict.distance_meters,
           severity: conflict.distance_meters < 1000 ? 'high' : 'medium'
         });
