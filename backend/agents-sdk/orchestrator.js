@@ -416,8 +416,8 @@ async function executeFullWorkflow(burnRequestData, io) {
       burnRequestData.burn_date
     );
     
-    // REAL safety decision
-    const windSpeed = results.weather.current?.wind_speed || 0;
+    // REAL safety decision - use correct property path
+    const windSpeed = results.weather.currentWeather?.wind_speed || 0;
     if (windSpeed > 15) {
       results.weather.decision = 'UNSAFE';
       results.weather.requiresApproval = false;
@@ -448,11 +448,21 @@ async function executeFullWorkflow(burnRequestData, io) {
       results.weather.requiresApproval = false;
     }
     
-    // Step 4: Smoke Prediction
+    // Step 4: Smoke Prediction - pass correct weather data structure
+    // Predictor expects windSpeed not wind_speed
+    const weatherDataForPredictor = {
+      windSpeed: results.weather.currentWeather?.wind_speed || 5,
+      windDirection: results.weather.currentWeather?.wind_direction || 180,
+      temperature: results.weather.currentWeather?.temperature || 70,
+      humidity: results.weather.currentWeather?.humidity || 50,
+      cloudCover: results.weather.currentWeather?.clouds || 50,
+      timestamp: new Date().toISOString()
+    };
+    
     results.prediction = await predictorAgent.predictSmokeDispersion(
       burnRequestId,
       burnRequestData,
-      results.weather.current
+      weatherDataForPredictor
     );
     
     // Step 5: Schedule Optimization (if within 7 days)
@@ -469,7 +479,7 @@ async function executeFullWorkflow(burnRequestData, io) {
       results.optimization = await optimizerAgent.optimizeSchedule(
         burnRequestData.burn_date,
         allBurnRequests,
-        results.weather.current,
+        weatherDataForPredictor,  // Use the same weather data structure
         [results.prediction]
       );
       
@@ -510,12 +520,11 @@ async function executeFullWorkflow(burnRequestData, io) {
     
     await query(`
       UPDATE burn_requests 
-      SET status = ?, weather_decision = ?, has_conflicts = ?
+      SET status = ?, coordinator_notes = ?
       WHERE request_id = ?
     `, [
       finalStatus,
-      results.weather.decision,
-      results.prediction.conflicts?.length > 0,
+      `Weather: ${results.weather.decision}, Conflicts: ${results.prediction.conflicts?.length || 0}`,
       burnRequestId
     ]);
     

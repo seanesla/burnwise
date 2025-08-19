@@ -142,13 +142,8 @@ module.exports = {
     return function(proxy, allowedHost) {
       const config = configFunction(proxy, allowedHost);
       
-      // REQUIRED for React Router - serves index.html for all routes
-      // This is NOT a fallback - it's how SPAs work
-      config.historyApiFallback = {
-        index: '/index.html',
-        disableDotRule: true,
-        htmlAcceptHeaders: ['text/html', 'application/xhtml+xml']
-      };
+      // Enable serving index.html for all non-file routes (required for React Router)
+      config.historyApiFallback = true;
       
       return config;
     };
