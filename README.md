@@ -1,4 +1,4 @@
-# 🔥 BURNWISE
+# BURNWISE
 
 **Multi-Farm Agricultural Burn Coordinator** - TiDB AgentX Hackathon 2025
 
@@ -8,7 +8,7 @@ BURNWISE is an intelligent agricultural burn coordination system that prevents d
 ![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-green.svg)
 ![TiDB](https://img.shields.io/badge/TiDB-Serverless-orange.svg)
 
-## 🎯 Problem Solved
+## Problem Solved
 
 Agricultural burning is essential for crop residue management, but uncoordinated burns between neighboring farms create:
 - **Dangerous PM2.5 levels** exceeding EPA limits (35 µg/m³)
@@ -18,10 +18,10 @@ Agricultural burning is essential for crop residue management, but uncoordinated
 
 BURNWISE coordinates burns across multiple farms to ensure safe air quality while maximizing farming efficiency.
 
-## ✨ Key Features
+## Key Features
 
-### 🤖 REAL Autonomous Multi-Agent System (OpenAI Agents SDK)
-**Implementation Status**: Phase 2 of 3 (Agents SDK installed, building agents)
+### REAL Autonomous Multi-Agent System (OpenAI Agents SDK)
+**Implementation Status**: Phase 5 COMPLETE - Revolutionary Spatial Interface (Aug 18, 2025)
 
 1. **BurnRequestAgent** - Natural language → structured JSON using GPT-5-mini (nano incompatible with JSON)
 2. **WeatherAnalyst** - Autonomous SAFE/UNSAFE/MARGINAL decisions using GPT-5-nano
@@ -33,27 +33,38 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 
 **Cost Optimized**: Uses GPT-5-nano ($0.05/1M) for text-only agents, GPT-5-mini ($0.25/1M) for JSON tasks (nano incompatible). Total API cost: ~$5-8 for complete testing.
 
-### 💬 Natural Language Interface (NEW)
+### Revolutionary Spatial Interface (UNCONVENTIONAL)
+**MAP-AS-APPLICATION**: No traditional pages or navigation - the map IS the entire interface
+- **Floating AI Assistant** - Draggable chat bubble like Facebook Messenger
+- **4-Icon Dock** - Replaced 8 tabs with minimalist bottom dock (Map, AI, Burns, Settings)
+- **Timeline Scrubber** - Scrub through past/present/future burns like video editing
+- **Spatial Interactions** - Click farms directly, drag to create burn zones
+- **3D Perspective** - 45° pitch with terrain exaggeration and atmospheric fog
+- **Glass Morphism** - Semi-transparent floating panels with backdrop blur
+- **Spring Physics** - Smooth draggable components using Framer Motion
+- **Bloomberg Terminal meets Google Earth** - Professional yet intuitive
+
+### Natural Language Interface
 - **Conversational UI** - Chat with agents instead of filling forms
 - **Context Awareness** - Agents remember your farm details and preferences
 - **One Question at a Time** - No overwhelming 18-field forms
 - **Smart Suggestions** - "Tomorrow has high winds, but Thursday looks perfect"
 
-### 🗺️ Interactive Features
+### Interactive Features
 - **Real-time Map Visualization** - Mapbox integration showing farms and smoke plumes
 - **Conflict Detection** - Automatic identification of overlapping smoke zones
 - **Schedule Optimization** - AI-powered rescheduling to eliminate conflicts
 - **Weather Integration** - Live weather data affecting burn decisions
 - **Alert Management** - Automated notifications via SMS (Twilio)
 
-### 🚀 TiDB Vector Capabilities
+### TiDB Vector Capabilities
 - **Weather Pattern Vectors** (128-dimensional) - Historical pattern matching
 - **Smoke Plume Vectors** (64-dimensional) - Dispersion predictions
 - **Burn History Vectors** (32-dimensional) - Success rate analysis
 - **Spatial Queries** - Geographic proximity calculations
 - **Vector Similarity Search** - Finding similar weather conditions
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### AI & Agents (REAL Implementation - August 2025)
 - **OpenAI Agents SDK** (`@openai/agents` v0.0.17) - INSTALLED AND WORKING
@@ -73,19 +84,22 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 - **Winston** for logging
 
 ### Frontend
-- **React 18** with React Router
+- **React 18** with spatial interface (no traditional routing)
+- **Mapbox GL JS** - 3D terrain, atmospheric fog, satellite view
+- **Framer Motion** - Draggable components, spring animations
 - **OpenAI Agents SDK** for conversational UI
-- **Mapbox GL** for interactive maps
+- **cmdk** - Command palette (installed but rejected by user)
+- **AnimatedFlameLogo** - Custom logo component (NO EMOJIS)
+- **Glass Morphism** - Modern translucent design
 - **Recharts** for data visualization
 - **Turf.js** for geospatial calculations
-- **Zod** for schema validation
 
 ### Algorithms
 - **Gaussian Plume Model** for smoke dispersion
 - **Simulated Annealing** for schedule optimization
 - **Vector Embeddings** for pattern matching
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Node.js 16+ and npm
 - TiDB Serverless account (free tier works)
@@ -95,7 +109,7 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
   - Mapbox token (required)
   - Twilio credentials (optional, for SMS)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone the repository
 ```bash

@@ -11,8 +11,10 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 
 ### Implementation Status
 **Phase 1 COMPLETE**: OpenAI Agents SDK installed (`@openai/agents` in package.json)
-**Phase 2 IN PROGRESS**: Building actual agents with handoffs and autonomy
-**Phase 3 PLANNED**: Chat interface, human-in-the-loop, proactive monitoring
+**Phase 2 COMPLETE**: Building actual agents with handoffs and autonomy
+**Phase 3 COMPLETE**: Chat interface, human-in-the-loop, proactive monitoring
+**Phase 4 COMPLETE**: TiDB Vector Embeddings & Human-in-the-Loop Safety
+**Phase 5 COMPLETE**: Revolutionary Spatial Interface - Map IS the Application (Aug 18, 2025)
 
 ### Autonomous Agent System (OpenAI Agents SDK)
 **Backend Agent System** (`backend/agents-sdk/`):
@@ -30,10 +32,14 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 - `optimizer.js`: Simulated annealing wrapped as tool
 - `alerts.js`: Twilio SMS wrapped as tool
 
-**Frontend Chat Interface** (`frontend/src/components/`):
-- `AgentChat.js`: Conversational UI with agent visualization (IN PROGRESS)
-- `HandoffDiagram.js`: Visual agent delegation flow
-- `ApprovalModal.js`: Human-in-the-loop for safety decisions
+**Frontend Spatial Interface** (`frontend/src/components/`):
+- `SpatialInterface.js`: Revolutionary map-as-application main component (Bloomberg Terminal meets Google Earth)
+- `FloatingAI.js`: Draggable AI assistant bubble with glass morphism
+- `DockNavigation.js`: Minimalist 4-icon bottom dock (replaced 8 tabs)
+- `TimelineScrubber.js`: Temporal navigation for past/present/future burns
+- `AgentChat.js`: Conversational UI with agent visualization (NO EMOJIS)
+- `HandoffDiagram.js`: Visual agent delegation flow (NO EMOJIS)
+- `ApprovalModal.js`: Human-in-the-loop for safety decisions (NO EMOJIS)
 
 **Key Features**:
 - **Agent Handoffs**: Real delegation using OpenAI SDK's `Handoff` class
@@ -42,13 +48,13 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 - **Proactive**: Autonomous monitoring without triggers
 - **Cost Optimized**: GPT-5-nano for most, GPT-5-mini only for complex reasoning
 
-**Stack**: TiDB+circuit breaker (`db/connection.js`), React Router+Mapbox (`Map.js`), Socket.io, OpenAI Agents SDK, GPT-5-mini/nano | **API**: `/api/{burn-requests,weather,schedule,alerts,farms,analytics,agents}`
+**Stack**: TiDB+circuit breaker (`db/connection.js`), Mapbox GL JS (3D terrain+fog), Framer Motion (draggable components), Socket.io, OpenAI Agents SDK, GPT-5-mini/nano | **API**: `/api/{burn-requests,weather,schedule,alerts,farms,analytics,agents}`
 **Setup**: TiDB creds in `backend/.env`, OpenWeatherMap key (`OPENWEATHERMAP_API_KEY`), Mapbox token in `frontend/.env` (`REACT_APP_MAPBOX_TOKEN`), OpenAI key (`OPENAI_API_KEY`) REQUIRED
 
 ## Technical Specs
 **Algorithms**: Gaussian plume (`predictor.js:predictSmokeDispersion()`), simulated annealing (`optimizer.js:simulatedAnnealing()`)
 **Vectors**: Weather 128-dim (text-embedding-3-large), smoke 64-dim, burns 32-dim | **Reliability**: Circuit breaker (5 fail), rate limit (100/15min), pool (max 10)
-**Testing**: Unit (`backend/tests/agents/`), Integration (`five-agent-workflow.test.js`), E2E (Playwright) | **UI**: Fire theme, glass morphism, `FullScreenStartup.js`
+**Testing**: Unit (`backend/tests/agents/`), Integration (`five-agent-workflow.test.js`), E2E (Playwright) | **UI**: Spatial map-centric interface, glass morphism, NO TRADITIONAL NAVIGATION, draggable floating panels
 
 ## Cost Optimization (CRITICAL FOR TESTING)
 **GPT-5 Pricing** (per 1M tokens):
@@ -78,6 +84,16 @@ GPT-5-nano is FUNDAMENTALLY INCOMPATIBLE with structured JSON tasks:
 - ScheduleOptimizer: 1500 max tokens (nano) - optimization logic, text only
 - ProactiveMonitor: 1000 max tokens (nano) - monitoring decisions, text only
 
+## Revolutionary UI Design (SPATIAL INTERFACE - Aug 18, 2025)
+**MAP-AS-APPLICATION**: No traditional pages - the map IS the entire interface
+**SPATIAL INTERACTIONS**: Click farms directly, drag to create burn zones, hover for real-time stats
+**FLOATING PANELS**: Draggable AI assistant, farm info cards with spring physics (Framer Motion)
+**DOCK NAVIGATION**: 4 essential icons at bottom (replaced 8 tabs) - Map Controls, AI Assistant, Active Burns, Settings
+**TIMELINE SCRUBBER**: Scrub through past/present/future burns like video editing
+**3D PERSPECTIVE**: 45° pitch, terrain exaggeration, atmospheric fog for immersive experience
+**NO COMMAND PALETTE**: User rejected cmdk - keep it spatial and visual
+**UNCONVENTIONAL**: Like Bloomberg Terminal meets Google Earth - farmers think spatially about land
+
 ## Development Standards
 
 ### AI/ML Verification (CRITICAL FOR HACKATHON)
@@ -94,7 +110,7 @@ GPT-5-nano is FUNDAMENTALLY INCOMPATIBLE with structured JSON tasks:
 
 ### Code Quality
 **NEVER**: Use profanity/offensive language | Create redundant files | Claim code works without running
-**ALWAYS**: Scan for CLAUDE.md violations | Update/rename existing files | Update `.claude/` context when structure changes | Use descriptive naming | DO NOT USE EMOJIS |
+**ALWAYS**: Scan for CLAUDE.md violations | Update/rename existing files | Update `.claude/` context when structure changes | Use descriptive naming | NO EMOJIS ANYWHERE IN FRONTEND (use AnimatedFlameLogo component instead)
 
 ### Git Standards
 Commit: early/often, one logical change | Message: `<type>(<scope>): <subject>\n\n<body-what&why>` | Never commit: generated files, secrets, .env*, CLAUDE.md, agent configs | PRs need: description, screenshots/gifs for UI, test evidence
