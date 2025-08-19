@@ -388,6 +388,7 @@ const SpatialInterface = () => {
       <FloatingAI 
         isOpen={activePanel === 'ai'} 
         onClose={() => setActivePanel(null)}
+        onOpen={() => setActivePanel('ai')}
       />
       
       {/* Bottom Dock Navigation */}

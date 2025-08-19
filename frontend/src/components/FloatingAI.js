@@ -12,7 +12,7 @@ import io from 'socket.io-client';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './FloatingAI.css';
 
-const FloatingAI = ({ isOpen, onClose }) => {
+const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -128,6 +128,7 @@ const FloatingAI = ({ isOpen, onClose }) => {
         animate={{ scale: 1 }}
         exit={{ scale: 0 }}
         style={{ x: position.x, y: position.y }}
+        onClick={onOpen}
         onDragEnd={(e, info) => {
           setPosition({ x: info.x, y: info.y });
         }}
