@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-08-18T19:46:47.603973",
+  "total_issues": 2,
+  "critical_issues": [
+    "\u274c DOCK NOT CENTERED! Off by 119.00px (viewport center: 960.0, dock center: 1079)"
+  ],
+  "alignment_issues": [
+    "\u274c TIMELINE NOT CENTERED! Off by 594.00px"
+  ],
+  "spacing_issues": [],
+  "overlap_issues": [],
+  "math_violations": []
+}
