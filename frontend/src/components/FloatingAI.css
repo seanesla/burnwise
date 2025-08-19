@@ -15,7 +15,8 @@
   justify-content: center;
   cursor: move;
   box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
-  z-index: 300;
+  z-index: 150; /* Reduced from 300 to not block other UI */
+  pointer-events: auto;
 }
 
 .bubble-badge {

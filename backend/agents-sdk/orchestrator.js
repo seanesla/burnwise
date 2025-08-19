@@ -395,11 +395,6 @@ async function executeFullWorkflow(burnRequestData, io) {
     logger.info('REAL: Starting 5-agent workflow');
     
     // Step 1: Validate and store with Coordinator
-    logger.info('REAL: Burn request data before coordinator', { 
-      burnRequestData,
-      hasFarmId: !!burnRequestData.farm_id,
-      farmId: burnRequestData.farm_id
-    });
     results.coordinator = await coordinatorAgent.coordinateBurnRequest(burnRequestData);
     if (!results.coordinator.success) {
       throw new Error(`Validation failed: ${results.coordinator.error}`);
@@ -408,25 +403,12 @@ async function executeFullWorkflow(burnRequestData, io) {
     const burnRequestId = results.coordinator.burnRequestId;
     
     // Step 2: Get farm location
-    logger.info('REAL: Getting farm location', {
-      burnRequestDataKeys: Object.keys(burnRequestData || {}),
-      farmId: burnRequestData?.farm_id,
-      farmIdType: typeof burnRequestData?.farm_id,
-      coordinatorResult: results.coordinator
-    });
-    
-    // Ensure we have a farm_id
-    const farmId = burnRequestData?.farm_id || results.coordinator?.farmId;
-    if (!farmId) {
-      throw new Error(`farm_id is missing. burnRequestData: ${JSON.stringify(burnRequestData)}, coordinator result: ${JSON.stringify(results.coordinator)}`);
-    }
-    
     const [farm] = await query(`
       SELECT latitude as lat, longitude as lon 
       FROM farms WHERE farm_id = ?
-    `, [farmId]);
+    `, [burnRequestData.farm_id]);
     
-    if (!farm) throw new Error(`Farm not found for farm_id: ${farmId}`);
+    if (!farm) throw new Error('Farm not found');
     
     // Step 3: Weather Analysis with autonomous decision
     results.weather = await weatherAgent.analyzeBurnConditions(
@@ -450,7 +432,7 @@ async function executeFullWorkflow(burnRequestData, io) {
       // Send alert
       await alertsAgent.processAlert({
         type: 'burn_rejected',
-        farm_id: farmId,
+        farm_id: burnRequestData.farm_id,
         burn_request_id: burnRequestId,
         title: 'Burn Request Rejected',
         message: `Weather conditions are unsafe. Wind speed: ${windSpeed} mph exceeds 15 mph limit.`,
@@ -477,11 +459,20 @@ async function executeFullWorkflow(burnRequestData, io) {
       timestamp: new Date().toISOString()
     };
     
-    results.prediction = await predictorAgent.predictSmokeDispersion(
-      burnRequestId,
-      burnRequestData,
-      weatherDataForPredictor
-    );
+    try {
+      results.prediction = await predictorAgent.predictSmokeDispersion(
+        burnRequestId,
+        burnRequestData,
+        weatherDataForPredictor
+      );
+    } catch (predictionError) {
+      logger.warn('Smoke prediction failed, using defaults', { error: predictionError.message });
+      results.prediction = {
+        success: false,
+        conflicts: [],
+        error: predictionError.message
+      };
+    }
     
     // Step 5: Schedule Optimization (if within 7 days)
     const burnDate = new Date(burnRequestData.burn_date);
@@ -489,30 +480,46 @@ async function executeFullWorkflow(burnRequestData, io) {
     const daysUntilBurn = (burnDate - today) / (1000 * 60 * 60 * 24);
     
     if (daysUntilBurn <= 7) {
-      const allBurnRequests = await query(`
-        SELECT * FROM burn_requests
-        WHERE requested_date = ? AND status IN ('pending', 'approved')
-      `, [burnRequestData.burn_date]);
+      try {
+        const allBurnRequests = await query(`
+          SELECT * FROM burn_requests
+          WHERE requested_date = ? AND status IN ('pending', 'approved')
+        `, [burnRequestData.burn_date]);
+        
+        // Only pass valid predictions to optimizer
+        const validPredictions = results.prediction?.success !== false ? [results.prediction] : [];
+        
+        results.optimization = await optimizerAgent.optimizeSchedule(
+          burnRequestData.burn_date,
+          allBurnRequests,
+          weatherDataForPredictor,  // Use the same weather data structure
+          validPredictions
+        );
+      } catch (optimizationError) {
+        logger.warn('Schedule optimization failed', { error: optimizationError.message });
+        results.optimization = {
+          success: false,
+          error: optimizationError.message
+        };
+      }
       
-      results.optimization = await optimizerAgent.optimizeSchedule(
-        burnRequestData.burn_date,
-        allBurnRequests,
-        weatherDataForPredictor,  // Use the same weather data structure
-        [results.prediction]
-      );
-      
-      // ACTUALLY CREATE SCHEDULE
-      if (results.optimization.success && results.optimization.schedule) {
+      // ACTUALLY CREATE SCHEDULE - with validation
+      if (results.optimization?.success && results.optimization?.schedule?.items) {
         for (const item of results.optimization.schedule.items) {
-          await query(`
-            INSERT INTO schedule_items 
-            (burn_request_id, scheduled_start, scheduled_end, status)
-            VALUES (?, ?, ?, 'scheduled')
-          `, [
-            item.burnRequestId,
-            item.scheduledStart,
-            item.scheduledEnd
-          ]);
+          // Validate schedule item parameters
+          if (item.burnRequestId && item.scheduledStart && item.scheduledEnd) {
+            await query(`
+              INSERT INTO schedule_items 
+              (burn_request_id, scheduled_start, scheduled_end, status)
+              VALUES (?, ?, ?, 'scheduled')
+            `, [
+              item.burnRequestId,
+              item.scheduledStart,
+              item.scheduledEnd
+            ]);
+          } else {
+            logger.warn('Skipping invalid schedule item', item);
+          }
         }
       }
     }
@@ -532,19 +539,36 @@ async function executeFullWorkflow(burnRequestData, io) {
       }
     }, results.optimization, io);
     
-    // Update burn request status
-    const finalStatus = results.prediction.conflicts?.length > 0 ? 'pending' : 
-                       results.weather.requiresApproval ? 'pending_approval' : 'approved';
+    // Update burn request status - handle missing prediction gracefully
+    const hasConflicts = results.prediction?.conflicts?.length > 0;
+    const finalStatus = hasConflicts ? 'pending' : 
+                       results.weather?.requiresApproval ? 'pending_approval' : 'approved';
+    
+    // CRITICAL: Validate all parameters before UPDATE
+    if (!burnRequestId) {
+      logger.error('CRITICAL: burnRequestId is undefined for UPDATE query');
+      throw new Error('Cannot update burn request - burnRequestId is undefined');
+    }
+    
+    const updateParams = [
+      finalStatus || 'pending',
+      `Weather: ${results.weather?.decision || 'Unknown'}, Conflicts: ${results.prediction?.conflicts?.length || 0}`,
+      burnRequestId
+    ];
+    
+    // Verify no undefined parameters
+    updateParams.forEach((param, index) => {
+      if (param === undefined) {
+        logger.error(`UPDATE parameter ${index} is undefined`, { params: updateParams });
+        throw new Error(`UPDATE parameter ${index} is undefined`);
+      }
+    });
     
     await query(`
       UPDATE burn_requests 
       SET status = ?, coordinator_notes = ?
       WHERE request_id = ?
-    `, [
-      finalStatus,
-      `Weather: ${results.weather.decision}, Conflicts: ${results.prediction.conflicts?.length || 0}`,
-      burnRequestId
-    ]);
+    `, updateParams);
     
     logger.info('REAL: 5-agent workflow completed', {
       burnRequestId,

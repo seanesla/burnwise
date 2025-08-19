@@ -238,6 +238,16 @@ const dbConnection = new DatabaseConnection();
 // Vector similarity search using TiDB's native vector functions
 async function vectorSimilaritySearch(tableName, vectorColumn, searchVector, limit = 10, filters = {}) {
   try {
+    // CRITICAL: Validate inputs
+    if (!searchVector || !Array.isArray(searchVector) || searchVector.length === 0) {
+      logger.warn('Invalid search vector provided to vectorSimilaritySearch');
+      return [];
+    }
+    
+    if (!limit || limit < 1) {
+      limit = 10;
+    }
+    
     // Convert array to TiDB vector format
     const vectorString = `[${searchVector.join(',')}]`;
     
@@ -264,7 +274,8 @@ async function vectorSimilaritySearch(tableName, vectorColumn, searchVector, lim
       LIMIT ?
     `;
     
-    params.push(limit);
+    // Ensure limit is a valid integer
+    params.push(parseInt(limit, 10));
     
     const results = await dbConnection.query(sql, params);
     

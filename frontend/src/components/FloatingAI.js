@@ -86,24 +86,75 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         try {
           const parsed = JSON.parse(data.response);
           
-          // Format the burn request response
-          if (parsed.missingInfo && parsed.nextSteps) {
-            const missingList = parsed.missingInfo.map(item => `• ${item}`).join('\n');
-            const nextList = parsed.nextSteps.map(item => `• ${item}`).join('\n');
+          // Format based on agent type
+          if (parsed.delegated_to === 'BurnRequestAgent') {
+            // Format burn request response
+            const burnDate = parsed.parsed?.requestedBurnDate || 'your requested date';
+            const timeWindow = parsed.parsed?.timeWindow 
+              ? `${parsed.parsed.timeWindow.start} - ${parsed.parsed.timeWindow.end}` 
+              : 'morning';
             
-            formattedResponse = `I've processed your burn request for ${parsed.field?.acreage || 'unknown'} acres of ${parsed.cropType || 'crops'} on ${parsed.requestedDate || 'the requested date'}.
-
-**Missing Information:**
-${missingList}
-
-**Next Steps:**
-${nextList}`;
+            let message = `I understand you want to schedule a burn for ${burnDate} during ${timeWindow}.\n\n`;
+            
+            if (parsed.missingFields && parsed.missingFields.length > 0) {
+              message += `**I need the following information:**\n`;
+              message += parsed.missingFields.map(field => `• ${field}`).join('\n');
+              message += '\n\n';
+            }
+            
+            if (parsed.notes && parsed.notes.length > 0) {
+              message += `**Notes:**\n`;
+              message += parsed.notes.map(note => `• ${note}`).join('\n');
+            }
+            
+            formattedResponse = message;
+            
+          } else if (parsed.delegated_to === 'WeatherAnalyst') {
+            // Format weather response
+            const decision = parsed.decision || parsed.weatherDecision || 'UNKNOWN';
+            const temp = parsed.temperature || parsed.temp || 'N/A';
+            const wind = parsed.windSpeed || parsed.wind || 'N/A';
+            
+            formattedResponse = `**Weather Analysis**\n\n`;
+            formattedResponse += `Status: ${decision}\n`;
+            formattedResponse += `Temperature: ${temp}°F\n`;
+            formattedResponse += `Wind Speed: ${wind} mph\n`;
+            
+            if (parsed.reasoning) {
+              formattedResponse += `\nReasoning: ${parsed.reasoning}`;
+            }
+            
+          } else if (parsed.conflictsDetected !== undefined) {
+            // Format conflict resolver response
+            formattedResponse = `**Conflict Analysis**\n\n`;
+            formattedResponse += parsed.conflictsDetected 
+              ? `⚠️ Conflicts detected with nearby farms. Adjusting schedule...`
+              : `✅ No conflicts detected. Your burn window is clear.`;
+              
+          } else if (parsed.scheduled) {
+            // Format schedule optimizer response
+            formattedResponse = `**Schedule Confirmed**\n\n`;
+            formattedResponse += `Your burn has been scheduled.\n`;
+            if (parsed.optimizedTime) {
+              formattedResponse += `Optimal time: ${parsed.optimizedTime}`;
+            }
+            
           } else if (typeof parsed === 'object') {
-            // Generic object formatting
-            formattedResponse = JSON.stringify(parsed, null, 2);
+            // Fallback: try to format any object nicely
+            if (parsed.message) {
+              formattedResponse = parsed.message;
+            } else if (parsed.error) {
+              formattedResponse = `Error: ${parsed.error}`;
+            } else {
+              // Last resort: show key information
+              formattedResponse = 'I processed your request. ';
+              if (parsed.status) formattedResponse += `Status: ${parsed.status}. `;
+              if (parsed.result) formattedResponse += `Result: ${parsed.result}`;
+            }
           }
         } catch (e) {
           // Not JSON, use as-is
+          console.log('Response is not JSON:', data.response);
         }
         
         setMessages(prev => [...prev, {
@@ -134,9 +185,97 @@ ${nextList}`;
     { label: 'View Conflicts', prompt: 'Check for conflicts with other farms' }
   ];
   
-  const handleQuickAction = (prompt) => {
-    setInputMessage(prompt);
-    setTimeout(() => sendMessage(), 100);
+  const handleQuickAction = async (prompt) => {
+    if (isLoading) return;
+    
+    // Add user message immediately
+    const userMessage = {
+      id: Date.now(),
+      type: 'user',
+      content: prompt,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+    setInputMessage(''); // Clear input
+    
+    try {
+      const response = await fetch('http://localhost:5001/api/agents/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: prompt,
+          userId: 'spatial-ui',
+          conversationId: 'floating-ai'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Use the same formatting logic from sendMessage
+        let formattedResponse = data.response;
+        try {
+          const parsed = JSON.parse(data.response);
+          
+          // Format based on agent type (same as sendMessage)
+          if (parsed.delegated_to === 'BurnRequestAgent') {
+            const burnDate = parsed.parsed?.requestedBurnDate || 'your requested date';
+            const timeWindow = parsed.parsed?.timeWindow 
+              ? `${parsed.parsed.timeWindow.start} - ${parsed.parsed.timeWindow.end}` 
+              : 'morning';
+            
+            let message = `I understand you want to schedule a burn for ${burnDate} during ${timeWindow}.\n\n`;
+            
+            if (parsed.missingFields && parsed.missingFields.length > 0) {
+              message += `**I need the following information:**\n`;
+              message += parsed.missingFields.map(field => `• ${field}`).join('\n');
+              message += '\n\n';
+            }
+            
+            if (parsed.notes && parsed.notes.length > 0) {
+              message += `**Notes:**\n`;
+              message += parsed.notes.map(note => `• ${note}`).join('\n');
+            }
+            
+            formattedResponse = message;
+          } else if (parsed.delegated_to === 'WeatherAnalyst') {
+            const decision = parsed.decision || parsed.weatherDecision || 'UNKNOWN';
+            const temp = parsed.temperature || parsed.temp || 'N/A';
+            const wind = parsed.windSpeed || parsed.wind || 'N/A';
+            
+            formattedResponse = `**Weather Analysis**\n\n`;
+            formattedResponse += `Status: ${decision}\n`;
+            formattedResponse += `Temperature: ${temp}°F\n`;
+            formattedResponse += `Wind Speed: ${wind} mph\n`;
+            
+            if (parsed.reasoning) {
+              formattedResponse += `\nReasoning: ${parsed.reasoning}`;
+            }
+          }
+        } catch (e) {
+          // Not JSON, use as-is
+        }
+        
+        setMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: formattedResponse,
+          timestamp: new Date()
+        }]);
+      }
+    } catch (error) {
+      console.error('Failed to send quick action:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   if (!isOpen) {
@@ -147,21 +286,34 @@ ${nextList}`;
         drag
         dragMomentum={false}
         dragElastic={0.1}
+        dragConstraints={{
+          top: 0,
+          left: 0,
+          right: window.innerWidth - 80,
+          bottom: window.innerHeight - 80
+        }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0 }}
-        style={{ x: position.x, y: position.y }}
+        style={{ 
+          x: position.x, 
+          y: position.y,
+          right: 20,
+          bottom: 100
+        }}
         onClick={onOpen}
         onDragEnd={(e, info) => {
           setPosition({ x: info.x, y: info.y });
         }}
       >
-        <AnimatedFlameLogo size={32} animated={true} />
-        {messages.filter(m => m.type === 'ai').length > 0 && (
+        <div className="bubble-content">
+          <AnimatedFlameLogo size={32} animated={true} />
+        </div>
+        {messages.filter(m => m.type === 'ai').length > 1 && (
           <div className="bubble-badge">
-            {messages.filter(m => m.type === 'ai').length}
+            {messages.filter(m => m.type === 'ai').length - 1}
           </div>
         )}
       </motion.div>
@@ -172,11 +324,16 @@ ${nextList}`;
     <motion.div
       ref={constraintsRef}
       className="floating-ai-container"
-      drag="position"
+      drag
       dragControls={dragControls}
       dragMomentum={false}
       dragElastic={0.2}
-      dragConstraints={constraintsRef}
+      dragConstraints={{
+        top: 0,
+        left: 0,
+        right: window.innerWidth - 360,
+        bottom: window.innerHeight - 500
+      }}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ 
         opacity: 1, 

@@ -157,9 +157,11 @@ router.post('/login', loginRateLimiter, async (req, res) => {
       email: user.contact_email 
     });
     
-    // Don't send token in response body (it's in cookies)
+    // Send token in response body for API clients AND set cookies for browser
     res.json({
       success: true,
+      token: accessToken,  // Include token for API clients
+      refreshToken: refreshToken,  // Include refresh token
       user: {
         farmId: user.farm_id,
         name: user.owner_name,

@@ -238,14 +238,6 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
     const startTime = Date.now();
     const requestId = uuidv4();
     
-    // DEBUG: Log exactly what we received
-    logger.agent(this.agentName, 'debug', 'Received burn request data', {
-      requestData,
-      keys: Object.keys(requestData || {}),
-      farmId: requestData?.farm_id,
-      farmIdType: typeof requestData?.farm_id
-    });
-    
     try {
       logger.agent(this.agentName, 'info', 'Processing new burn request', { requestId });
       
@@ -262,19 +254,45 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
       const priorityScore = await this.calculatePriorityScore(validatedData);
       
       // Step 5: Generate burn vector for similarity analysis
-      const burnVector = await this.generateBurnVector(validatedData);
+      let burnVector = null;
+      let similarRequests = [];
       
-      // Step 6: Check for similar historical requests
-      const similarRequests = await this.findSimilarRequests(burnVector);
+      try {
+        burnVector = await this.generateBurnVector(validatedData);
+        
+        // Step 6: Check for similar historical requests (only if we have a valid vector)
+        if (burnVector && Array.isArray(burnVector) && burnVector.length > 0) {
+          similarRequests = await this.findSimilarRequests(burnVector);
+        } else {
+          logger.agent(this.agentName, 'warn', 'Invalid burn vector, skipping similarity search');
+        }
+      } catch (error) {
+        logger.agent(this.agentName, 'warn', 'Failed to generate burn vector or find similar requests', { 
+          error: error.message 
+        });
+        // Continue without vector similarity - not critical for basic functionality
+      }
       
       // Step 7: Store burn request in database
       const burnRequestId = await this.storeBurnRequest({
         ...validatedData,
         priority_score: priorityScore,
-        burn_vector: burnVector,
         request_id: requestId,
         status: 'pending'
       });
+      
+      // Step 7b: Store burn vector separately in burn_embeddings table
+      if (burnVector && burnVector.length > 0) {
+        try {
+          await query(`
+            INSERT INTO burn_embeddings (request_id, embedding_vector, embedding_type)
+            VALUES (?, ?, 'characteristics')
+          `, [burnRequestId, JSON.stringify(burnVector)]);
+          logger.agent(this.agentName, 'debug', 'Burn vector stored in embeddings table');
+        } catch (error) {
+          logger.agent(this.agentName, 'warn', 'Failed to store burn vector', { error: error.message });
+        }
+      }
       
       // Step 8: Log coordination completion
       const duration = Date.now() - startTime;
@@ -528,14 +546,15 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
 
   async findSimilarRequests(burnVector) {
     try {
+      // Search in burn_embeddings table which has the embedding_vector column
       const similarRequests = await vectorSimilaritySearch(
-        'burn_requests',
-        'burn_vector',
+        'burn_embeddings',
+        'embedding_vector',
         burnVector,
         5
       );
       
-      logger.vector('similarity_search', 'burn_vector', 32, {
+      logger.vector('similarity_search', 'embedding_vector', 32, {
         queryVector: burnVector.slice(0, 5),
         resultsFound: similarRequests.length
       });
@@ -550,6 +569,15 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
 
   async storeBurnRequest(requestData) {
     try {
+      // CRITICAL FIX: Ensure ALL parameters are defined before SQL
+      logger.agent(this.agentName, 'debug', 'Storing burn request', {
+        farm_id: requestData.farm_id,
+        field_name: requestData.field_name,
+        acres: requestData.acres,
+        crop_type: requestData.crop_type,
+        burn_date: requestData.burn_date
+      });
+      
       // Format date properly for MySQL - ensure we have a date
       const burnDate = requestData.burn_date || requestData.requested_date || new Date();
       const formattedDate = burnDate instanceof Date ? 
@@ -593,7 +621,7 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
       const insertData = {
         farm_id: requestData.farm_id,
         field_id: fieldId,
-        acreage: requestData.acres || requestData.acreage,
+        acreage: requestData.acres || requestData.acreage || null,
         crop_type: requestData.crop_type,
         requested_date: formattedDate,
         requested_window_start: `${formattedDate} ${requestData.time_window_start || requestData.requested_window_start || '08:00'}:00`,
@@ -602,9 +630,30 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
         status: requestData.status || 'pending'
       };
       
-      logger.agent(this.agentName, 'debug', 'Storing burn request with data', insertData);
+      // CRITICAL: Check for undefined values and provide defaults
+      const validatedData = {
+        farm_id: insertData.farm_id,
+        field_id: insertData.field_id,
+        acreage: insertData.acreage !== undefined ? insertData.acreage : null,
+        crop_type: insertData.crop_type,
+        requested_date: insertData.requested_date,
+        requested_window_start: insertData.requested_window_start,
+        requested_window_end: insertData.requested_window_end,
+        priority_score: insertData.priority_score,
+        status: insertData.status
+      };
       
-      // Use proper parameterized query
+      // Verify NO undefined values
+      for (const [key, value] of Object.entries(validatedData)) {
+        if (value === undefined) {
+          logger.agent(this.agentName, 'error', `CRITICAL: ${key} is undefined in SQL parameters`);
+          throw new ValidationError(`${key} is required but undefined`, key);
+        }
+      }
+      
+      logger.agent(this.agentName, 'debug', 'SQL parameters validated', validatedData);
+      
+      // Use validated data for SQL query - NO UNDEFINED ALLOWED
       const result = await query(`
         INSERT INTO burn_requests (
           farm_id, field_id, acreage, crop_type,
@@ -612,15 +661,15 @@ MANDATORY: You MUST end your response with "Sources: [specific standards, EPA do
           status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        insertData.farm_id,
-        insertData.field_id,
-        insertData.acreage,
-        insertData.crop_type,
-        insertData.requested_date,
-        insertData.requested_window_start,
-        insertData.requested_window_end,
-        insertData.priority_score,
-        insertData.status
+        validatedData.farm_id,
+        validatedData.field_id,
+        validatedData.acreage,
+        validatedData.crop_type,
+        validatedData.requested_date,
+        validatedData.requested_window_start,
+        validatedData.requested_window_end,
+        validatedData.priority_score,
+        validatedData.status
       ]);
       
       const burnRequestId = result.insertId;

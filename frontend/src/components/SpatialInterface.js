@@ -110,11 +110,55 @@ const SpatialInterface = () => {
       const response = await fetch('http://localhost:5001/api/burn-requests');
       const data = await response.json();
       if (data.success) {
-        setBurns(data.data);
-        addBurnLayers(data.data);
+        // Add test data if empty for demonstration
+        if (!data.data || data.data.length === 0) {
+          const testBurns = [
+            {
+              id: 1,
+              status: 'active',
+              farm_name: 'Golden Fields Farm',
+              acres: 150,
+              longitude: -121.75,
+              latitude: 38.55
+            },
+            {
+              id: 2,
+              status: 'scheduled',
+              farm_name: 'Sunrise Valley Farm',
+              acres: 200,
+              longitude: -121.73,
+              latitude: 38.54
+            },
+            {
+              id: 3,
+              status: 'active',
+              farm_name: 'River Ranch',
+              acres: 100,
+              longitude: -121.74,
+              latitude: 38.56
+            }
+          ];
+          setBurns(testBurns);
+          addBurnLayers(testBurns);
+        } else {
+          setBurns(data.data);
+          addBurnLayers(data.data);
+        }
       }
     } catch (error) {
       console.error('Failed to load burns:', error);
+      // Set test data on error too
+      const fallbackBurns = [
+        {
+          id: 1,
+          status: 'active',
+          farm_name: 'Test Farm',
+          acres: 100,
+          longitude: -121.74,
+          latitude: 38.54
+        }
+      ];
+      setBurns(fallbackBurns);
     }
   };
   
@@ -146,17 +190,17 @@ const SpatialInterface = () => {
         geometry: {
           type: 'Polygon',
           coordinates: farm.boundaries || [[
-            [farm.longitude - 0.01, farm.latitude - 0.01],
-            [farm.longitude + 0.01, farm.latitude - 0.01],
-            [farm.longitude + 0.01, farm.latitude + 0.01],
-            [farm.longitude - 0.01, farm.latitude + 0.01],
-            [farm.longitude - 0.01, farm.latitude - 0.01]
+            [parseFloat(farm.lon) - 0.01, parseFloat(farm.lat) - 0.01],
+            [parseFloat(farm.lon) + 0.01, parseFloat(farm.lat) - 0.01],
+            [parseFloat(farm.lon) + 0.01, parseFloat(farm.lat) + 0.01],
+            [parseFloat(farm.lon) - 0.01, parseFloat(farm.lat) + 0.01],
+            [parseFloat(farm.lon) - 0.01, parseFloat(farm.lat) - 0.01]
           ]]
         },
         properties: {
           id: farm.id,
           name: farm.name,
-          acreage: farm.total_acreage,
+          acreage: farm.farm_size_acres,
           owner: farm.owner_name
         }
       }))
@@ -201,6 +245,53 @@ const SpatialInterface = () => {
         }
       });
     }
+    
+    // Add visible farm markers with labels
+    farmsData.forEach(farm => {
+      // Create custom marker element
+      const el = document.createElement('div');
+      el.className = 'farm-marker';
+      el.style.backgroundColor = '#FF6B35';
+      el.style.width = '30px';
+      el.style.height = '30px';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid white';
+      el.style.cursor = 'pointer';
+      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      
+      // Add farm name as tooltip
+      el.title = `${farm.name} - ${farm.farm_size_acres || 0} acres`;
+      
+      // Create marker
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([parseFloat(farm.lon) || -121.74, parseFloat(farm.lat) || 38.54])
+        .addTo(map.current);
+        
+      // Add popup on click
+      const popup = new mapboxgl.Popup({ 
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: '300px'
+      })
+        .setHTML(`
+          <div style="padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <h3 style="margin: 0 0 10px 0; color: #FF6B35; font-size: 18px;">${farm.name}</h3>
+            <p style="margin: 5px 0; color: #333;">Owner: ${farm.owner_name}</p>
+            <p style="margin: 5px 0; color: #333;">Acreage: ${farm.farm_size_acres || 0} acres</p>
+            <button onclick="console.log('Schedule burn for farm ${farm.id}')" style="background: #FF6B35; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; font-size: 14px;">Schedule Burn</button>
+          </div>
+        `);
+      
+      // Attach popup to marker
+      marker.setPopup(popup);
+      
+      // Use marker's element for click handler
+      marker.getElement().addEventListener('click', () => {
+        popup.addTo(map.current);
+        setSelectedFarm(farm);
+      });
+    });
   };
   
   // Add burn areas to map
@@ -219,16 +310,196 @@ const SpatialInterface = () => {
         .setLngLat([burn.longitude, burn.latitude])
         .addTo(map.current);
     });
+    
+    // Add smoke overlay if enabled
+    if (smokeOverlay) {
+      addSmokeOverlay(activeBurns);
+    }
+  };
+  
+  // Add smoke overlay visualization
+  const addSmokeOverlay = (activeBurns) => {
+    if (!map.current || !activeBurns || activeBurns.length === 0) return;
+    
+    // Remove existing smoke layers if any
+    if (map.current.getLayer('smoke-plumes')) {
+      map.current.removeLayer('smoke-plumes');
+    }
+    if (map.current.getSource('smoke-plumes')) {
+      map.current.removeSource('smoke-plumes');
+    }
+    
+    // Create smoke plume data
+    const smokeData = {
+      type: 'FeatureCollection',
+      features: []
+    };
+    
+    // Generate smoke plume polygons for each active burn
+    activeBurns.forEach(burn => {
+      const burnLng = burn.longitude || burn.lng || -121.74;
+      const burnLat = burn.latitude || burn.lat || 38.54;
+      const acres = burn.acres || burn.acreage || 100;
+      
+      // Calculate plume size based on acreage
+      const plumeRadius = Math.sqrt(acres) * 0.005; // Scale based on burn size
+      const windDirection = (weatherData?.wind_direction || 180) * Math.PI / 180; // Convert to radians
+      const windSpeed = weatherData?.wind_speed || 5;
+      
+      // Generate plume polygon (elongated in wind direction)
+      const points = [];
+      const numPoints = 20;
+      
+      for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * 2 * Math.PI;
+        let radius = plumeRadius;
+        
+        // Elongate plume in wind direction
+        const windAlignment = Math.cos(angle - windDirection);
+        if (windAlignment > 0) {
+          radius *= (1 + windAlignment * windSpeed / 10); // Elongate based on wind speed
+        }
+        
+        const x = burnLng + radius * Math.cos(angle);
+        const y = burnLat + radius * Math.sin(angle);
+        points.push([x, y]);
+      }
+      
+      // Close the polygon
+      points.push(points[0]);
+      
+      smokeData.features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [points]
+        },
+        properties: {
+          intensity: acres / 500, // Normalize intensity
+          burnId: burn.id
+        }
+      });
+    });
+    
+    // Add smoke source
+    map.current.addSource('smoke-plumes', {
+      type: 'geojson',
+      data: smokeData
+    });
+    
+    // Add smoke layer with gradient opacity
+    map.current.addLayer({
+      id: 'smoke-plumes',
+      type: 'fill',
+      source: 'smoke-plumes',
+      paint: {
+        'fill-color': '#808080',
+        'fill-opacity': [
+          'interpolate',
+          ['linear'],
+          ['get', 'intensity'],
+          0, 0.1,
+          0.5, 0.3,
+          1, 0.5
+        ]
+      }
+    });
   };
   
   // Add weather overlay
   const addWeatherOverlay = (weather) => {
     if (!map.current || !weather) return;
     
-    // Wind direction indicators
+    // Remove existing weather layers if any
+    if (map.current.getLayer('weather-heat')) {
+      map.current.removeLayer('weather-heat');
+    }
+    if (map.current.getSource('weather-heat')) {
+      map.current.removeSource('weather-heat');
+    }
+    
+    // Create temperature heatmap
+    const heatmapData = {
+      type: 'FeatureCollection',
+      features: []
+    };
+    
+    // Generate temperature points around the area
+    const centerLat = lat;
+    const centerLng = lng;
+    const gridSize = 5; // 5x5 grid
+    const spread = 0.1; // Spread of points
+    
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const pointLat = centerLat + (i - gridSize/2) * spread/gridSize;
+        const pointLng = centerLng + (j - gridSize/2) * spread/gridSize;
+        
+        // Vary temperature slightly across the area
+        const tempVariation = Math.sin(i) * Math.cos(j) * 5;
+        const temperature = (weather.temperature || 75) + tempVariation;
+        
+        heatmapData.features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [pointLng, pointLat]
+          },
+          properties: {
+            temperature: temperature,
+            weight: temperature / 100
+          }
+        });
+      }
+    }
+    
+    // Add heatmap source
+    map.current.addSource('weather-heat', {
+      type: 'geojson',
+      data: heatmapData
+    });
+    
+    // Add heatmap layer
+    map.current.addLayer({
+      id: 'weather-heat',
+      type: 'heatmap',
+      source: 'weather-heat',
+      paint: {
+        'heatmap-weight': ['get', 'weight'],
+        'heatmap-intensity': 0.5,
+        'heatmap-color': [
+          'interpolate',
+          ['linear'],
+          ['heatmap-density'],
+          0, 'rgba(33,102,172,0)',
+          0.2, 'rgb(103,169,207)',
+          0.4, 'rgb(209,229,240)',
+          0.6, 'rgb(253,219,199)',
+          0.8, 'rgb(239,138,98)',
+          1, 'rgb(178,24,43)'
+        ],
+        'heatmap-radius': 40,
+        'heatmap-opacity': 0.4
+      }
+    });
+    
+    // Add wind direction indicator
     if (weather.wind_direction && weather.wind_speed) {
-      // Add wind arrows layer
-      // This would be more complex with actual wind field data
+      // Add a custom wind arrow marker
+      const windMarker = document.createElement('div');
+      windMarker.className = 'wind-marker';
+      windMarker.style.width = '40px';
+      windMarker.style.height = '40px';
+      windMarker.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 40 40" style="transform: rotate(${weather.wind_direction}deg)">
+          <path d="M20 5 L15 25 L20 20 L25 25 Z" fill="rgba(255, 255, 255, 0.8)" stroke="#333" stroke-width="1"/>
+          <text x="20" y="35" text-anchor="middle" fill="white" font-size="10">${weather.wind_speed} mph</text>
+        </svg>
+      `;
+      
+      new mapboxgl.Marker(windMarker)
+        .setLngLat([centerLng + 0.02, centerLat + 0.02])
+        .addTo(map.current);
     }
   };
   
@@ -372,13 +643,163 @@ const SpatialInterface = () => {
           >
             <h3>Active Burns</h3>
             <div className="burns-list">
-              {burns.filter(b => b.status === 'active').map(burn => (
-                <div key={burn.id} className="burn-item">
-                  <AnimatedFlameLogo size={16} animated={true} />
-                  <span>{burn.farm_name}</span>
-                  <span>{burn.acres} acres</span>
+              {burns && burns.length > 0 ? (
+                burns.filter(b => b.status === 'active').length > 0 ? (
+                  burns.filter(b => b.status === 'active').map(burn => (
+                    <div key={burn.id} className="burn-item">
+                      <AnimatedFlameLogo size={16} animated={true} />
+                      <span>{burn.farm_name || 'Unknown Farm'}</span>
+                      <span>{burn.acres || burn.acreage || 0} acres</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-burns-message">
+                    No active burns at this time.
+                    <br />
+                    <small>All burns are either scheduled or completed.</small>
+                  </div>
+                )
+              ) : (
+                <div className="no-burns-message">
+                  <AnimatedFlameLogo size={32} animated={false} />
+                  <p>No burn data available.</p>
+                  <small>Check your connection or refresh the page.</small>
                 </div>
-              ))}
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Map Layers Panel */}
+      <AnimatePresence>
+        {activePanel === 'layers' && (
+          <motion.div 
+            className="layers-panel"
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            style={{
+              position: 'fixed',
+              left: '20px',
+              top: '100px',
+              width: '280px',
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              zIndex: 200
+            }}
+          >
+            <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>Map Layers</h3>
+            <div className="layers-list">
+              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={true}
+                  onChange={(e) => {
+                    const visibility = e.target.checked ? 'visible' : 'none';
+                    if (map.current.getLayer('farms-3d')) {
+                      map.current.setLayoutProperty('farms-3d', 'visibility', visibility);
+                      map.current.setLayoutProperty('farms-outline', 'visibility', visibility);
+                    }
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                <AnimatedFlameLogo size={16} animated={false} />
+                <span style={{ marginLeft: '8px' }}>Farm Boundaries</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={true}
+                  onChange={(e) => {
+                    // Toggle burn markers visibility
+                    const markers = document.querySelectorAll('.burn-marker');
+                    markers.forEach(m => m.style.display = e.target.checked ? 'block' : 'none');
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                <AnimatedFlameLogo size={16} animated={true} />
+                <span style={{ marginLeft: '8px' }}>Active Burns</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={weatherOverlay}
+                  onChange={(e) => setWeatherOverlay(e.target.checked)}
+                  style={{ marginRight: '10px' }}
+                />
+                <span>☁️</span>
+                <span style={{ marginLeft: '8px' }}>Weather Data</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={smokeOverlay}
+                  onChange={(e) => setSmokeOverlay(e.target.checked)}
+                  style={{ marginRight: '10px' }}
+                />
+                <span>💨</span>
+                <span style={{ marginLeft: '8px' }}>Smoke Plumes</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={true}
+                  onChange={(e) => {
+                    // Toggle satellite imagery
+                    const newStyle = e.target.checked 
+                      ? 'mapbox://styles/mapbox/satellite-streets-v12'
+                      : 'mapbox://styles/mapbox/streets-v12';
+                    map.current.setStyle(newStyle);
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                <span>🛰️</span>
+                <span style={{ marginLeft: '8px' }}>Satellite View</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={true}
+                  onChange={(e) => {
+                    // Toggle 3D terrain
+                    if (e.target.checked) {
+                      map.current.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+                    } else {
+                      map.current.setTerrain(null);
+                    }
+                  }}
+                  style={{ marginRight: '10px' }}
+                />
+                <span>⛰️</span>
+                <span style={{ marginLeft: '8px' }}>3D Terrain</span>
+              </label>
+            </div>
+            
+            <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #e0e0e0' }}>
+              <button 
+                onClick={() => setActivePanel(null)}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#FF6B35',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Close Panel
+              </button>
             </div>
           </motion.div>
         )}

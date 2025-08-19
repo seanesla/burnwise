@@ -292,8 +292,10 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
           dragElastic={0}
           dragMomentum={false}
           onDrag={(e, info) => {
+            if (!scrubberRef.current) return;
             const rect = scrubberRef.current.getBoundingClientRect();
-            const percentage = (info.point.x - rect.left) / rect.width;
+            const dragX = info.point.x - rect.left;
+            const percentage = Math.max(0, Math.min(1, dragX / rect.width));
             const totalDuration = endTime - startTime;
             const newTime = new Date(startTime.getTime() + totalDuration * percentage);
             onChange(newTime);

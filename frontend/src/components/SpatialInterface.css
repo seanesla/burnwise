@@ -222,3 +222,24 @@
     opacity: 1;
   }
 }
+
+/* Wind marker */
+.wind-marker {
+  position: absolute;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* No burns message */
+.no-burns-message {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+}
+
+.no-burns-message small {
+  display: block;
+  margin-top: 10px;
+  color: #999;
+  font-size: 12px;
+}
