@@ -269,12 +269,12 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     analytics.alert_system = await query(`
       SELECT 
         COUNT(*) as total_alerts,
-        COUNT(CASE WHEN status = 'sent' THEN 1 END) as sent_alerts,
-        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_alerts,
+        COUNT(CASE WHEN delivery_status = 'sent' THEN 1 END) as sent_alerts,
+        COUNT(CASE WHEN delivery_status = 'failed' THEN 1 END) as failed_alerts,
         COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_alerts,
         AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(sent_at, created_at))) as avg_delivery_time_seconds,
-        COUNT(CASE WHEN type = 'smoke_warning' THEN 1 END) as smoke_warnings,
-        COUNT(CASE WHEN type = 'conflict_detected' THEN 1 END) as conflict_alerts
+        COUNT(CASE WHEN alert_type = 'smoke_warning' THEN 1 END) as smoke_warnings,
+        COUNT(CASE WHEN alert_type = 'conflict_detected' THEN 1 END) as conflict_alerts
       FROM alerts a
       WHERE a.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays]);
@@ -285,7 +285,7 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         COUNT(CASE WHEN weather_pattern_embedding IS NOT NULL THEN 1 END) as weather_vectors,
         (SELECT COUNT(*) FROM burn_smoke_predictions WHERE plume_vector IS NOT NULL 
          AND created_at > DATE_SUB(NOW(), INTERVAL ? DAY)) as smoke_vectors,
-        (SELECT COUNT(*) FROM burn_requests WHERE terrain_vector IS NOT NULL 
+        (SELECT COUNT(*) FROM burn_embeddings WHERE embedding_vector IS NOT NULL 
          AND created_at > DATE_SUB(NOW(), INTERVAL ? DAY)) as burn_vectors
       FROM weather_data
       WHERE timestamp > DATE_SUB(NOW(), INTERVAL ? DAY)
@@ -375,7 +375,7 @@ router.get('/efficiency', asyncHandler(async (req, res) => {
       SELECT 
         COUNT(*) / ? as avg_requests_per_day,
         AVG(TIMESTAMPDIFF(SECOND, br.created_at, br.updated_at)) as avg_processing_time_seconds,
-        COUNT(CASE WHEN sp.id IS NOT NULL THEN 1 END) / COUNT(*) as prediction_completion_rate,
+        COUNT(CASE WHEN sp.prediction_id IS NOT NULL THEN 1 END) / COUNT(*) as prediction_completion_rate,
         COUNT(CASE WHEN si.id IS NOT NULL THEN 1 END) / COUNT(*) as scheduling_completion_rate
       FROM burn_requests br
       LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
@@ -398,7 +398,7 @@ router.get('/efficiency', asyncHandler(async (req, res) => {
       SELECT 
         'predictor_agent' as agent,
         COUNT(*) as total_operations,
-        COUNT(CASE WHEN sp.id IS NULL THEN 1 END) as failed_operations
+        COUNT(CASE WHEN sp.prediction_id IS NULL THEN 1 END) as failed_operations
       FROM burn_requests br
       LEFT JOIN burn_smoke_predictions sp ON br.request_id = sp.request_id
       WHERE br.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
@@ -408,7 +408,7 @@ router.get('/efficiency', asyncHandler(async (req, res) => {
       SELECT 
         'alerts_agent' as agent,
         COUNT(*) as total_operations,
-        COUNT(CASE WHEN a.status = 'failed' THEN 1 END) as failed_operations
+        COUNT(CASE WHEN a.delivery_status = 'failed' THEN 1 END) as failed_operations
       FROM alerts a
       WHERE a.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays, periodDays, periodDays]);
@@ -459,10 +459,10 @@ router.get('/safety', asyncHandler(async (req, res) => {
     const airQualityMetrics = await query(`
       SELECT 
         COUNT(*) as total_predictions,
-        COUNT(CASE WHEN predicted_pm25 > 35 THEN 1 END) as unhealthy_predictions,
-        COUNT(CASE WHEN predicted_pm25 > 150 THEN 1 END) as hazardous_predictions,
-        AVG(predicted_pm25) as avg_predicted_pm25,
-        MAX(predicted_pm25) as max_predicted_pm25,
+        COUNT(CASE WHEN max_concentration_pm25 > 35 THEN 1 END) as unhealthy_predictions,
+        COUNT(CASE WHEN max_concentration_pm25 > 150 THEN 1 END) as hazardous_predictions,
+        AVG(max_concentration_pm25) as avg_predicted_pm25,
+        MAX(max_concentration_pm25) as max_predicted_pm25,
         AVG(confidence_score) as avg_prediction_confidence
       FROM burn_smoke_predictions sp
       WHERE sp.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
@@ -483,12 +483,11 @@ router.get('/safety', asyncHandler(async (req, res) => {
     const weatherSafety = await query(`
       SELECT 
         COUNT(*) as weather_analyses,
-        COUNT(CASE WHEN JSON_EXTRACT(suitability_analysis, '$.overallScore') >= 7 THEN 1 END) as safe_conditions,
-        COUNT(CASE WHEN JSON_EXTRACT(suitability_analysis, '$.overallScore') < 5 THEN 1 END) as unsafe_conditions,
-        AVG(JSON_EXTRACT(suitability_analysis, '$.overallScore')) as avg_safety_score
-      FROM weather_data wd
-      WHERE wd.timestamp > DATE_SUB(NOW(), INTERVAL ? DAY)
-      AND suitability_analysis IS NOT NULL
+        COUNT(CASE WHEN decision = 'SAFE' THEN 1 END) as safe_conditions,
+        COUNT(CASE WHEN decision = 'UNSAFE' THEN 1 END) as unsafe_conditions,
+        AVG(confidence) * 10 as avg_safety_score
+      FROM weather_analyses wa
+      WHERE wa.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays]);
     
     // Emergency response analytics
@@ -496,12 +495,12 @@ router.get('/safety', asyncHandler(async (req, res) => {
       SELECT 
         COUNT(*) as total_emergency_alerts,
         COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_alerts,
-        AVG(TIMESTAMPDIFF(MINUTE, created_at, COALESCE(acknowledged_at, created_at))) as avg_response_time_minutes,
-        COUNT(CASE WHEN type = 'emergency_stop' THEN 1 END) as emergency_stops,
-        COUNT(CASE WHEN type = 'smoke_warning' AND severity = 'critical' THEN 1 END) as critical_smoke_warnings
+        AVG(TIMESTAMPDIFF(MINUTE, created_at, COALESCE(sent_at, created_at))) as avg_response_time_minutes,
+        COUNT(CASE WHEN alert_type = 'emergency_stop' THEN 1 END) as emergency_stops,
+        COUNT(CASE WHEN alert_type = 'smoke_warning' AND severity = 'critical' THEN 1 END) as critical_smoke_warnings
       FROM alerts a
       WHERE a.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
-      AND (a.type LIKE '%emergency%' OR a.severity = 'critical')
+      AND (a.alert_type LIKE '%emergency%' OR a.severity = 'critical')
     `, [periodDays]);
     
     // Calculate safety scores
@@ -563,7 +562,7 @@ router.get('/predictions', asyncHandler(async (req, res) => {
         AVG(confidence_score) as avg_confidence,
         COUNT(CASE WHEN confidence_score >= 0.8 THEN 1 END) as high_confidence_predictions,
         AVG(max_dispersion_radius) as avg_dispersion_radius,
-        COUNT(CASE WHEN predicted_pm25 > 35 THEN 1 END) as air_quality_exceedances
+        COUNT(CASE WHEN max_concentration_pm25 > 35 THEN 1 END) as air_quality_exceedances
       FROM burn_smoke_predictions sp
       WHERE sp.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays]);
@@ -572,12 +571,11 @@ router.get('/predictions', asyncHandler(async (req, res) => {
     const weatherPredictionAccuracy = await query(`
       SELECT 
         COUNT(*) as total_weather_analyses,
-        AVG(JSON_EXTRACT(suitability_analysis, '$.overallScore')) as avg_suitability_score,
-        COUNT(CASE WHEN JSON_EXTRACT(suitability_analysis, '$.overallScore') >= 7 THEN 1 END) as favorable_predictions,
-        COUNT(*) as weather_vectors_generated
-      FROM weather_data wd
-      WHERE wd.timestamp > DATE_SUB(NOW(), INTERVAL ? DAY)
-      AND suitability_analysis IS NOT NULL
+        AVG(CASE WHEN decision = 'SAFE' THEN 10 WHEN decision = 'MARGINAL' THEN 5 ELSE 0 END) as avg_suitability_score,
+        COUNT(CASE WHEN decision IN ('SAFE', 'MARGINAL') THEN 1 END) as favorable_predictions,
+        COUNT(weather_embedding) as weather_vectors_generated
+      FROM weather_analyses wa
+      WHERE wa.created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
     `, [periodDays]);
     
     // Model performance comparison
@@ -796,7 +794,7 @@ async function getCoordinatorMetrics(periodDays) {
     SELECT 
       COUNT(*) as requests_processed,
       AVG(priority_score) as avg_priority_assigned,
-      COUNT(CASE WHEN terrain_vector IS NOT NULL THEN 1 END) as vectors_generated
+      COUNT(CASE WHEN priority_score IS NOT NULL THEN 1 END) as priority_scores_assigned
     FROM burn_requests
     WHERE created_at > DATE_SUB(NOW(), INTERVAL ? DAY)
   `, [periodDays]);
