@@ -193,32 +193,32 @@ router.post('/conflict-check', async (req, res) => {
     logger.info('Conflict check requested', { location, date, radius });
     
     // Query for nearby burns on the same date
+    // Using Haversine formula for distance calculation since TiDB doesn't support ST_Distance_Sphere
     const nearbyBurns = await query(`
       SELECT 
         br.request_id,
         br.farm_id,
         br.acreage,
         br.crop_type,
-        f.name as farm_name,
+        f.farm_name as farm_name,
         f.latitude,
         f.longitude,
-        ST_Distance_Sphere(
-          POINT(?, ?),
-          POINT(f.longitude, f.latitude)
-        ) / 1000 as distance_km
+        (
+          6371 * acos(
+            cos(radians(?)) * cos(radians(f.latitude)) *
+            cos(radians(f.longitude) - radians(?)) +
+            sin(radians(?)) * sin(radians(f.latitude))
+          )
+        ) as distance_km
       FROM burn_requests br
       JOIN farms f ON br.farm_id = f.farm_id
       WHERE br.requested_date = ?
         AND br.status IN ('approved', 'pending')
-        AND ST_Distance_Sphere(
-          POINT(?, ?),
-          POINT(f.longitude, f.latitude)
-        ) / 1000 < ?
+      HAVING distance_km < ?
       ORDER BY distance_km ASC
     `, [
-      location.lng, location.lat,
+      location.lat, location.lng, location.lat,
       date,
-      location.lng, location.lat,
       radius
     ]);
     

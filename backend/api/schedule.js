@@ -508,8 +508,8 @@ router.post('/optimize', asyncHandler(async (req, res) => {
     const smokePredictions = await query(`
       SELECT 
         sp.*
-      FROM smoke_predictions sp
-      WHERE sp.burn_request_id IN (${burnRequests.map(() => '?').join(',')})
+      FROM burn_smoke_predictions sp
+      WHERE sp.request_id IN (${burnRequests.map(() => '?').join(',')})
       ORDER BY sp.created_at DESC
     `, burnRequests.map(br => br.request_id));
     
@@ -1061,8 +1061,8 @@ router.post('/reoptimize/:date', asyncHandler(async (req, res) => {
     // Get current smoke predictions
     const smokePredictions = await query(`
       SELECT sp.*
-      FROM smoke_predictions sp
-      WHERE sp.burn_request_id IN (${burnRequests.map(() => '?').join(',')})
+      FROM burn_smoke_predictions sp
+      WHERE sp.request_id IN (${burnRequests.map(() => '?').join(',')})
       ORDER BY sp.created_at DESC
     `, burnRequests.map(br => br.request_id));
     
