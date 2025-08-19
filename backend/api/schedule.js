@@ -312,7 +312,7 @@ router.get('/:date', asyncHandler(async (req, res) => {
       JOIN farms f ON br.farm_id = f.farm_id
       LEFT JOIN burn_fields bf ON br.field_id = bf.field_id
       WHERE s.date = ?
-      ORDER BY s.created_at DESC, si.time_slot ASC
+      ORDER BY s.created_at DESC, si.scheduled_start ASC
       LIMIT 1
     `;
     

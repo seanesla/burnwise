@@ -413,7 +413,7 @@ const toolFunctions = {
       // Create main schedule entry
       const scheduleResult = await query(`
         INSERT INTO schedules 
-        (schedule_date, optimization_score, total_conflicts, created_at)
+        (date, optimization_score, total_conflicts, created_at)
         VALUES (?, ?, ?, NOW())
       `, [
         params.date,
