@@ -39,11 +39,12 @@ const ApprovalModal = ({
   };
 
   const getSeverityIcon = (severity) => {
+    // Returns CSS class name for severity icon
     switch (severity) {
-      case 'CRITICAL': return '🚨';
-      case 'HIGH': return '⚠️';
-      case 'MARGINAL': return '⚡';
-      default: return 'ℹ️';
+      case 'CRITICAL': return 'icon-critical';
+      case 'HIGH': return 'icon-high';
+      case 'MARGINAL': return 'icon-marginal';
+      default: return 'icon-info';
     }
   };
 
@@ -118,7 +119,7 @@ const ApprovalModal = ({
         {/* Header */}
         <div className="modal-header">
           <div className="severity-indicator" style={{ backgroundColor: getSeverityColor(approvalRequest.severity) }}>
-            <span className="severity-icon">{getSeverityIcon(approvalRequest.severity)}</span>
+            <span className={`severity-icon ${getSeverityIcon(approvalRequest.severity)}`}></span>
             <span className="severity-text">{approvalRequest.severity} APPROVAL REQUIRED</span>
           </div>
           <button className="close-button" onClick={onClose}>×</button>
@@ -247,7 +248,9 @@ const ApprovalModal = ({
                 onClick={() => setDecision('approve')}
                 disabled={isSubmitting}
               >
-                <span className="button-icon">✓</span>
+                <svg className="button-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 Approve Burn
               </button>
               <button
@@ -255,7 +258,10 @@ const ApprovalModal = ({
                 onClick={() => setDecision('reject')}
                 disabled={isSubmitting}
               >
-                <span className="button-icon">✗</span>
+                <svg className="button-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
                 Reject Burn
               </button>
             </div>

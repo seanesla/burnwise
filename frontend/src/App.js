@@ -13,14 +13,8 @@ const Landing = lazy(() => import('./components/Landing'));
 const Login = lazy(() => import('./components/Login'));
 const SignUp = lazy(() => import('./components/SignUp'));
 const Onboarding = lazy(() => import('./components/Onboarding'));
-const SimpleDashboard = lazy(() => import('./components/SimpleDashboard'));
-const Map = lazy(() => import('./components/Map'));
-const Schedule = lazy(() => import('./components/Schedule'));
-const AlertsPanel = lazy(() => import('./components/AlertsPanel'));
-const ImprovedBurnRequestForm = lazy(() => import('./components/ImprovedBurnRequestForm'));
-const Analytics = lazy(() => import('./components/Analytics'));
+const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
-const AgentChat = lazy(() => import('./components/AgentChat'));
 
 // Debug system (disabled for production)
 const DEBUG = false;
@@ -42,9 +36,13 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
   
+  // Check if we're on auth pages or main spatial interface
+  const isAuthPage = ['/', '/login', '/signup', '/onboarding'].includes(location.pathname);
+  
   return (
     <div className="App">
-      <Navigation />
+      {/* No traditional navigation for spatial interface */}
+      {isAuthPage && <Navigation />}
       <div className="app-content">
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
@@ -61,42 +59,23 @@ function AppContent() {
                 </ProtectedRoute>
               } />
               
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={
+              {/* Main Spatial Interface - Replaces all dashboard/map/schedule routes */}
+              <Route path="/spatial" element={
                 <ProtectedRoute>
-                  <SimpleDashboard />
+                  <SpatialInterface />
                 </ProtectedRoute>
               } />
-              <Route path="/map" element={
-                <ProtectedRoute>
-                  <Map />
-                </ProtectedRoute>
-              } />
-              <Route path="/schedule" element={
-                <ProtectedRoute>
-                  <Schedule />
-                </ProtectedRoute>
-              } />
-              <Route path="/alerts" element={
-                <ProtectedRoute>
-                  <AlertsPanel />
-                </ProtectedRoute>
-              } />
-              <Route path="/request" element={
-                <ProtectedRoute>
-                  <ImprovedBurnRequestForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/agent-chat" element={
-                <ProtectedRoute>
-                  <AgentChat />
-                </ProtectedRoute>
-              } />
-              <Route path="/analytics" element={
-                <ProtectedRoute>
-                  <Analytics />
-                </ProtectedRoute>
-              } />
+              
+              {/* Redirect old routes to spatial interface */}
+              <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
+              <Route path="/map" element={<Navigate to="/spatial" replace />} />
+              <Route path="/schedule" element={<Navigate to="/spatial" replace />} />
+              <Route path="/alerts" element={<Navigate to="/spatial" replace />} />
+              <Route path="/request" element={<Navigate to="/spatial" replace />} />
+              <Route path="/agent-chat" element={<Navigate to="/spatial" replace />} />
+              <Route path="/analytics" element={<Navigate to="/spatial" replace />} />
+              
+              {/* Settings still accessible separately */}
               <Route path="/settings" element={
                 <ProtectedRoute>
                   <Settings />

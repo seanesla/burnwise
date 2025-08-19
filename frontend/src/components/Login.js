@@ -33,7 +33,7 @@ const Login = () => {
       if (needsOnboarding) {
         navigate('/onboarding');
       } else {
-        navigate('/dashboard');
+        navigate('/spatial');
       }
     }
   }, [isAuthenticated, needsOnboarding, navigate]);
@@ -126,7 +126,7 @@ const Login = () => {
         if (result.needsOnboarding) {
           navigate('/onboarding');
         } else {
-          navigate('/dashboard');
+          navigate('/spatial');
         }
       } else {
         setLoginError(result.error || 'Login failed. Please try again.');

@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './HandoffDiagram.css';
 
 const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs = [] }) => {
@@ -15,7 +16,6 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
   const agents = {
     'BurnwiseOrchestrator': {
       name: 'Burnwise Orchestrator',
-      icon: '🎯',
       color: '#ff6b35',
       position: { x: 50, y: 20 },
       description: 'Main coordinator - delegates to specialists',
@@ -23,7 +23,6 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
     },
     'BurnRequestAgent': {
       name: 'Burn Request Agent',
-      icon: '📝',
       color: '#4CAF50',
       position: { x: 15, y: 60 },
       description: 'Natural language → structured JSON (GPT-5-mini)',
@@ -31,7 +30,6 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
     },
     'WeatherAnalyst': {
       name: 'Weather Analyst',
-      icon: '🌤️',
       color: '#2196F3',
       position: { x: 35, y: 75 },
       description: 'Autonomous SAFE/UNSAFE/MARGINAL decisions (GPT-5-nano)',
@@ -39,7 +37,6 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
     },
     'ConflictResolver': {
       name: 'Conflict Resolver',
-      icon: '⚖️',
       color: '#FF9800',
       position: { x: 50, y: 85 },
       description: 'Multi-farm negotiation (GPT-5-mini)',
@@ -47,7 +44,6 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
     },
     'ScheduleOptimizer': {
       name: 'Schedule Optimizer',
-      icon: '⏰',
       color: '#9C27B0',
       position: { x: 65, y: 75 },
       description: 'AI-enhanced simulated annealing (GPT-5-nano)',
@@ -55,7 +51,6 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
     },
     'ProactiveMonitor': {
       name: 'Proactive Monitor',
-      icon: '👁️',
       color: '#607D8B',
       position: { x: 85, y: 60 },
       description: '24/7 autonomous monitoring (GPT-5-nano)',
@@ -166,7 +161,9 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
               '--agent-color': agent.color
             }}
           >
-            <div className="agent-icon">{agent.icon}</div>
+            <div className="agent-icon">
+              <AnimatedFlameLogo size={20} animated={false} />
+            </div>
             <div className="agent-name">{agent.name}</div>
             <div className="agent-description">{agent.description}</div>
             
@@ -191,14 +188,14 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
                     className="handoff-from"
                     style={{ color: agents[handoff.from]?.color }}
                   >
-                    {agents[handoff.from]?.icon} {agents[handoff.from]?.name}
+                    <AnimatedFlameLogo size={14} animated={false} /> {agents[handoff.from]?.name}
                   </span>
                   <span className="handoff-arrow">→</span>
                   <span 
                     className="handoff-to"
                     style={{ color: agents[handoff.to]?.color }}
                   >
-                    {agents[handoff.to]?.icon} {agents[handoff.to]?.name}
+                    <AnimatedFlameLogo size={14} animated={false} /> {agents[handoff.to]?.name}
                   </span>
                 </div>
                 <div className="handoff-reason">{handoff.reason}</div>
@@ -221,7 +218,7 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
                 className="capability-icon"
                 style={{ backgroundColor: agent.color }}
               >
-                {agent.icon}
+                <AnimatedFlameLogo size={16} animated={false} />
               </div>
               <div className="capability-info">
                 <div className="capability-name">{agent.name}</div>
@@ -240,7 +237,7 @@ const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs =
             className="status-value"
             style={{ color: agents[activeAgent]?.color }}
           >
-            {agents[activeAgent]?.icon} {agents[activeAgent]?.name}
+            <AnimatedFlameLogo size={16} animated={false} /> {agents[activeAgent]?.name}
           </span>
         </div>
         <div className="status-item">

@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import ApprovalModal from './ApprovalModal';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './AgentChat.css';
 
 const AgentChat = () => {
@@ -24,37 +25,31 @@ const AgentChat = () => {
   const agents = {
     'BurnwiseOrchestrator': {
       name: 'Burnwise Orchestrator',
-      icon: '🎯',
       color: '#ff6b35',
       description: 'Main coordinator - delegates to specialist agents'
     },
     'BurnRequestAgent': {
       name: 'Burn Request Agent',
-      icon: '📝',
       color: '#4CAF50',
       description: 'Processes natural language burn requests'
     },
     'WeatherAnalyst': {
       name: 'Weather Analyst',
-      icon: '🌤️',
       color: '#2196F3',
       description: 'Autonomous SAFE/UNSAFE/MARGINAL decisions'
     },
     'ConflictResolver': {
       name: 'Conflict Resolver',
-      icon: '⚖️',
       color: '#FF9800',
       description: 'Multi-farm negotiation and mediation'
     },
     'ScheduleOptimizer': {
       name: 'Schedule Optimizer',
-      icon: '⏰',
       color: '#9C27B0',
       description: 'AI-enhanced simulated annealing'
     },
     'ProactiveMonitor': {
       name: 'Proactive Monitor',
-      icon: '👁️',
       color: '#607D8B',
       description: '24/7 autonomous monitoring'
     }
@@ -127,7 +122,7 @@ const AgentChat = () => {
       addMessage({
         type: 'approval_request',
         agent: data.agent || 'WeatherAnalyst',
-        content: `⚠️ Human approval required: ${data.description}`,
+        content: `Human approval required: ${data.description}`,
         timestamp: new Date()
       });
     });
@@ -137,7 +132,7 @@ const AgentChat = () => {
       addMessage({
         type: 'approval_result',
         decision: data.decision,
-        content: `✓ Burn ${data.decision === 'approved' ? 'approved' : 'rejected'} by human operator${data.reasoning ? `: ${data.reasoning}` : ''}`,
+        content: `Burn ${data.decision === 'approved' ? 'approved' : 'rejected'} by human operator${data.reasoning ? `: ${data.reasoning}` : ''}`,
         timestamp: new Date()
       });
     });
@@ -271,7 +266,9 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
       case 'user':
         return (
           <div className="message user-message">
-            <div className="message-avatar">👨‍🌾</div>
+            <div className="message-avatar user-avatar">
+              <span className="user-icon">U</span>
+            </div>
             <div className="message-content">
               <div className="message-text">{message.content}</div>
               <div className="message-time">
@@ -286,7 +283,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
         return (
           <div className="message agent-message">
             <div className="message-avatar" style={{ backgroundColor: agent.color }}>
-              {agent.icon}
+              <AnimatedFlameLogo size={20} animated={false} />
             </div>
             <div className="message-content">
               <div className="agent-name">{agent.name}</div>
@@ -325,11 +322,11 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
           <div className="message handoff-message">
             <div className="handoff-indicator">
               <span className="handoff-from" style={{ color: fromAgent.color }}>
-                {fromAgent.icon} {fromAgent.name}
+                <AnimatedFlameLogo size={16} animated={false} /> {fromAgent.name}
               </span>
               <span className="handoff-arrow">→</span>
               <span className="handoff-to" style={{ color: toAgent.color }}>
-                {toAgent.icon} {toAgent.name}
+                <AnimatedFlameLogo size={16} animated={false} /> {toAgent.name}
               </span>
             </div>
             <div className="handoff-reason">{message.reason}</div>
@@ -345,7 +342,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
           <div className="message thinking-message">
             <div className="thinking-indicator">
               <div className="thinking-avatar" style={{ backgroundColor: thinkingAgent.color }}>
-                {thinkingAgent.icon}
+                <AnimatedFlameLogo size={16} animated={true} />
               </div>
               <div className="thinking-content">
                 <div className="thinking-text">{message.content}</div>
@@ -363,7 +360,9 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
       case 'error':
         return (
           <div className="message error-message">
-            <div className="message-avatar">⚠️</div>
+            <div className="message-avatar error-avatar">
+              <span className="error-icon">!</span>
+            </div>
             <div className="message-content">
               <div className="message-text">{message.content}</div>
               <div className="message-time">
@@ -398,7 +397,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
             className="agent-avatar" 
             style={{ backgroundColor: getCurrentAgentInfo().color }}
           >
-            {getCurrentAgentInfo().icon}
+            <AnimatedFlameLogo size={24} animated={false} />
           </div>
           <div className="agent-info">
             <div className="agent-name">{getCurrentAgentInfo().name}</div>
@@ -469,7 +468,14 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
           disabled={!inputMessage.trim() || isLoading}
           className="send-button"
         >
-          {isLoading ? '⏳' : '🔥'}
+          {isLoading ? (
+            <span className="loading-spinner"></span>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          )}
         </button>
       </div>
     </div>
