@@ -197,18 +197,17 @@ class BurnwiseUltimateTest:
     def test_5_agent_workflow(self):
         """Test complete 5-agent workflow with proper burn data"""
         try:
-            # Prepare complete burn request data
+            # Prepare complete burn request data with correct structure matching schema
             burn_data = {
-                "message": "I need to schedule a burn for tomorrow at my wheat field",
-                "conversationId": f"test-workflow-{int(time.time())}",
-                "userId": 1,
-                "burnData": {
+                "burnRequest": {
+                    "farm_id": 1,  # Robert Wilson's Golden Fields farm
+                    "field_name": "North Field",
                     "acres": 150,
                     "crop_type": "wheat",
                     "reason": "Post-harvest residue management",
-                    "requested_date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
-                    "requested_window_start": "08:00",
-                    "requested_window_end": "12:00",
+                    "burn_date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
+                    "time_window_start": "08:00",
+                    "time_window_end": "12:00",
                     "field_boundary": {
                         "type": "Polygon",
                         "coordinates": [[
@@ -218,7 +217,8 @@ class BurnwiseUltimateTest:
                             [-121.74, 38.54],
                             [-121.75, 38.54]
                         ]]
-                    }
+                    },
+                    "contact_method": "sms"
                 }
             }
             
