@@ -294,12 +294,11 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0 }}
+        initial={{ scale: 0, width: 60, height: 60 }}
+        animate={{ scale: 1, width: 60, height: 60 }}
+        exit={{ scale: 0, width: 60, height: 60 }}
         style={{ 
-          x: position.x, 
-          y: position.y,
+          position: 'fixed',
           right: 20,
           bottom: 100
         }}
