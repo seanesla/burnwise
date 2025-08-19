@@ -119,7 +119,7 @@ class PredictorAgent {
     try {
       const historicalData = await query(`
         SELECT 
-          pm.dispersion_radius_km,
+          pm.max_dispersion_radius as dispersion_radius_km,
           pm.confidence_score,
           br.crop_type,
           br.acreage,

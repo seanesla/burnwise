@@ -37,23 +37,25 @@ const OPTIMIZATION_CONFIG = {
 
 // Tools for schedule optimization
 const optimizationTools = [
-  tool({
-    name: 'run_simulated_annealing',
-    description: 'Run simulated annealing optimization with AI-enhanced scoring',
-    parameters: z.object({
-      date: z.string(),
-      burnRequests: z.array(z.any()),
-      constraints: z.object({
-        maxConcurrentBurns: z.number().default(3),
-        minSeparationMiles: z.number().default(5),
-        maxDailyAcres: z.number().default(1000),
-        workingHours: z.object({
-          start: z.string().default('06:00'),
-          end: z.string().default('18:00')
+  tool(
+    {
+      name: 'run_simulated_annealing',
+      description: 'Run simulated annealing optimization with AI-enhanced scoring',
+      parameters: z.object({
+        date: z.string(),
+        burnRequests: z.array(z.any()),
+        constraints: z.object({
+          maxConcurrentBurns: z.number().default(3),
+          minSeparationMiles: z.number().default(5),
+          maxDailyAcres: z.number().default(1000),
+          workingHours: z.object({
+            start: z.string().default('06:00'),
+            end: z.string().default('18:00')
+          })
         })
       })
-    }),
-    execute: async (params) => {
+    },
+    async (params) => {
       logger.info('REAL: Running simulated annealing', {
         date: params.date,
         requests: params.burnRequests.length
@@ -77,21 +79,23 @@ const optimizationTools = [
       
       return result;
     }
-  }),
+  ),
 
-  tool({
-    name: 'evaluate_schedule_quality',
-    description: 'Use AI to evaluate schedule quality and suggest improvements',
-    parameters: z.object({
-      schedule: z.any(),
-      metrics: z.object({
-        totalConflicts: z.number(),
-        utilizationRate: z.number(),
-        fairnessScore: z.number(),
-        safetyScore: z.number()
+  tool(
+    {
+      name: 'evaluate_schedule_quality',
+      description: 'Use AI to evaluate schedule quality and suggest improvements',
+      parameters: z.object({
+        schedule: z.any(),
+        metrics: z.object({
+          totalConflicts: z.number(),
+          utilizationRate: z.number(),
+          fairnessScore: z.number(),
+          safetyScore: z.number()
+        })
       })
-    }),
-    execute: async (params) => {
+    },
+    async (params) => {
       logger.info('REAL: Evaluating schedule quality with AI');
       
       // Use GPT-5-nano to analyze schedule quality
@@ -125,25 +129,27 @@ const optimizationTools = [
       
       return JSON.parse(completion.choices[0].message.content);
     }
-  }),
+  ),
 
-  tool({
-    name: 'optimize_time_slots',
-    description: 'Optimize time slot assignments to minimize smoke overlap',
-    parameters: z.object({
-      burnRequests: z.array(z.object({
-        requestId: z.number(),
-        farmId: z.number(),
-        acres: z.number(),
-        lat: z.number(),
-        lng: z.number(),
-        requestedStart: z.string(),
-        requestedEnd: z.string()
-      })),
-      windDirection: z.number(),
-      windSpeed: z.number()
-    }),
-    execute: async (params) => {
+  tool(
+    {
+      name: 'optimize_time_slots',
+      description: 'Optimize time slot assignments to minimize smoke overlap',
+      parameters: z.object({
+        burnRequests: z.array(z.object({
+          requestId: z.number(),
+          farmId: z.number(),
+          acres: z.number(),
+          lat: z.number(),
+          lng: z.number(),
+          requestedStart: z.string(),
+          requestedEnd: z.string()
+        })),
+        windDirection: z.number(),
+        windSpeed: z.number()
+      })
+    },
+    async (params) => {
       logger.info('REAL: Optimizing time slots');
       
       const optimizedSlots = [];
@@ -193,23 +199,25 @@ const optimizationTools = [
       
       return optimizedSlots;
     }
-  }),
+  ),
 
-  tool({
-    name: 'create_schedule_in_database',
-    description: 'Create actual schedule entries in database',
-    parameters: z.object({
-      date: z.string(),
-      optimizedSchedule: z.array(z.object({
-        requestId: z.number(),
-        assignedStart: z.string(),
-        assignedEnd: z.string(),
-        priority: z.number(),
-        conflictScore: z.number()
-      })),
-      overallScore: z.number()
-    }),
-    execute: async (params) => {
+  tool(
+    {
+      name: 'create_schedule_in_database',
+      description: 'Create actual schedule entries in database',
+      parameters: z.object({
+        date: z.string(),
+        optimizedSchedule: z.array(z.object({
+          requestId: z.number(),
+          assignedStart: z.string(),
+          assignedEnd: z.string(),
+          priority: z.number(),
+          conflictScore: z.number()
+        })),
+        overallScore: z.number()
+      })
+    },
+    async (params) => {
       logger.info('REAL: Creating schedule in database', {
         date: params.date,
         items: params.optimizedSchedule.length
@@ -279,8 +287,193 @@ const optimizationTools = [
         throw error;
       }
     }
-  })
+  )
 ];
+
+// Create wrapper functions for direct tool execution
+const toolFunctions = {
+  runSimulatedAnnealing: optimizationTools[0]._execute || (async (params) => {
+    logger.info('REAL: Running simulated annealing', {
+      date: params.date,
+      requests: params.burnRequests.length
+    });
+    
+    // Get weather data for the date
+    const weatherData = await query(`
+      SELECT * FROM weather_data 
+      WHERE DATE(timestamp) = ? 
+      ORDER BY timestamp DESC 
+      LIMIT 1
+    `, [params.date]);
+    
+    // Run actual simulated annealing from existing optimizer
+    const result = await optimizerAgent.optimizeSchedule(
+      params.date,
+      params.burnRequests,
+      weatherData[0] || {},
+      [] // Predictions will be generated during optimization
+    );
+    
+    return result;
+  }),
+  
+  evaluateScheduleQuality: optimizationTools[1]._execute || (async (params) => {
+    logger.info('REAL: Evaluating schedule quality with AI');
+    
+    // Use GPT-5-nano to analyze schedule quality
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5-nano',
+      messages: [
+        {
+          role: 'system',
+          content: `Evaluate agricultural burn schedule quality.
+                   Consider: safety, efficiency, fairness, minimal disruption.
+                   Output JSON with:
+                   {
+                     "overallScore": 0-100,
+                     "strengths": ["list of strengths"],
+                     "weaknesses": ["list of weaknesses"],
+                     "improvements": ["specific actionable improvements"],
+                     "riskFactors": ["potential risks to monitor"]
+                   }`
+        },
+        {
+          role: 'user',
+          content: JSON.stringify({
+            schedule: params.schedule,
+            metrics: params.metrics
+          })
+        }
+      ],
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 400,
+    });
+    
+    return JSON.parse(completion.choices[0].message.content);
+  }),
+  
+  optimizeTimeSlots: optimizationTools[2]._execute || (async (params) => {
+    logger.info('REAL: Optimizing time slots');
+    
+    const optimizedSlots = [];
+    const timeSlots = generateTimeSlots('06:00', '18:00', 120); // 2-hour slots
+    
+    // Sort burns by priority and size
+    const sortedBurns = params.burnRequests.sort((a, b) => 
+      b.acres - a.acres // Larger burns first
+    );
+    
+    // Assign to time slots minimizing overlap
+    const slotAssignments = new Map();
+    
+    for (const burn of sortedBurns) {
+      let bestSlot = null;
+      let minConflict = Infinity;
+      
+      for (const slot of timeSlots) {
+        const conflictScore = calculateSlotConflict(
+          burn,
+          slot,
+          slotAssignments.get(slot.key) || [],
+          params.windDirection,
+          params.windSpeed
+        );
+        
+        if (conflictScore < minConflict) {
+          minConflict = conflictScore;
+          bestSlot = slot;
+        }
+      }
+      
+      if (bestSlot) {
+        if (!slotAssignments.has(bestSlot.key)) {
+          slotAssignments.set(bestSlot.key, []);
+        }
+        slotAssignments.get(bestSlot.key).push(burn);
+        
+        optimizedSlots.push({
+          ...burn,
+          assignedStart: bestSlot.start,
+          assignedEnd: bestSlot.end,
+          conflictScore: minConflict
+        });
+      }
+    }
+    
+    return optimizedSlots;
+  }),
+  
+  createScheduleInDatabase: optimizationTools[3]._execute || (async (params) => {
+    logger.info('REAL: Creating schedule in database', {
+      date: params.date,
+      items: params.optimizedSchedule.length
+    });
+    
+    try {
+      // Create main schedule entry
+      const scheduleResult = await query(`
+        INSERT INTO schedules 
+        (schedule_date, optimization_score, total_conflicts, created_at)
+        VALUES (?, ?, ?, NOW())
+      `, [
+        params.date,
+        params.overallScore,
+        params.optimizedSchedule.filter(s => s.conflictScore > 0).length
+      ]);
+      
+      const scheduleId = scheduleResult.insertId;
+      
+      // Create schedule items
+      for (const item of params.optimizedSchedule) {
+        await query(`
+          INSERT INTO schedule_items
+          (schedule_id, burn_request_id, scheduled_start, scheduled_end, 
+           status, priority_order, conflict_score, created_at)
+          VALUES (?, ?, ?, ?, 'scheduled', ?, ?, NOW())
+          ON DUPLICATE KEY UPDATE
+          scheduled_start = VALUES(scheduled_start),
+          scheduled_end = VALUES(scheduled_end),
+          priority_order = VALUES(priority_order),
+          conflict_score = VALUES(conflict_score)
+        `, [
+          scheduleId,
+          item.requestId,
+          `${params.date} ${item.assignedStart}:00`,
+          `${params.date} ${item.assignedEnd}:00`,
+          item.priority || 0,
+          item.conflictScore || 0
+        ]);
+        
+        // Update burn request status
+        await query(`
+          UPDATE burn_requests
+          SET status = 'scheduled',
+              schedule_id = ?
+          WHERE request_id = ?
+        `, [scheduleId, item.requestId]);
+      }
+      
+      logger.info('REAL: Schedule created successfully', {
+        scheduleId,
+        date: params.date,
+        itemsCreated: params.optimizedSchedule.length
+      });
+      
+      return {
+        success: true,
+        scheduleId,
+        itemsCreated: params.optimizedSchedule.length
+      };
+      
+    } catch (error) {
+      logger.error('REAL: Failed to create schedule', {
+        error: error.message,
+        date: params.date
+      });
+      throw error;
+    }
+  })
+};
 
 // Helper functions
 function generateTimeSlots(startTime, endTime, durationMinutes) {
@@ -443,14 +636,14 @@ async function optimizeBurnSchedule(date, burnRequests = null) {
     const windSpeed = weather?.wind_speed || 5;
     
     // Step 1: Run simulated annealing
-    const saResult = await optimizationTools[0].execute({
+    const saResult = await toolFunctions.runSimulatedAnnealing({
       date,
       burnRequests,
       constraints: OPTIMIZATION_CONFIG.constraints
     });
     
     // Step 2: Optimize time slots
-    const optimizedSlots = await optimizationTools[2].execute({
+    const optimizedSlots = await toolFunctions.optimizeTimeSlots({
       burnRequests: burnRequests.map(br => ({
         requestId: br.request_id,
         farmId: br.farm_id,
@@ -465,7 +658,7 @@ async function optimizeBurnSchedule(date, burnRequests = null) {
     });
     
     // Step 3: Evaluate quality
-    const quality = await optimizationTools[1].execute({
+    const quality = await toolFunctions.evaluateScheduleQuality({
       schedule: optimizedSlots,
       metrics: {
         totalConflicts: optimizedSlots.filter(s => s.conflictScore > 0).length,
@@ -476,7 +669,7 @@ async function optimizeBurnSchedule(date, burnRequests = null) {
     });
     
     // Step 4: Create schedule in database
-    const dbResult = await optimizationTools[3].execute({
+    const dbResult = await toolFunctions.createScheduleInDatabase({
       date,
       optimizedSchedule: optimizedSlots,
       overallScore: quality.overallScore || 75
