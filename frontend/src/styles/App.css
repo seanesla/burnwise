@@ -36,18 +36,19 @@ body {
 #root {
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden; /* Only hide horizontal scroll */
+  overflow-y: auto; /* Allow vertical scroll for settings and other pages */
   margin: 0;
   padding: 0;
 }
 
 .App {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh; /* Changed from height to min-height to allow content expansion */
   display: flex;
   flex-direction: column;
   background: var(--bg-gradient);
-  overflow: hidden;
+  overflow-x: hidden; /* Only hide horizontal scroll */
   margin: 0;
   padding: 0;
 }
@@ -55,8 +56,9 @@ body {
 .app-content {
   padding: 0;
   width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh; /* Changed from height to min-height */
+  overflow-x: hidden; /* Only hide horizontal scroll */
+  overflow-y: auto; /* Allow vertical scroll */
   position: relative;
   margin: 0;
 }
