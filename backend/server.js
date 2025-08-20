@@ -54,6 +54,8 @@ const optimizerAgent = require('./agents/optimizer');
 console.log('Optimizer agent loaded');
 const alertsAgent = require('./agents/alerts');
 console.log('Alerts agent loaded');
+const { startCleanupJob } = require('./jobs/demoCleanup');
+console.log('Demo cleanup job loaded');
 
 const app = express();
 const server = http.createServer(app);
@@ -390,6 +392,15 @@ async function startServer() {
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Socket.io enabled for real-time updates`);
       logger.info(`5-Agent System: Coordinator | Weather | Predictor | Optimizer | Alerts`);
+      
+      // Start demo cleanup job
+      try {
+        startCleanupJob();
+        logger.info('Demo cleanup job started successfully');
+      } catch (error) {
+        logger.error('Failed to start demo cleanup job:', error.message);
+      }
+      
       console.log('='.repeat(60));
       console.log('SERVER FULLY READY FOR PLAYWRIGHT MCP TESTING');
       console.log('='.repeat(60));

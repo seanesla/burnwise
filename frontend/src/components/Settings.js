@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FaCog, FaBell, FaUser, FaLock, FaPalette, 
-  FaDatabase, FaSync, FaSave, FaExclamationTriangle 
+  FaDatabase, FaSync, FaSave, FaExclamationTriangle,
+  FaTrash, FaRedo, FaClock, FaShieldAlt
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
@@ -526,6 +527,9 @@ const Settings = () => {
                   </button>
                 </div>
               </div>
+
+              {/* Demo Reset Section - Only visible in demo mode */}
+              <DemoResetSection />
             </div>
           )}
         </motion.div>
@@ -556,6 +560,181 @@ const Settings = () => {
             )}
           </motion.button>
         </motion.div>
+      </div>
+    </div>
+  );
+};
+
+// Demo Reset Section Component - Only shown in demo mode
+const DemoResetSection = () => {
+  const [isResetting, setIsResetting] = useState(false);
+  const [demoSession, setDemoSession] = useState(null);
+
+  useEffect(() => {
+    // Check if we're in demo mode
+    const demoContext = sessionStorage.getItem('burnwise_demo_context');
+    if (demoContext) {
+      try {
+        setDemoSession(JSON.parse(demoContext));
+      } catch (error) {
+        console.error('Failed to parse demo context:', error);
+      }
+    }
+  }, []);
+
+  if (!demoSession) return null; // Only show in demo mode
+
+  const handleDemoReset = async () => {
+    const confirmed = window.confirm(`
+Are you sure you want to reset your demo session?
+
+This will:
+• Delete all demo data from TiDB database
+• Clear your burn requests and farm data  
+• Remove phone number (if added)
+• Reset tutorial progress
+• Return you to demo mode selection
+
+This action cannot be undone.
+    `);
+
+    if (!confirmed) return;
+
+    setIsResetting(true);
+    
+    try {
+      const response = await fetch('/api/demo/reset', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Demo-Mode': 'true'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          sessionId: demoSession.sessionId,
+          isDemo: true
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Reset failed');
+      }
+
+      const data = await response.json();
+      
+      // Clear local demo context
+      sessionStorage.removeItem('burnwise_demo_context');
+      localStorage.removeItem('demo_encryption_key');
+      
+      toast.success('Demo session reset successfully!');
+      
+      // Redirect to demo selector or login page
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
+
+    } catch (error) {
+      console.error('Demo reset error:', error);
+      toast.error(error.message || 'Failed to reset demo session');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const getTimeRemaining = () => {
+    if (!demoSession.startTime) return 'Unknown';
+    
+    const start = new Date(demoSession.startTime);
+    const expiry = new Date(start.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+    const now = new Date();
+    const remaining = expiry - now;
+    
+    if (remaining <= 0) return 'Expired';
+    
+    const hours = Math.floor(remaining / (1000 * 60 * 60));
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `${hours}h ${minutes}m`;
+  };
+
+  return (
+    <div className="subsection demo-reset-section">
+      <h3 className="subsection-title">
+        <FaTrash />
+        Demo Session Management
+      </h3>
+      
+      <div className="demo-info-card">
+        <div className="demo-info-header">
+          <FaShieldAlt className="demo-icon" />
+          <div>
+            <h4>Active Demo Session</h4>
+            <p>Session ID: {demoSession.sessionId?.substring(0, 8)}...</p>
+          </div>
+        </div>
+        
+        <div className="demo-info-stats">
+          <div className="demo-stat">
+            <FaClock />
+            <div>
+              <strong>Time Remaining</strong>
+              <span>{getTimeRemaining()}</span>
+            </div>
+          </div>
+          <div className="demo-stat">
+            <FaDatabase />
+            <div>
+              <strong>Demo Mode</strong>
+              <span>{demoSession.mode === 'blank' ? 'Blank Slate' : 'Sample Farm'}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="demo-features">
+          <p>Your demo includes:</p>
+          <ul>
+            <li>Real TiDB database integration</li>
+            <li>Live GPT-5 agent interactions</li>
+            <li>Secure encrypted phone storage</li>
+            <li>Full spatial interface experience</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="reset-warning">
+        <FaExclamationTriangle />
+        <div>
+          <strong>Reset Demo Session</strong>
+          <p>This will completely delete all your demo data from the TiDB database and return you to demo mode selection.</p>
+        </div>
+      </div>
+
+      <div className="demo-reset-actions">
+        <motion.button
+          className="btn-danger demo-reset-btn"
+          onClick={handleDemoReset}
+          disabled={isResetting}
+          whileHover={!isResetting ? { scale: 1.02 } : {}}
+          whileTap={!isResetting ? { scale: 0.98 } : {}}
+        >
+          {isResetting ? (
+            <>
+              <LoadingSpinner size="small" color="#fff" />
+              Resetting Demo...
+            </>
+          ) : (
+            <>
+              <FaRedo />
+              Reset Demo Session
+            </>
+          )}
+        </motion.button>
+        
+        <p className="reset-disclaimer">
+          <strong>Note:</strong> All demo data is automatically deleted after 24 hours.
+          Use reset if you want to start fresh or try a different demo mode.
+        </p>
       </div>
     </div>
   );
