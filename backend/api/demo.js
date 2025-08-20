@@ -359,6 +359,7 @@ router.get('/status', async (req, res) => {
 
 /**
  * Add phone number to demo session (encrypted)
+ * Enhanced security and validation
  */
 router.post('/add-phone', async (req, res) => {
   if (!req.isDemoMode) {
@@ -367,31 +368,129 @@ router.post('/add-phone', async (req, res) => {
 
   const { sessionId, phone } = req.body;
 
-  if (!phone) {
-    return res.status(400).json({ error: 'Phone number is required' });
+  // Validation
+  if (!sessionId) {
+    return res.status(400).json({ error: 'Session ID is required' });
+  }
+
+  if (!phone || typeof phone !== 'string' || phone.length === 0) {
+    return res.status(400).json({ error: 'Encrypted phone number is required' });
+  }
+
+  // Additional security: limit phone data size (encrypted data should be reasonable size)
+  if (phone.length > 500) {
+    return res.status(400).json({ error: 'Invalid phone data format' });
   }
 
   try {
-    // Store encrypted phone in TiDB
+    // Verify session exists and is active
+    const session = await db('demo_sessions')
+      .where('session_id', sessionId)
+      .where('is_active', true)
+      .first();
+
+    if (!session) {
+      return res.status(404).json({ error: 'Demo session not found or expired' });
+    }
+
+    // Check if phone already added to prevent duplicate submissions
+    if (session.phone_encrypted) {
+      return res.json({
+        success: true,
+        verificationId: uuidv4(),
+        message: 'Phone number already added to this session'
+      });
+    }
+
+    // Store encrypted phone in TiDB with additional metadata
     await db('demo_sessions')
       .where('session_id', sessionId)
       .update({
-        phone_encrypted: Buffer.from(phone), // Store encrypted phone
-        phone_added_at: new Date()
+        phone_encrypted: Buffer.from(phone), // Store as binary blob
+        phone_added_at: new Date(),
+        phone_encryption_method: 'AES-256-Client',
+        last_activity: new Date()
       });
 
-    // For demo, we won't actually send SMS but log it
-    console.log(`[DEMO] Phone number added to session ${sessionId} (encrypted)`);
+    // Generate verification ID for demo flow
+    const verificationId = uuidv4();
 
+    console.log(`[DEMO] Encrypted phone number added to session ${sessionId}`);
+    console.log(`[DEMO] In production, SMS would be sent. Demo verification ID: ${verificationId}`);
+
+    // Security: Don't log the actual encrypted phone data
     res.json({
       success: true,
-      verificationId: uuidv4(), // Mock verification ID for demo
-      message: 'Phone number added successfully. In production, SMS verification would be sent.'
+      verificationId: verificationId,
+      message: 'Phone number encrypted and stored securely. In production, SMS verification would be sent.',
+      security: {
+        encrypted: true,
+        method: 'AES-256-Client',
+        autoDeleteHours: 24
+      }
     });
 
   } catch (error) {
-    console.error('[DEMO] Add phone error:', error);
-    res.status(500).json({ error: 'Failed to add phone number' });
+    console.error('[DEMO] Add phone error:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to add phone number',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * Verify phone number (demo implementation)
+ */
+router.post('/verify-phone', async (req, res) => {
+  if (!req.isDemoMode) {
+    return res.status(400).json({ error: 'Not in demo mode' });
+  }
+
+  const { sessionId, verificationId, code } = req.body;
+
+  if (!sessionId || !verificationId || !code) {
+    return res.status(400).json({ error: 'Session ID, verification ID, and code are required' });
+  }
+
+  try {
+    // For demo purposes, accept code "123456"
+    if (code !== '123456') {
+      return res.status(400).json({ 
+        error: 'Invalid verification code',
+        hint: 'For demo, use code: 123456'
+      });
+    }
+
+    // Update session to mark phone as verified
+    const updated = await db('demo_sessions')
+      .where('session_id', sessionId)
+      .where('is_active', true)
+      .update({
+        phone_verified: true,
+        phone_verified_at: new Date(),
+        last_activity: new Date()
+      });
+
+    if (updated === 0) {
+      return res.status(404).json({ error: 'Demo session not found or expired' });
+    }
+
+    console.log(`[DEMO] Phone verified for session ${sessionId}`);
+
+    res.json({
+      success: true,
+      message: 'Phone number verified successfully',
+      features_enabled: {
+        sms_alerts: true,
+        weather_notifications: true,
+        conflict_warnings: true
+      }
+    });
+
+  } catch (error) {
+    console.error('[DEMO] Phone verification error:', error.message);
+    res.status(500).json({ error: 'Failed to verify phone number' });
   }
 });
 

@@ -33,8 +33,14 @@ router.post('/chat', async (req, res) => {
     
     logger.info('Agent chat request', { userId, conversationId, messageLength: message.length });
     
-    // Process with orchestrator agent
-    const result = await processUserRequest(message, userId, conversationId, req.io);
+    // Process with orchestrator agent (with demo context)
+    const demoContext = req.isDemoMode ? {
+      isDemo: true,
+      sessionId: req.session?.demoSessionId,
+      farmId: req.session?.demoFarmId
+    } : null;
+    
+    const result = await processUserRequest(message, userId, conversationId, req.io, demoContext);
     
     res.json({
       success: true,

@@ -37,14 +37,20 @@ CREATE TABLE demo_sessions (
   expires_at TIMESTAMP NOT NULL,
   phone_number VARCHAR(20),
   phone_encrypted BLOB,
+  phone_added_at TIMESTAMP NULL,
+  phone_verified BOOLEAN DEFAULT FALSE,
+  phone_verified_at TIMESTAMP NULL,
+  phone_encryption_method VARCHAR(50),
   demo_type ENUM('blank', 'preloaded') NOT NULL,
   tutorial_progress JSON,
   total_cost DECIMAL(10,4) DEFAULT 0.0000,
   is_active BOOLEAN DEFAULT TRUE,
+  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   
   INDEX idx_demo_cleanup (expires_at, is_active),
   INDEX idx_demo_farm (farm_id),
-  INDEX idx_demo_cost (total_cost, created_at)
+  INDEX idx_demo_cost (total_cost, created_at),
+  INDEX idx_demo_phone (phone_verified, phone_added_at)
 );
 
 -- Agent interactions tracking for demo cost monitoring

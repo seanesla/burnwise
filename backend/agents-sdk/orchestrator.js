@@ -21,6 +21,7 @@ const { scheduleOptimizerAgent } = require('./ScheduleOptimizer');
 const { proactiveMonitorAgent } = require('./ProactiveMonitor');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
+const { trackDemoCost } = require('../middleware/demoIsolation');
 
 // Lazy-initialize OpenAI to prevent crash when API key not set
 let openai = null;
@@ -265,7 +266,7 @@ const tools = [
         };
       }
       
-      // Use GPT-5-nano to extract structured data
+      // Use GPT-5-nano to extract structured data  
       const completion = await openaiClient.chat.completions.create({
         model: 'gpt-5-nano',
         messages: [
@@ -284,6 +285,19 @@ const tools = [
         response_format: { type: 'json_object' },
         max_completion_tokens: 500,
       });
+      
+      // Track costs if demo context available (passed via params)
+      if (params.demoContext?.isDemo && completion.usage) {
+        try {
+          await trackDemoCost(
+            { session: { demoSessionId: params.demoContext.sessionId, demoFarmId: params.demoContext.farmId }, isDemoMode: true },
+            completion.usage,
+            'gpt-5-nano'
+          );
+        } catch (costError) {
+          logger.error('DEMO: Cost tracking failed for extract tool', { error: costError.message });
+        }
+      }
       
       const extracted = JSON.parse(completion.choices[0].message.content);
       
@@ -341,14 +355,16 @@ const orchestratorAgent = Agent.create({
 /**
  * Process a real user request with the orchestrator agent
  */
-async function processUserRequest(userInput, userId, conversationId, io) {
+async function processUserRequest(userInput, userId, conversationId, io, demoContext = null) {
   const startTime = Date.now();
   
   try {
     logger.info('REAL: Processing user request', {
       userId,
       conversationId,
-      input: userInput.substring(0, 100)
+      input: userInput.substring(0, 100),
+      isDemo: demoContext?.isDemo || false,
+      demoSession: demoContext?.sessionId || null
     });
     
     // Emit real-time status
@@ -362,6 +378,25 @@ async function processUserRequest(userInput, userId, conversationId, io) {
     
     // Run the agent with real OpenAI SDK
     const result = await run(orchestratorAgent, userInput);
+    
+    // Track demo costs if in demo mode
+    if (demoContext?.isDemo && result.usage) {
+      try {
+        await trackDemoCost(
+          { session: { demoSessionId: demoContext.sessionId, demoFarmId: demoContext.farmId }, isDemoMode: true },
+          result.usage,
+          'orchestrator'
+        );
+        logger.info('DEMO: Cost tracked for orchestrator', {
+          sessionId: demoContext.sessionId,
+          tokens: result.usage.total_tokens,
+          farmId: demoContext.farmId
+        });
+      } catch (costError) {
+        logger.error('DEMO: Cost tracking failed', { error: costError.message });
+        // Continue execution even if cost tracking fails
+      }
+    }
     
     // Log the actual result structure
     logger.info('REAL: Agent result details', {

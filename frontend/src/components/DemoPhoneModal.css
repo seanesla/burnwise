@@ -1,0 +1,493 @@
+/* Demo Phone Modal - Secure phone number collection */
+
+.demo-phone-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 2000;
+}
+
+.demo-phone-modal {
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 32px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  backdrop-filter: blur(40px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 107, 53, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Header */
+.demo-phone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.demo-phone-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  margin-left: 12px;
+}
+
+.demo-phone-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.demo-phone-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Content */
+.demo-phone-content {
+  min-height: 200px;
+}
+
+.demo-phone-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin: 0 0 32px 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Intro Step */
+.intro-step {
+  text-align: center;
+}
+
+.benefits-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.benefit-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.benefit-icon {
+  color: #FF6B35;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.benefit-card h3 {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.benefit-card p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.security-section {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.security-title {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.security-title svg {
+  color: #4CAF50;
+}
+
+.security-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.security-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  border-radius: 8px;
+}
+
+.security-icon {
+  color: #4CAF50;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.security-feature strong {
+  color: #ffffff;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.security-feature p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  margin: 0;
+}
+
+.intro-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Phone Step */
+.phone-step {
+  text-align: center;
+}
+
+.step-description {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.phone-input-section {
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.phone-label {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.demo-phone-input {
+  width: 100%;
+}
+
+.demo-phone-input input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 16px;
+  padding: 12px 16px;
+  transition: border-color 0.2s ease;
+}
+
+.demo-phone-input input:focus {
+  outline: none;
+  border-color: #FF6B35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.demo-phone-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.phone-error {
+  color: #ff4444;
+  font-size: 13px;
+  margin: 8px 0 0 0;
+}
+
+.encryption-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  margin-bottom: 24px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.encryption-notice svg {
+  color: #4CAF50;
+}
+
+.phone-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Verification Step */
+.verification-step {
+  text-align: center;
+}
+
+.verification-icon {
+  color: #FF6B35;
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.verification-step h3 {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.verification-step p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin: 0 0 24px 0;
+}
+
+.demo-note {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 24px;
+  color: #FF6B35;
+  font-size: 14px;
+}
+
+.demo-note code {
+  background: rgba(255, 107, 53, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.verification-input {
+  width: 100%;
+  max-width: 200px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 24px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  text-align: center;
+  padding: 16px;
+  margin: 0 auto 24px auto;
+  letter-spacing: 4px;
+  transition: border-color 0.2s ease;
+}
+
+.verification-input:focus {
+  outline: none;
+  border-color: #FF6B35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.verification-actions {
+  display: flex;
+  justify-content: center;
+}
+
+/* Success Step */
+.success-step {
+  text-align: center;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  background: #4CAF50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  color: #ffffff;
+  font-size: 24px;
+}
+
+.success-step h3 {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.success-step p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.success-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.success-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  border-radius: 8px;
+  color: #4CAF50;
+}
+
+.success-feature span {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #FF6B35 0%, #FFB000 100%);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 24px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+  width: 100%;
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-primary:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-secondary {
+  background: none;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .demo-phone-modal {
+    padding: 24px;
+    max-height: 95vh;
+  }
+
+  .demo-phone-title {
+    font-size: 18px;
+  }
+
+  .benefits-grid {
+    gap: 12px;
+  }
+
+  .benefit-card {
+    padding: 16px;
+  }
+
+  .security-features {
+    gap: 8px;
+  }
+
+  .security-feature {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .demo-phone-overlay {
+    padding: 12px;
+  }
+
+  .demo-phone-modal {
+    padding: 20px;
+  }
+
+  .demo-phone-title {
+    font-size: 16px;
+  }
+
+  .benefit-card {
+    padding: 14px;
+  }
+
+  .benefit-card h3 {
+    font-size: 15px;
+  }
+
+  .benefit-card p {
+    font-size: 13px;
+  }
+}
