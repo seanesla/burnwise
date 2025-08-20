@@ -39,6 +39,8 @@ const analyticsRoutes = require('./api/analytics');
 console.log('Analytics routes loaded');
 const agentsRoutes = require('./api/agents');
 console.log('Agents routes loaded');
+const demoRoutes = require('./api/demo');
+console.log('Demo routes loaded');
 
 // Import agents for initialization
 console.log('Loading agents...');
@@ -172,6 +174,7 @@ app.use('/api/farms', optionalAuth, farmsRoutes);
 app.use('/api/analytics', optionalAuth, analyticsRoutes); // Analytics can be public
 app.use('/api/agents', optionalAuth, agentsRoutes); // Agent API for 5-agent system
 app.use('/api/predictor', optionalAuth, require('./api/predictor')); // Gaussian plume model API
+app.use('/api/demo', demoRoutes); // Demo mode with real TiDB integration
 
 // Socket.io setup for real-time updates
 console.log('Setting up Socket.io...');

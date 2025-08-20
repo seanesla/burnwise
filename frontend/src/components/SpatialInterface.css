@@ -4,7 +4,11 @@
  */
 
 .spatial-interface {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -15,8 +19,22 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  overflow: hidden;
+}
+
+/* Force Mapbox canvas to fill container */
+.mapboxgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.mapboxgl-map {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Coordinates Display */

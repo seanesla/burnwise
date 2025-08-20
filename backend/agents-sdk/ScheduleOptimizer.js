@@ -12,11 +12,21 @@ const predictorAgent = require('../agents/predictor');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 
-// Initialize OpenAI with GPT-5-nano for cost efficiency
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v1'
-});
+// Lazy-initialize OpenAI to prevent crash when API key not set
+let openai = null;
+const getOpenAI = () => {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      logger.warn('OPENAI_API_KEY not set, using mock mode for ScheduleOptimizer');
+      return null;
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: 'https://api.openai.com/v1'
+    });
+  }
+  return openai;
+};
 
 // Optimization parameters
 const OPTIMIZATION_CONFIG = {
@@ -99,7 +109,13 @@ const optimizationTools = [
       logger.info('REAL: Evaluating schedule quality with AI');
       
       // Use GPT-5-nano to analyze schedule quality
-      const completion = await openai.chat.completions.create({
+      const openaiClient = getOpenAI();
+      if (!openaiClient) {
+        // Return mock response when OpenAI not available
+        return { improvement: 'minimal', reasoning: 'Mock optimization - OpenAI not configured' };
+      }
+      
+      const completion = await openaiClient.chat.completions.create({
         model: 'gpt-5-nano',
         messages: [
           {

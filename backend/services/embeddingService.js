@@ -8,11 +8,21 @@ const OpenAI = require('openai');
 const logger = require('../middleware/logger');
 const { query } = require('../db/connection');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v1'
-});
+// Lazy-initialize OpenAI to prevent crash when API key not set
+let openai = null;
+const getOpenAI = () => {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      logger.warn('OPENAI_API_KEY not set, using mock mode for embeddingService');
+      return null;
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: 'https://api.openai.com/v1'
+    });
+  }
+  return openai;
+};
 
 // Embedding dimensions for different use cases
 const EMBEDDING_DIMENSIONS = {
@@ -42,7 +52,13 @@ async function generateWeatherEmbedding(weatherData) {
       weatherData.uv_index ? `UV Index: ${weatherData.uv_index}` : ''
     ].filter(Boolean).join(', ');
 
-    const response = await openai.embeddings.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return zero vector when OpenAI not available
+      return new Array(EMBEDDING_DIMENSIONS.weather).fill(0);
+    }
+    
+    const response = await openaiClient.embeddings.create({
       model: 'text-embedding-3-large',
       input: weatherText,
       dimensions: EMBEDDING_DIMENSIONS.weather
@@ -83,7 +99,13 @@ async function generateSmokeEmbedding(smokeData) {
       smokeData.inversion_risk ? `Temperature inversion risk: ${smokeData.inversion_risk}` : ''
     ].filter(Boolean).join(', ');
 
-    const response = await openai.embeddings.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return zero vector when OpenAI not available
+      return new Array(EMBEDDING_DIMENSIONS.smoke).fill(0);
+    }
+    
+    const response = await openaiClient.embeddings.create({
       model: 'text-embedding-3-large',
       input: smokeText,
       dimensions: EMBEDDING_DIMENSIONS.smoke
@@ -121,7 +143,13 @@ async function generateBurnEmbedding(burnData) {
       burnData.neighboring_farms ? `Nearby farms: ${burnData.neighboring_farms}` : ''
     ].filter(Boolean).join(', ');
 
-    const response = await openai.embeddings.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return zero vector when OpenAI not available
+      return new Array(EMBEDDING_DIMENSIONS.burn).fill(0);
+    }
+    
+    const response = await openaiClient.embeddings.create({
       model: 'text-embedding-3-large',
       input: burnText,
       dimensions: EMBEDDING_DIMENSIONS.burn
@@ -158,7 +186,13 @@ async function generateDecisionEmbedding(decisionData) {
       decisionData.conflict_score ? `Conflict score: ${decisionData.conflict_score}` : ''
     ].filter(Boolean).join(', ');
 
-    const response = await openai.embeddings.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return zero vector when OpenAI not available
+      return new Array(EMBEDDING_DIMENSIONS.decision).fill(0);
+    }
+    
+    const response = await openaiClient.embeddings.create({
       model: 'text-embedding-3-large',
       input: decisionText,
       dimensions: EMBEDDING_DIMENSIONS.decision
@@ -286,7 +320,13 @@ function calculateSimilarity(embedding1, embedding2) {
 async function batchGenerateEmbeddings(texts, dimensions = 128) {
   try {
     // OpenAI supports batch embedding generation
-    const response = await openai.embeddings.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return zero vectors when OpenAI not available
+      return texts.map(() => new Array(dimensions).fill(0));
+    }
+    
+    const response = await openaiClient.embeddings.create({
       model: 'text-embedding-3-large',
       input: texts,
       dimensions: dimensions

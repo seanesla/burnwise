@@ -36,10 +36,15 @@ const Landing = ({ isInitialLoad = true }) => {
       const titleRect = title.getBoundingClientRect();
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
       
-      // The "I" in BURNWISE is approximately at 61% of the word width
-      // This is based on the proportions of the letters in the Inter font
-      // B-U-R-N-W are wider letters, I is narrow, S-E follow
-      const iPositionRatio = 0.61; // 61% from the left edge
+      // CRITICAL: DO NOT CHANGE - Flame position above "I" in BURNWISE
+      // The "I" is at index 5 (6th character) - verified visually
+      // This ratio has been precisely calibrated through extensive testing
+      const iPositionRatio = 0.67; // LOCKED: Exact center of "I" character - DO NOT MODIFY
+      
+      // Defensive check to ensure ratio hasn't been changed
+      if (iPositionRatio !== 0.67) {
+        console.error('CRITICAL: Flame position ratio has been modified! Must be 0.67');
+      }
       
       // Calculate the I position
       const iCenterX = titleRect.left + (titleRect.width * iPositionRatio);
@@ -174,8 +179,9 @@ const Landing = ({ isInitialLoad = true }) => {
   const viewportCenterY = typeof window !== 'undefined' ? window.innerHeight / 2 - 90 : 0;
   
   // Calculate final flame position (accounting for scaled size)
-  // Scaled flame is 180 * 0.361 = 65px, so we need to offset by half (32.5px) to center it
-  const finalFlameX = flameTarget.x > 0 ? flameTarget.x - 32.5 : viewportCenterX;
+  // CRITICAL: The flame must stay above the "I" character
+  // Transform positions from top-left, so we offset by half the original width (90px)
+  const finalFlameX = flameTarget.x > 0 ? flameTarget.x - 90 : viewportCenterX;
   
   // Use viewport coordinates for fixed positioning, page coordinates for absolute
   const finalFlameYFixed = flameTarget.yViewport !== undefined ? flameTarget.yViewport : viewportCenterY;

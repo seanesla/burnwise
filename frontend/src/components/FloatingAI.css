@@ -15,7 +15,7 @@
   justify-content: center;
   cursor: move;
   box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
-  z-index: 150; /* Reduced from 300 to not block other UI */
+  z-index: 1000; /* Increased to ensure it's above map markers */
   pointer-events: auto;
 }
 
@@ -44,6 +44,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  z-index: 1001; /* Ensure it's above map elements and bubble */
 }
 
 /* Header */
@@ -272,4 +273,64 @@
 
 .floating-ai-messages::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile Responsive - CRITICAL FIX */
+@media (max-width: 768px) {
+  .floating-ai-container {
+    max-width: calc(100vw - 30px) !important;
+    max-height: calc(100vh - 100px) !important;
+    right: 15px !important;
+    bottom: 15px !important;
+  }
+  
+  .floating-ai-messages {
+    max-height: 250px;
+  }
+  
+  .floating-ai-bubble {
+    width: 50px !important;
+    height: 50px !important;
+  }
+  
+  .quick-action-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  
+  .ai-input-field {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  
+  .message-bubble {
+    font-size: 13px;
+    max-width: 85%;
+  }
+}
+
+@media (max-width: 400px) {
+  .floating-ai-container {
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - 80px) !important;
+    right: 10px !important;
+    bottom: 10px !important;
+  }
+  
+  .floating-ai-header {
+    padding: 10px 12px;
+  }
+  
+  .header-title {
+    font-size: 13px;
+  }
+  
+  .floating-ai-messages {
+    max-height: 200px;
+    padding: 10px;
+  }
+  
+  .floating-ai-input {
+    padding: 10px;
+  }
 }

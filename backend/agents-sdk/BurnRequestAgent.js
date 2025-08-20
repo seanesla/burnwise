@@ -10,11 +10,21 @@ const OpenAI = require('openai');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 
-// Initialize OpenAI with GPT-5-nano for cost efficiency
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v1'
-});
+// Lazy-initialize OpenAI to prevent crash when API key not set
+let openai = null;
+const getOpenAI = () => {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      logger.warn('OPENAI_API_KEY not set, using mock mode for BurnRequestAgent');
+      return null;
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: 'https://api.openai.com/v1'
+    });
+  }
+  return openai;
+};
 
 // Schema for structured burn request
 const structuredBurnRequestSchema = z.object({
@@ -30,7 +40,7 @@ const structuredBurnRequestSchema = z.object({
   field_boundary: z.object({
     type: z.literal('Polygon'),
     coordinates: z.array(z.array(z.array(z.number())))
-  }).optional()
+  }).nullable().default(null)
 });
 
 // Tools for the agent
@@ -192,7 +202,27 @@ async function extractBurnRequest(naturalLanguageInput, userId) {
       userId
     });
     
-    const completion = await openai.chat.completions.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return mock extraction when OpenAI not available
+      const mockDate = new Date();
+      mockDate.setDate(mockDate.getDate() + 7);
+      return {
+        farm_name: null,
+        owner_name: null,
+        field_name: `Field-${Date.now()}`,
+        acres: 50,
+        crop_type: 'wheat',
+        burn_date: mockDate.toISOString().split('T')[0],
+        time_window_start: '08:00',
+        time_window_end: '12:00',
+        urgency: 'medium',
+        reason: 'Mock extraction from: ' + naturalLanguageInput.substring(0, 50),
+        missing_info: []
+      };
+    }
+    
+    const completion = await openaiClient.chat.completions.create({
       model: 'gpt-5-mini', // CRITICAL: GPT-5-nano uses ALL tokens for reasoning, need GPT-5-mini for JSON
       messages: [
         {

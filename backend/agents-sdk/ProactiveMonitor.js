@@ -12,11 +12,21 @@ const alertsAgent = require('../agents/alerts');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 
-// Initialize OpenAI with GPT-5-nano for cost efficiency
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v1'
-});
+// Lazy-initialize OpenAI to prevent crash when API key not set
+let openai = null;
+const getOpenAI = () => {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      logger.warn('OPENAI_API_KEY not set, using mock mode for ProactiveMonitor');
+      return null;
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: 'https://api.openai.com/v1'
+    });
+  }
+  return openai;
+};
 
 // Monitoring configuration
 const MONITORING_CONFIG = {
@@ -204,7 +214,7 @@ const monitoringTools = [
         farmId: z.number(),
         alertType: z.enum(['optimal_window', 'weather_change', 'reminder', 'safety', 'conflict']),
         message: z.string(),
-        data: z.any().optional(),
+        data: z.any().nullable().default(null),
         severity: z.enum(['low', 'medium', 'high', 'critical'])
       })
     },
@@ -269,7 +279,13 @@ const monitoringTools = [
       logger.info('REAL: Analyzing monitoring data with AI');
       
       // Use GPT-5-nano to analyze and decide on alerts
-      const completion = await openai.chat.completions.create({
+      const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return mock response when OpenAI not available
+      return [];
+    }
+    
+    const completion = await openaiClient.chat.completions.create({
         model: 'gpt-5-nano',
         messages: [
           {
@@ -463,7 +479,13 @@ const toolFunctions = {
     logger.info('REAL: Analyzing monitoring data with AI');
     
     // Use GPT-5-nano to analyze and decide on alerts
-    const completion = await openai.chat.completions.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return mock response when OpenAI not available
+      return [];
+    }
+    
+    const completion = await openaiClient.chat.completions.create({
       model: 'gpt-5-nano',
       messages: [
         {

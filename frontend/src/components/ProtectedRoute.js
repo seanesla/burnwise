@@ -41,7 +41,7 @@ const ProtectedRoute = ({ children, requireOnboarding = false }) => {
 
   // Authenticated and trying to access onboarding when already completed
   if (!needsOnboarding && requireOnboarding) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/spatial" replace />;
   }
 
   // All checks passed - render the protected component

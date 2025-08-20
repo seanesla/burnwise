@@ -6,17 +6,17 @@
 
 .timeline-scrubber {
   position: fixed;
-  bottom: 70px;
+  bottom: 100px; /* Increased from 70px to avoid dock overlap */
   left: 50% !important;
   transform: translateX(-50%) !important;
-  width: 80%;
-  max-width: 1200px;
+  width: 60%; /* Reduced from 80% for more discrete appearance */
+  max-width: 1000px; /* Reduced from 1200px */
   background: rgba(30, 30, 30, 0.9);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px; /* Reduced from 20px for more compact feel */
   box-shadow: 
     0 20px 40px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -114,12 +114,12 @@
 /* Timeline Track */
 .timeline-track {
   position: relative;
-  height: 60px;
+  height: 50px; /* Reduced from 60px for more compact feel */
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to allow marker labels */
   cursor: pointer;
-  margin-bottom: 20px;
+  margin-bottom: 25px; /* Reduced from 30px */
 }
 
 /* Progress Fill */
@@ -145,6 +145,7 @@
   right: 0;
   bottom: 0;
   pointer-events: none;
+  overflow: visible; /* Allow labels to be visible */
 }
 
 .timeline-marker {
@@ -348,9 +349,9 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .timeline-scrubber {
-    width: 95%;
-    bottom: 60px;
-    padding: 15px;
+    width: 90%; /* Reduced from 95% for better mobile appearance */
+    bottom: 85px; /* Increased from 60px to ensure no overlap with dock on mobile */
+    padding: 12px; /* Reduced for mobile */
   }
   
   .timeline-controls {
@@ -372,7 +373,7 @@
   }
   
   .timeline-track {
-    height: 40px;
+    height: 35px; /* Reduced for mobile compactness */
   }
   
   .display-date {

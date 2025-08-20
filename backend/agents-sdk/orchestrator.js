@@ -22,10 +22,20 @@ const { proactiveMonitorAgent } = require('./ProactiveMonitor');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Lazy-initialize OpenAI to prevent crash when API key not set
+let openai = null;
+const getOpenAI = () => {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      logger.warn('OPENAI_API_KEY not set, using mock mode for orchestrator');
+      return null;
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  }
+  return openai;
+};
 
 // Tool Schemas
 const burnRequestSchema = z.object({
@@ -239,8 +249,24 @@ const tools = [
     execute: async (params) => {
       logger.info('REAL: Extracting burn request from text');
       
+      const openaiClient = getOpenAI();
+      if (!openaiClient) {
+        // Return mock extraction when OpenAI not available
+        return {
+          farm_id: params.farmId || 1,
+          field_name: `Field-${Date.now()}`,
+          acres: 50,
+          crop_type: 'wheat',
+          burn_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          time_window_start: '08:00',
+          time_window_end: '12:00',
+          urgency: 'medium',
+          reason: 'Mock extraction from: ' + params.text.substring(0, 50)
+        };
+      }
+      
       // Use GPT-5-nano to extract structured data
-      const completion = await openai.chat.completions.create({
+      const completion = await openaiClient.chat.completions.create({
         model: 'gpt-5-nano',
         messages: [
           {

@@ -1,11 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <defs>
-    <linearGradient id="fireGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#ff3300;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#ff6b35;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ffaa00;stop-opacity:1" />
+    <linearGradient id="mainFlame" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stopColor="#D2691E"/>
+      <stop offset="30%" stopColor="#FF6347"/>
+      <stop offset="60%" stopColor="#FFA500"/>
+      <stop offset="100%" stopColor="#FFD700"/>
+    </linearGradient>
+    <linearGradient id="middleFlame" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stopColor="#B22222"/>
+      <stop offset="50%" stopColor="#FF4500"/>
+      <stop offset="100%" stopColor="#FF8C00"/>
+    </linearGradient>
+    <linearGradient id="bottomFlame" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stopColor="#FF6347"/>
+      <stop offset="40%" stopColor="#FFA500"/>
+      <stop offset="100%" stopColor="#FFFF00"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" fill="#0a0a0a"/>
-  <path d="M16 28c-4.4 0-8-3.6-8-8 0-2 .8-4 2-5.2.4-.4.8-.8 1.2-1.2.8-.8 1.6-2 2-3.2.4 1.2 1.2 2.4 2 3.2.4.4.8.8 1.2 1.2 1.2 1.2 2 3.2 2 5.2 0 1.2-.4 2.4-1.2 3.2.8-.8 1.2-2 1.2-3.2 0-2-.8-4-2-5.2-.4-.4-.8-.8-1.2-1.2-.8-.8-1.6-2-2-3.2-.4 1.2-1.2 2.4-2 3.2-.4.4-.8.8-1.2 1.2-1.2 1.2-2 3.2-2 5.2 0 4.4 3.6 8 8 8 2.4 0 4.4-1.2 5.6-2.8.4.8.4 1.6.4 2.8-1.6 1.2-3.6 2-6 2zm0-20c0-2 1.2-4 2.4-5.6.4-.4.8-.8 1.2-1.2.4.4.8.8 1.2 1.2 1.2 1.6 2.4 3.6 2.4 5.6 0 4.4-3.6 8-8 8s-8-3.6-8-8c0-2 1.2-4 2.4-5.6.4-.4.8-.8 1.2-1.2.4.4.8.8 1.2 1.2 1.2 1.6 2.4 3.6 2.4 5.6z" fill="url(#fireGradient)"/>
+  
+  <!-- Main large angular flame -->
+  <path d="M4 28 L8 26 L12 20 L10 16 L8 12 L6 8 L10 4 L14 2 L18 6 L16 12 L18 18 L20 24 L16 28 Z" fill="url(#mainFlame)"/>
+  
+  <!-- Middle flame segment -->
+  <path d="M16 26 L18 24 L20 20 L18 16 L16 12 L18 8 L22 6 L24 10 L22 16 L24 22 L22 26 Z" fill="url(#middleFlame)"/>
+  
+  <!-- Bottom right flame -->
+  <path d="M20 28 L22 26 L24 22 L22 18 L20 16 L24 14 L28 16 L26 20 L28 24 L24 28 Z" fill="url(#bottomFlame)"/>
 </svg>

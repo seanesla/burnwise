@@ -11,11 +11,21 @@ const predictorAgent = require('../agents/predictor');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 
-// Initialize OpenAI with GPT-5-mini for complex reasoning
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v1'
-});
+// Lazy-initialize OpenAI to prevent crash when API key not set
+let openai = null;
+const getOpenAI = () => {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      logger.warn('OPENAI_API_KEY not set, using mock mode for ConflictResolver');
+      return null;
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: 'https://api.openai.com/v1'
+    });
+  }
+  return openai;
+};
 
 // Conflict resolution strategies
 const RESOLUTION_STRATEGIES = {
@@ -280,15 +290,94 @@ const conflictTools = [
     name: 'negotiate_resolution',
     description: 'Use GPT-5-mini to negotiate complex multi-party resolution',
     parameters: z.object({
-      conflict: z.any(),
-      priorities: z.array(z.any()),
-      alternatives: z.array(z.any())
+      conflict: z.object({
+        burn1: z.object({
+          requestId: z.number(),
+          farmId: z.number(),
+          farmName: z.string(),
+          acres: z.number(),
+          priority: z.number(),
+          urgency: z.string()
+        }),
+        burn2: z.object({
+          requestId: z.number(),
+          farmId: z.number(),
+          farmName: z.string(),
+          acres: z.number(),
+          priority: z.number(),
+          urgency: z.string()
+        }),
+        distance: z.string(),
+        overlapMinutes: z.number(),
+        severity: z.string()
+      }),
+      priorities: z.array(z.object({
+        burnId: z.number(),
+        score: z.number(),
+        components: z.object({
+          firstCome: z.number(),
+          urgency: z.number(),
+          acreage: z.number(),
+          cropType: z.number(),
+          weatherWindow: z.number(),
+          history: z.number()
+        })
+      })),
+      alternatives: z.array(z.object({
+        strategy: z.string(),
+        burnId: z.number(),
+        newDate: z.string().nullable().default(null),
+        newTimeStart: z.string().nullable().default(null),
+        newTimeEnd: z.string().nullable().default(null),
+        impact: z.string(),
+        splits: z.array(z.object({
+          acres: z.number(),
+          date: z.string(),
+          timeStart: z.string(),
+          timeEnd: z.string()
+        })).nullable().default(null)
+      }))
     }),
     execute: async (params) => {
       logger.info('REAL: Negotiating resolution with GPT-5-mini');
       
+      const openaiClient = getOpenAI();
+      if (!openaiClient) {
+        // Return mock resolution when OpenAI not available
+        return {
+          resolution: "Mock resolution: Time-shifted burns to avoid conflicts",
+          assignments: [
+            {
+              burnId: params.conflict.burn1?.requestId || 1,
+              farmName: params.conflict.burn1?.farmName || "Farm 1",
+              action: "keep",
+              newSchedule: {
+                date: new Date().toISOString().split('T')[0],
+                timeStart: "06:00",
+                timeEnd: "10:00"
+              },
+              reason: "First requestor maintains original time"
+            },
+            {
+              burnId: params.conflict.burn2?.requestId || 2,
+              farmName: params.conflict.burn2?.farmName || "Farm 2",
+              action: "shift",
+              newSchedule: {
+                date: new Date().toISOString().split('T')[0],
+                timeStart: "14:00",
+                timeEnd: "18:00"
+              },
+              reason: "Shifted to afternoon to avoid smoke overlap"
+            }
+          ],
+          fairnessScore: 0.8,
+          safetyScore: 0.95,
+          explanation: "Mock mode: Simulated resolution for testing"
+        };
+      }
+      
       // Use GPT-5-mini for complex negotiation
-      const completion = await openai.chat.completions.create({
+      const completion = await openaiClient.chat.completions.create({
         model: 'gpt-5-mini',
         messages: [
           {
@@ -611,7 +700,17 @@ async function mediateFarms(farmIds, issue) {
     `, [farmIds]);
     
     // Use GPT-5-mini to mediate
-    const completion = await openai.chat.completions.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return mock mediation when OpenAI not available
+      return {
+        resolution: 'Mock mediation: Farms should coordinate burn times',
+        recommendation: 'Farm 1 burns morning, Farm 2 burns afternoon',
+        reasoning: 'Mock resolution - OpenAI not configured'
+      };
+    }
+    
+    const completion = await openaiClient.chat.completions.create({
       model: 'gpt-5-mini',
       messages: [
         {

@@ -14,6 +14,7 @@ import {
   FaChartLine, FaMobileAlt, FaEnvelope
 } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './Onboarding.css';
 
 const STEPS = [
@@ -143,8 +144,8 @@ const Onboarding = () => {
       // Small delay for UX
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to spatial interface
+      navigate('/spatial');
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
     } finally {
@@ -155,7 +156,7 @@ const Onboarding = () => {
   const handleSkip = () => {
     // Complete with default settings
     completeOnboarding(onboardingData);
-    navigate('/dashboard');
+    navigate('/spatial');
   };
 
   const renderStepContent = () => {
@@ -164,7 +165,7 @@ const Onboarding = () => {
         return (
           <div className="onboarding-welcome">
             <div className="welcome-icon">
-              <FaFire />
+              <AnimatedFlameLogo size={100} animated={true} />
             </div>
             <h2>Welcome, {user?.name || 'Farmer'}!</h2>
             <p className="welcome-text">
@@ -469,7 +470,7 @@ const Onboarding = () => {
         return (
           <div className="onboarding-complete">
             <div className="complete-icon">
-              <FaCheck />
+              <AnimatedFlameLogo size={60} animated={true} />
             </div>
             <h2>Setup Complete!</h2>
             <p className="complete-text">

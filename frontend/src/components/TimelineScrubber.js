@@ -195,7 +195,7 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
       className="timeline-scrubber"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      transition={{ type: "spring", damping: 20, stiffness: 300 }}
+      transition={{ type: "spring", stiffness: 100, damping: 30, restDelta: 0.001 }}
     >
       {/* Controls */}
       <div className="timeline-controls">
@@ -267,9 +267,24 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
               key={burn.id}
               className={`timeline-event ${burn.status}`}
               style={{ left: `${getTimePosition(new Date(burn.start_time))}%` }}
-              whileHover={{ scale: 1.2, y: -5 }}
+              whileHover={{ 
+                scale: 1.2, 
+                y: -5,
+                transition: { 
+                  type: "spring", 
+                  stiffness: 400, 
+                  damping: 40, 
+                  restDelta: 0.001 
+                }
+              }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 300, 
+                damping: 35, 
+                restDelta: 0.001 
+              }}
             >
               <div className="event-tooltip">
                 <div className="tooltip-farm">{burn.farm_name}</div>

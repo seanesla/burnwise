@@ -54,6 +54,9 @@ const SpatialInterface = () => {
     });
     
     map.current.on('load', () => {
+      // Force resize to fill container
+      map.current.resize();
+      
       // Enable 3D terrain
       map.current.addSource('mapbox-dem', {
         'type': 'raster-dem',
@@ -88,6 +91,26 @@ const SpatialInterface = () => {
       setLat(map.current.getCenter().lat.toFixed(4));
       setZoom(map.current.getZoom().toFixed(2));
     });
+    
+    // Handle window resize
+    const handleResize = () => {
+      if (map.current) {
+        map.current.resize();
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Trigger initial resize after a short delay
+    setTimeout(() => {
+      if (map.current) {
+        map.current.resize();
+      }
+    }, 100);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
   
   // Load farms data
@@ -679,22 +702,47 @@ const SpatialInterface = () => {
             initial={{ opacity: 0, x: -300 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -300 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 100,
+              damping: 30,
+              restDelta: 0.001
+            }}
             style={{
               position: 'fixed',
               left: '20px',
               top: '100px',
               width: '280px',
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 107, 53, 0.15)',
               borderRadius: '12px',
               padding: '20px',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-              zIndex: 200
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+              zIndex: 500
             }}
           >
-            <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>Map Layers</h3>
+            <h3 style={{ margin: '0 0 15px 0', color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>Map Layers</h3>
             <div className="layers-list">
-              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '10px', 
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 <input 
                   type="checkbox" 
                   checked={true}
@@ -705,13 +753,30 @@ const SpatialInterface = () => {
                       map.current.setLayoutProperty('farms-outline', 'visibility', visibility);
                     }
                   }}
-                  style={{ marginRight: '10px' }}
+                  style={{ marginRight: '10px', accentColor: '#ff6b35', cursor: 'pointer' }}
                 />
                 <AnimatedFlameLogo size={16} animated={false} />
-                <span style={{ marginLeft: '8px' }}>Farm Boundaries</span>
+                <span style={{ marginLeft: '8px', color: 'rgba(255, 255, 255, 0.9)' }}>Farm Boundaries</span>
               </label>
               
-              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '10px', 
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 <input 
                   type="checkbox" 
                   checked={true}
@@ -720,35 +785,90 @@ const SpatialInterface = () => {
                     const markers = document.querySelectorAll('.burn-marker');
                     markers.forEach(m => m.style.display = e.target.checked ? 'block' : 'none');
                   }}
-                  style={{ marginRight: '10px' }}
+                  style={{ marginRight: '10px', accentColor: '#ff6b35', cursor: 'pointer' }}
                 />
                 <AnimatedFlameLogo size={16} animated={true} />
-                <span style={{ marginLeft: '8px' }}>Active Burns</span>
+                <span style={{ marginLeft: '8px', color: 'rgba(255, 255, 255, 0.9)' }}>Active Burns</span>
               </label>
               
-              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '10px', 
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 <input 
                   type="checkbox" 
                   checked={weatherOverlay}
                   onChange={(e) => setWeatherOverlay(e.target.checked)}
-                  style={{ marginRight: '10px' }}
+                  style={{ marginRight: '10px', accentColor: '#ff6b35', cursor: 'pointer' }}
                 />
-                <span>☁️</span>
-                <span style={{ marginLeft: '8px' }}>Weather Data</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" strokeWidth="2" style={{ display: 'flex', alignItems: 'center' }}>
+                  <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                </svg>
+                <span style={{ marginLeft: '8px', color: 'rgba(255, 255, 255, 0.9)' }}>Weather Data</span>
               </label>
               
-              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '10px', 
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 <input 
                   type="checkbox" 
                   checked={smokeOverlay}
                   onChange={(e) => setSmokeOverlay(e.target.checked)}
-                  style={{ marginRight: '10px' }}
+                  style={{ marginRight: '10px', accentColor: '#ff6b35', cursor: 'pointer' }}
                 />
-                <span>💨</span>
-                <span style={{ marginLeft: '8px' }}>Smoke Plumes</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" strokeWidth="2" style={{ display: 'flex', alignItems: 'center' }}>
+                  <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                </svg>
+                <span style={{ marginLeft: '8px', color: 'rgba(255, 255, 255, 0.9)' }}>Smoke Plumes</span>
               </label>
               
-              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', cursor: 'pointer' }}>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '10px', 
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 <input 
                   type="checkbox" 
                   checked={true}
@@ -759,13 +879,32 @@ const SpatialInterface = () => {
                       : 'mapbox://styles/mapbox/streets-v12';
                     map.current.setStyle(newStyle);
                   }}
-                  style={{ marginRight: '10px' }}
+                  style={{ marginRight: '10px', accentColor: '#ff6b35', cursor: 'pointer' }}
                 />
-                <span>🛰️</span>
-                <span style={{ marginLeft: '8px' }}>Satellite View</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" strokeWidth="2" style={{ display: 'flex', alignItems: 'center' }}>
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="m12 1 1.09 3.64L16 3l-1.91 4.36L18 8l-3.64 2.09L15 14l-4.36-1.91L10 16l-2.09-3.64L4 14l1.91-4.36L2 8l3.64-2.09L6 2z"/>
+                </svg>
+                <span style={{ marginLeft: '8px', color: 'rgba(255, 255, 255, 0.9)' }}>Satellite View</span>
               </label>
               
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <label 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 <input 
                   type="checkbox" 
                   checked={true}
@@ -777,25 +916,37 @@ const SpatialInterface = () => {
                       map.current.setTerrain(null);
                     }
                   }}
-                  style={{ marginRight: '10px' }}
+                  style={{ marginRight: '10px', accentColor: '#ff6b35', cursor: 'pointer' }}
                 />
-                <span>⛰️</span>
-                <span style={{ marginLeft: '8px' }}>3D Terrain</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" strokeWidth="2" style={{ display: 'flex', alignItems: 'center' }}>
+                  <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+                </svg>
+                <span style={{ marginLeft: '8px', color: 'rgba(255, 255, 255, 0.9)' }}>3D Terrain</span>
               </label>
             </div>
             
-            <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #e0e0e0' }}>
+            <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(255, 107, 53, 0.2)' }}>
               <button 
                 onClick={() => setActivePanel(null)}
                 style={{
                   width: '100%',
-                  padding: '8px',
-                  background: '#FF6B35',
-                  color: 'white',
+                  padding: '10px',
+                  background: 'linear-gradient(135deg, #ff6b35 0%, #ff5722 100%)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontWeight: '600',
                   cursor: 'pointer',
+                  transition: 'all 0.3s ease',
                   fontSize: '14px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 10px 30px rgba(255, 107, 53, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = 'none';
                 }}
               >
                 Close Panel
@@ -805,13 +956,13 @@ const SpatialInterface = () => {
         )}
       </AnimatePresence>
       
+      
       {/* Floating AI Assistant */}
       <FloatingAI 
         isOpen={activePanel === 'ai'} 
         onClose={() => setActivePanel(null)}
-        onOpen={() => setActivePanel('ai')}
       />
-      
+
       {/* Bottom Dock Navigation */}
       <DockNavigation 
         onAction={handleDockAction}

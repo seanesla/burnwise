@@ -49,6 +49,11 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Prevent global transition inheritance */
+body * {
+  transition: none;
+}
+
 /* Navigation */
 .navigation {
   background: var(--glass-bg) !important;

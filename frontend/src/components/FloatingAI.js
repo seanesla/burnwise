@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { motion, useDragControls } from 'framer-motion';
 import io from 'socket.io-client';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './FloatingAI.css';
@@ -18,6 +18,10 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 80 });
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
   
   const dragControls = useDragControls();
   const constraintsRef = useRef(null);
@@ -36,10 +40,21 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       timestamp: new Date()
     }]);
     
+    // Handle window resize for responsive dimensions
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
     return () => {
       if (socket.current) {
         socket.current.disconnect();
       }
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
   
@@ -279,44 +294,8 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   };
   
   if (!isOpen) {
-    // Minimized bubble state
-    return (
-      <motion.div
-        className="floating-ai-bubble"
-        drag
-        dragMomentum={false}
-        dragElastic={0.1}
-        dragConstraints={{
-          top: 0,
-          left: 0,
-          right: window.innerWidth - 80,
-          bottom: window.innerHeight - 80
-        }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        initial={{ scale: 0, width: 60, height: 60 }}
-        animate={{ scale: 1, width: 60, height: 60 }}
-        exit={{ scale: 0, width: 60, height: 60 }}
-        style={{ 
-          position: 'fixed',
-          right: 20,
-          bottom: 100
-        }}
-        onClick={onOpen}
-        onDragEnd={(e, info) => {
-          setPosition({ x: info.x, y: info.y });
-        }}
-      >
-        <div className="bubble-content">
-          <AnimatedFlameLogo size={32} animated={true} />
-        </div>
-        {messages.filter(m => m.type === 'ai').length > 1 && (
-          <div className="bubble-badge">
-            {messages.filter(m => m.type === 'ai').length - 1}
-          </div>
-        )}
-      </motion.div>
-    );
+    // Don't render anything when closed - dock navigation handles opening
+    return null;
   }
   
   return (
@@ -330,19 +309,19 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       dragConstraints={{
         top: 0,
         left: 0,
-        right: window.innerWidth - 360,
-        bottom: window.innerHeight - 500
+        right: Math.max(0, windowSize.width - Math.min(360, windowSize.width - 30)),
+        bottom: Math.max(0, windowSize.height - Math.min(500, windowSize.height - 100))
       }}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ 
         opacity: 1, 
         scale: isMinimized ? 0.3 : 1,
         y: 0,
-        width: isMinimized ? 80 : 360,
-        height: isMinimized ? 80 : 500
+        width: isMinimized ? 80 : Math.min(360, windowSize.width - 30),
+        height: isMinimized ? 80 : Math.min(500, windowSize.height - 100)
       }}
       exit={{ opacity: 0, scale: 0.8, y: 20 }}
-      transition={{ type: "spring", damping: 20, stiffness: 300 }}
+      transition={{ type: "spring", stiffness: 100, damping: 30, restDelta: 0.001 }}
       style={{ 
         x: position.x, 
         y: position.y,

@@ -12,7 +12,9 @@
   justify-content: center;
   padding: 2rem;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Background */
@@ -70,6 +72,9 @@
   padding: 3rem 2.5rem;
   width: 100%;
   max-width: 450px;
+  margin: auto 0;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.5),
     0 0 100px rgba(255, 107, 53, 0.1);
@@ -80,7 +85,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
@@ -99,13 +104,14 @@
 }
 
 .auth-logo-text {
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 2.5rem;
+  font-weight: 900;
   background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: 2px;
+  text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
 }
 
 /* Title */
@@ -203,6 +209,13 @@
   outline: none;
 }
 
+/* Password inputs need extra right padding for toggle button */
+.auth-input[type="password"],
+.auth-input[type="text"][name="password"],
+.auth-input[type="text"][name="confirmPassword"] {
+  padding-right: 3.5rem !important; /* Space for toggle button */
+}
+
 .auth-input::placeholder {
   color: #666666;
 }
@@ -225,14 +238,18 @@
 /* Password Toggle */
 .auth-password-toggle {
   position: absolute;
-  right: 1rem;
+  right: 0.75rem;
   background: none;
   border: none;
   color: #666666;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.5rem;
   transition: color 0.3s ease;
   font-size: 1.125rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-password-toggle:hover:not(:disabled) {
@@ -378,8 +395,14 @@
 
 /* Responsive */
 @media (max-width: 640px) {
+  .auth-container {
+    padding: 1rem;
+  }
+  
   .auth-card {
     padding: 2rem 1.5rem;
+    max-height: none;
+    height: auto;
   }
   
   .auth-logo-icon {

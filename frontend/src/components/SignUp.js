@@ -8,9 +8,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  FaFire, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash,
-  FaPhone, FaMapMarkerAlt, FaTree, FaBuilding
+  FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash,
+  FaPhone, FaBuilding
 } from 'react-icons/fa';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 import './Auth.css';
@@ -25,10 +26,7 @@ const SignUp = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    phone: '',
-    longitude: -122.4194,
-    latitude: 37.7749,
-    total_acreage: 100
+    phone: ''
   });
   
   const [errors, setErrors] = useState({});
@@ -106,13 +104,6 @@ const SignUp = () => {
       newErrors.phone = 'Please enter a valid phone number';
     }
     
-    // Acreage validation
-    if (formData.total_acreage <= 0) {
-      newErrors.total_acreage = 'Please enter valid acreage';
-    } else if (formData.total_acreage > 100000) {
-      newErrors.total_acreage = 'Acreage seems too large';
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -183,30 +174,6 @@ const SignUp = () => {
     }
   };
 
-  // Get user's location
-  const detectLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFormData(prev => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          }));
-          setSuccessMessage('Location detected successfully!');
-          setTimeout(() => setSuccessMessage(''), 3000);
-        },
-        (error) => {
-          console.error('Location error:', error);
-          setSignupError('Could not detect location. Using default.');
-          setTimeout(() => setSignupError(''), 3000);
-        }
-      );
-    } else {
-      setSignupError('Geolocation is not supported by your browser');
-      setTimeout(() => setSignupError(''), 3000);
-    }
-  };
 
   if (authLoading) {
     return (
@@ -229,7 +196,7 @@ const SignUp = () => {
       >
         {/* Logo */}
         <div className="auth-logo">
-          <FaFire className="auth-logo-icon" />
+          <AnimatedFlameLogo size={80} animated={true} />
           <h1 className="auth-logo-text">BURNWISE</h1>
         </div>
         
@@ -402,66 +369,7 @@ const SignUp = () => {
               )}
             </div>
             
-            {/* Acreage */}
-            <div className="auth-field">
-              <label className="auth-label">Total Acreage</label>
-              <div className="auth-input-wrapper">
-                <FaTree className="auth-input-icon" />
-                <input
-                  type="number"
-                  name="total_acreage"
-                  value={formData.total_acreage}
-                  onChange={handleChange}
-                  placeholder="100"
-                  min="1"
-                  max="100000"
-                  className={`auth-input ${errors.total_acreage ? 'error' : ''}`}
-                  disabled={loading}
-                />
-              </div>
-              {errors.total_acreage && (
-                <span className="auth-field-error">{errors.total_acreage}</span>
-              )}
-            </div>
             
-            {/* Location */}
-            <div className="auth-field auth-field-full">
-              <label className="auth-label">Farm Location</label>
-              <button
-                type="button"
-                onClick={detectLocation}
-                className="auth-demo-button"
-                disabled={loading}
-                style={{ width: '100%' }}
-              >
-                <FaMapMarkerAlt style={{ marginRight: '0.5rem' }} />
-                Detect My Location
-              </button>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <input
-                  type="number"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  placeholder="Latitude"
-                  step="0.0001"
-                  className="auth-input"
-                  disabled={loading}
-                  style={{ paddingLeft: '1rem' }}
-                />
-                <input
-                  type="number"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  placeholder="Longitude"
-                  step="0.0001"
-                  className="auth-input"
-                  disabled={loading}
-                  style={{ paddingLeft: '1rem' }}
-                />
-              </div>
-            </div>
           </div>
           
           {/* Submit Button */}

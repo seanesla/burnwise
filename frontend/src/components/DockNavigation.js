@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './DockNavigation.css';
+import { springPresets, animationVariants } from '../styles/animations';
 
 const DockNavigation = ({ onAction, activePanel }) => {
   const [hoveredIcon, setHoveredIcon] = useState(null);
@@ -61,19 +62,8 @@ const DockNavigation = ({ onAction, activePanel }) => {
     }
   ];
   
-  const iconVariants = {
-    initial: { scale: 1, y: 0 },
-    hover: { 
-      scale: 1.3, 
-      y: -10,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 10
-      }
-    },
-    tap: { scale: 0.9 }
-  };
+  // Using global animation standards for consistency
+  const iconVariants = animationVariants.dockIcon;
   
   const tooltipVariants = {
     hidden: { opacity: 0, y: 10, scale: 0.8 },
@@ -83,8 +73,9 @@ const DockNavigation = ({ onAction, activePanel }) => {
       scale: 1,
       transition: {
         type: "spring",
-        stiffness: 400,
-        damping: 15
+        stiffness: 300,
+        damping: 35,
+        restDelta: 0.001
       }
     }
   };
@@ -94,7 +85,7 @@ const DockNavigation = ({ onAction, activePanel }) => {
       className="dock-navigation"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
-      transition={{ type: "spring", damping: 20, stiffness: 300 }}
+      transition={springPresets.discreteEntrance}
     >
       <div className="dock-container">
         {dockItems.map((item, index) => (

@@ -100,7 +100,7 @@ const UnifiedFlameAnimation = ({ onAnimationComplete }) => {
       <motion.div
         style={{
           position: "fixed",
-          zIndex: animationPhase === "inPosition" ? 10 : 999999,
+          zIndex: animationPhase === "inPosition" ? 10 : 9999,
           width: 180,
           height: 180,
           display: "flex",

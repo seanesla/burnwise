@@ -12,11 +12,21 @@ const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 const embeddingService = require('../services/embeddingService');
 
-// Initialize OpenAI with GPT-5-nano for cost efficiency
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.openai.com/v1'
-});
+// Lazy-initialize OpenAI to prevent crash when API key not set
+let openai = null;
+const getOpenAI = () => {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      logger.warn('OPENAI_API_KEY not set, using mock mode for WeatherAnalyst');
+      return null;
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: 'https://api.openai.com/v1'
+    });
+  }
+  return openai;
+};
 
 // Safety thresholds based on EPA and agricultural standards
 const SAFETY_THRESHOLDS = {
@@ -209,7 +219,13 @@ async function getWeatherEmbedding(weatherData) {
   try {
     const text = `Temperature: ${weatherData.temperature}°F, Wind: ${weatherData.wind_speed}mph ${weatherData.wind_direction}, Humidity: ${weatherData.humidity}%, Conditions: ${weatherData.conditions}`;
     
-    const response = await openai.embeddings.create({
+    const openaiClient = getOpenAI();
+    if (!openaiClient) {
+      // Return zero vector when OpenAI not available
+      return JSON.stringify(new Array(128).fill(0));
+    }
+    
+    const response = await openaiClient.embeddings.create({
       model: 'text-embedding-3-large',
       input: text,
       dimensions: 128 // Weather vectors are 128-dimensional
