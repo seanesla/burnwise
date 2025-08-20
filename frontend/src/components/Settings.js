@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   FaCog, FaBell, FaUser, FaLock, FaPalette, 
   FaDatabase, FaSync, FaSave, FaExclamationTriangle,
-  FaTrash, FaRedo, FaClock, FaShieldAlt
+  FaTrash, FaRedo, FaClock, FaShieldAlt, FaSignOutAlt, FaKey
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
 import settingsManager from '../utils/settingsManager';
+import { useAuth } from '../contexts/AuthContext';
 import './Settings.css';
 
 const Settings = () => {
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
   const [settings, setSettings] = useState({
     profile: {
       name: '',
@@ -109,6 +115,59 @@ const Settings = () => {
         }
       }
     }));
+  };
+
+  const handleLogout = async () => {
+    // Check if user is in demo mode
+    const demoContext = sessionStorage.getItem('burnwise_demo_context');
+    const isDemoMode = !!demoContext;
+
+    const logoutMessage = isDemoMode 
+      ? `Are you sure you want to logout of your DEMO session?
+
+This will:
+• End your current demo session
+• Clear all local demo data
+• Return you to the login page
+
+Note: Your demo data in TiDB will remain until it expires in 24 hours.`
+      : `Are you sure you want to logout?
+
+This will:
+• Sign you out of BURNWISE
+• Clear your local session
+• Return you to the login page
+
+Your farm data will remain safely stored.`;
+
+    const confirmed = window.confirm(logoutMessage);
+    
+    if (!confirmed) return;
+
+    setIsLoggingOut(true);
+    
+    try {
+      // Clear demo context if in demo mode
+      if (isDemoMode) {
+        sessionStorage.removeItem('burnwise_demo_context');
+        sessionStorage.removeItem('demo_encryption_key');
+        toast.success('Demo session ended');
+      } else {
+        toast.success('Logged out successfully');
+      }
+      
+      // Call logout from AuthContext
+      await logout();
+      
+      // Navigate to login page
+      navigate('/login');
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Logout failed. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const tabs = [
@@ -242,6 +301,82 @@ const Settings = () => {
                       <span>{role}</span>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              {/* Account Management Section */}
+              <div className="subsection account-management">
+                <h3 className="subsection-title">
+                  <FaLock />
+                  Account Management
+                </h3>
+                
+                <div className="account-info-card">
+                  <div className="account-info-header">
+                    <FaUser className="account-icon" />
+                    <div>
+                      <h4>Account Status</h4>
+                      <p>Signed in as: <strong>{user?.email || 'Unknown'}</strong></p>
+                      <p>Farm ID: <strong>#{user?.farmId || 'Unknown'}</strong></p>
+                    </div>
+                  </div>
+                  
+                  {/* Check if demo mode */}
+                  {sessionStorage.getItem('burnwise_demo_context') && (
+                    <div className="demo-status-badge">
+                      <FaShieldAlt />
+                      <span>Demo Mode Active</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="account-actions">
+                  <div className="account-action-group">
+                    <h4>Security Actions</h4>
+                    
+                    <button
+                      className="btn-secondary account-action-btn"
+                      onClick={() => toast.info('Password change feature coming soon')}
+                      disabled={!!sessionStorage.getItem('burnwise_demo_context')}
+                    >
+                      <FaKey />
+                      Change Password
+                    </button>
+                  </div>
+
+                  <div className="account-action-group danger-zone">
+                    <h4>Session Management</h4>
+                    <p className="danger-zone-description">
+                      Sign out of your BURNWISE account
+                    </p>
+                    
+                    <motion.button
+                      className="btn-logout"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      whileHover={!isLoggingOut ? { scale: 1.02 } : {}}
+                      whileTap={!isLoggingOut ? { scale: 0.98 } : {}}
+                    >
+                      {isLoggingOut ? (
+                        <>
+                          <LoadingSpinner size="small" color="#fff" />
+                          Signing Out...
+                        </>
+                      ) : (
+                        <>
+                          <FaSignOutAlt />
+                          {sessionStorage.getItem('burnwise_demo_context') ? 'End Demo Session' : 'Logout'}
+                        </>
+                      )}
+                    </motion.button>
+                    
+                    <p className="logout-disclaimer">
+                      {sessionStorage.getItem('burnwise_demo_context') 
+                        ? 'Your demo data will remain in TiDB until automatic cleanup (24 hours)'
+                        : 'Your farm data will remain safely stored and accessible on next login'
+                      }
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

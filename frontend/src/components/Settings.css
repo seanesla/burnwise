@@ -573,6 +573,225 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* Account Management Section Styles */
+.account-management {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 2px solid rgba(255, 107, 53, 0.3);
+}
+
+.account-info-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.account-info-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.account-icon {
+  color: #FF6B35;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.account-info-header h4 {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.account-info-header p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin: 2px 0;
+  line-height: 1.4;
+}
+
+.account-info-header strong {
+  color: #FF6B35;
+  font-weight: 600;
+}
+
+.demo-status-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 107, 53, 0.2);
+  border: 1px solid rgba(255, 107, 53, 0.4);
+  border-radius: 20px;
+  padding: 6px 12px;
+  color: #FF6B35;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.demo-status-badge svg {
+  font-size: 10px;
+}
+
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.account-action-group {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.account-action-group h4 {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-width: 160px;
+}
+
+.account-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.danger-zone {
+  border-color: rgba(255, 68, 68, 0.2);
+  background: rgba(255, 68, 68, 0.05);
+}
+
+.danger-zone h4 {
+  color: #ff4444;
+}
+
+.danger-zone-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(255, 68, 68, 0.2);
+  margin-bottom: 12px;
+  min-width: 180px;
+}
+
+.btn-logout:hover:not(:disabled) {
+  box-shadow: 0 8px 30px rgba(255, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-logout:disabled {
+  background: rgba(255, 68, 68, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 10px rgba(255, 68, 68, 0.1);
+}
+
+.logout-disclaimer {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.4;
+  max-width: 400px;
+}
+
+/* Responsive adjustments for account management */
+@media (max-width: 768px) {
+  .account-info-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .demo-status-badge {
+    position: static;
+    align-self: flex-start;
+    margin-top: 8px;
+  }
+
+  .account-actions {
+    gap: 20px;
+  }
+
+  .account-action-group {
+    padding: 16px;
+  }
+
+  .btn-logout {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .account-action-btn {
+    width: 100%;
+    min-width: auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-management {
+    margin-top: 24px;
+    padding-top: 24px;
+  }
+
+  .account-info-card {
+    padding: 16px;
+  }
+
+  .account-info-header h4 {
+    font-size: 16px;
+  }
+
+  .account-action-group {
+    padding: 14px;
+  }
+
+  .btn-logout {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .settings-container {
