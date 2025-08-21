@@ -17,46 +17,50 @@
   }
 }
 
-/* Flame container with subtle shine */
+/* Flame container with glossy shine */
 .flame-container-animated {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   /* Static glow effect without pulsing */
   filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
           drop-shadow(0 0 20px rgba(255, 87, 34, 0.5));
 }
 
-/* Subtle shimmer effect overlay */
-.flame-container-animated::after {
+/* Professional glossy shine effect */
+.flame-container-animated::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: -50%;
+  left: -60%;
+  width: 30%;
+  height: 200%;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    transparent 30%,
-    rgba(255, 140, 90, 0.1) 45%,
-    rgba(255, 200, 150, 0.15) 50%,
-    rgba(255, 140, 90, 0.1) 55%,
-    transparent 70%,
-    transparent 100%
+    transparent,
+    rgba(255, 255, 255, 0) 10%,
+    rgba(255, 255, 255, 0.8) 20%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.8) 80%,
+    rgba(255, 255, 255, 0) 90%,
+    transparent
   );
-  background-size: 200% 100%;
-  animation: subtleShimmer 4s ease-in-out infinite;
+  transform: rotate(30deg);
+  animation: glossyShine 3s ease-in-out infinite;
+  animation-delay: 1s;
   pointer-events: none;
-  mix-blend-mode: screen;
-  opacity: 0.6;
 }
 
-@keyframes subtleShimmer {
+@keyframes glossyShine {
   0% {
-    background-position: 200% center;
+    left: -60%;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
   }
   100% {
-    background-position: -200% center;
+    left: 140%;
+    opacity: 0;
   }
 }
 
