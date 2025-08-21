@@ -36,6 +36,7 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 - `ConflictResolver.js`: Multi-farm negotiation and mediation (GPT-5-mini for complex reasoning)
 - `ScheduleOptimizer.js`: AI-enhanced simulated annealing (GPT-5-nano)
 - `ProactiveMonitor.js`: 24/7 autonomous monitoring (GPT-5-nano)
+- `OnboardingAgent.js`: Conversational farm setup replacing forms (GPT-5-mini)
 
 **Legacy Functions as Tools** (`backend/agents/`):
 - `coordinator.js`: Validation/scoring wrapped as tool
@@ -48,6 +49,7 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 - `SpatialInterface.js`: Revolutionary map-as-application main component (Bloomberg Terminal meets Google Earth)
 - `FloatingAI.js`: Draggable AI assistant bubble with glass morphism
 - `DockNavigation.js`: Minimalist 4-icon bottom dock (replaced 8 tabs)
+- `OnboardingChat.js`: Conversational onboarding interface using OpenAI Agents SDK
 - `TimelineScrubber.js`: Temporal navigation for past/present/future burns
 - `AgentChat.js`: Conversational UI with agent visualization (NO EMOJIS)
 - `HandoffDiagram.js`: Visual agent delegation flow (NO EMOJIS)
@@ -137,6 +139,18 @@ GPT-5-nano is FUNDAMENTALLY INCOMPATIBLE with structured JSON tasks:
 **PERSISTENCE**: Stores completion in localStorage, resettable via (?) button
 **COMPONENTS**: `InteractiveTutorial.js` + `InteractiveTutorial.css` in spatial interface
 **NO EMOJIS**: Professional tutorial text without emoji usage
+
+## Conversational Onboarding System (NEW Aug 21, 2025)
+**IMPLEMENTATION**: OpenAI Agents SDK replaces traditional form-based onboarding
+**AGENT**: `OnboardingAgent.js` uses GPT-5-mini for structured data extraction
+**TOOLS**: `save_farm_data`, `validate_location`, `check_email_availability`
+**CONVERSATION**: Natural language interface asks questions one at a time
+**DATA COLLECTION**: Farm name, owner, email, location, acreage, crops, burn preferences
+**FALLBACK**: Manual form available if AI unavailable (OnboardingForm.js)
+**STORAGE**: Creates farm record in TiDB with preferences in farm_preferences table
+**UI**: Chat interface with glass morphism matching spatial interface design
+**SESSION**: Maintains conversation state for 30-minute sessions
+**REQUIREMENTS**: All Zod schema fields must use `.nullable()` not `.optional()` for OpenAI SDK
 
 ## Development Standards
 
