@@ -92,16 +92,16 @@ const Navigation = () => {
                   onBlur={() => setTimeout(() => setShowUserMenu(false), 200)}
                 >
                   <div className="avatar-circle">
-                    {sessionStorage.getItem('isDemo') === 'true' ? 'D' : (user?.name?.charAt(0) || 'U')}
+                    {user?.isDemo ? 'D' : (user?.name?.charAt(0) || 'U')}
                   </div>
                 </button>
                 
                 {showUserMenu && (
                   <div className="user-menu-minimal">
                     <div className="user-menu-header-minimal">
-                      <div className="user-name">{sessionStorage.getItem('isDemo') === 'true' ? 'Demo User' : user?.name}</div>
-                      <div className="user-email">{sessionStorage.getItem('isDemo') === 'true' ? 'demo@burnwise.com' : user?.email}</div>
-                      <div className="user-farm">Farm #{sessionStorage.getItem('isDemo') === 'true' ? 'Demo' : user?.farmId}</div>
+                      <div className="user-name">{user?.name}</div>
+                      <div className="user-email">{user?.email}</div>
+                      <div className="user-farm">Farm #{user?.isDemo ? 'Demo' : user?.farmId}</div>
                       {user?.isDemo && <div className="demo-badge">Demo Mode</div>}
                     </div>
                     <div className="menu-divider" />

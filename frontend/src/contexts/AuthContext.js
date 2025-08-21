@@ -78,7 +78,18 @@ export const AuthProvider = ({ children }) => {
         const response = await axios.get('/api/auth/verify');
         
         if (response.data.valid && response.data.user) {
-          const userData = response.data.user;
+          let userData = response.data.user;
+          
+          // Override user data for demo mode
+          if (sessionStorage.getItem('isDemo') === 'true') {
+            userData = {
+              ...userData,
+              name: 'Demo User',
+              email: 'demo@burnwise.com',
+              isDemo: true
+            };
+          }
+          
           setUser(userData);
           setIsAuthenticated(true);
           
@@ -142,7 +153,17 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (response.data.success) {
-        const userData = response.data.user;
+        let userData = response.data.user;
+        
+        // Override user data for demo mode
+        if (sessionStorage.getItem('isDemo') === 'true') {
+          userData = {
+            ...userData,
+            name: 'Demo User',
+            email: 'demo@burnwise.com',
+            isDemo: true
+          };
+        }
         
         // Cookies are set automatically by backend (httpOnly)
         setUser(userData);
