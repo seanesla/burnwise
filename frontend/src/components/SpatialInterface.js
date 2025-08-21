@@ -14,6 +14,7 @@ import FloatingAI from './FloatingAI';
 import DockNavigation from './DockNavigation';
 import TimelineScrubber from './TimelineScrubber';
 import DemoSessionBanner from './DemoSessionBanner';
+import DashboardView from './DashboardView';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './SpatialInterface.css';
@@ -37,6 +38,7 @@ const SpatialInterface = () => {
   const [weatherOverlay, setWeatherOverlay] = useState(true);
   const [smokeOverlay, setSmokeOverlay] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
+  const [isMapView, setIsMapView] = useState(true); // Toggle between map and dashboard
   
   // Data state
   const [farms, setFarms] = useState([]);
@@ -55,9 +57,10 @@ const SpatialInterface = () => {
       const { panelId } = event.detail;
       console.log('Panel change event received:', panelId);
       
-      // Handle 'spatial' as closing all panels
+      // Handle 'spatial' as toggling map view
       if (panelId === 'spatial') {
-        setActivePanel(null);
+        setIsMapView(prev => !prev);
+        setActivePanel(null); // Close any open panels when toggling view
       } else if (activePanel === panelId) {
         // Toggle the panel - if it's already active, close it
         setActivePanel(null);
@@ -74,12 +77,12 @@ const SpatialInterface = () => {
     };
   }, [activePanel]);
   
-  // Emit activePanel changes to Sidebar
+  // Emit activePanel and isMapView changes to Sidebar
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('activePanelChanged', {
-      detail: { activePanel }
+      detail: { activePanel, isMapView }
     }));
-  }, [activePanel]);
+  }, [activePanel, isMapView]);
   
   // Initialize map
   useEffect(() => {
@@ -673,15 +676,28 @@ const SpatialInterface = () => {
       {/* Demo Session Banner - only show in demo mode */}
       {isDemo && <DemoSessionBanner />}
       
-      {/* Main Map Container */}
-      <div ref={mapContainer} className="map-container" />
-      
-      {/* Coordinate Display */}
-      <div className="coordinates-display">
-        <span>Lng: {lng}</span>
-        <span>Lat: {lat}</span>
-        <span>Zoom: {zoom}</span>
-      </div>
+      {/* Conditionally render Map or Dashboard based on toggle */}
+      {isMapView ? (
+        <>
+          {/* Main Map Container */}
+          <div ref={mapContainer} className="map-container" />
+          
+          {/* Coordinate Display - only show in map view */}
+          <div className="coordinates-display">
+            <span>Lng: {lng}</span>
+            <span>Lat: {lat}</span>
+            <span>Zoom: {zoom}</span>
+          </div>
+        </>
+      ) : (
+        /* Dashboard View */
+        <DashboardView 
+          burns={burns}
+          weatherData={weatherData}
+          farms={farms}
+          activePanel={activePanel}
+        />
+      )}
       
       {/* Selected Farm Info Card */}
       <AnimatePresence>

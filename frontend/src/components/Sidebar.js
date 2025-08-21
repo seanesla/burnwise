@@ -27,8 +27,9 @@ const Sidebar = ({ onPanelChange }) => {
     return saved !== null ? JSON.parse(saved) : true;
   });
   
-  // Track active panel from SpatialInterface
+  // Track active panel and map view state from SpatialInterface
   const [activePanel, setActivePanel] = useState(null);
+  const [isMapView, setIsMapView] = useState(true);
   
   // Real farm data
   const [farmData, setFarmData] = useState(null);
@@ -42,11 +43,16 @@ const Sidebar = ({ onPanelChange }) => {
     localStorage.setItem('burnwise-sidebar-expanded', JSON.stringify(isExpanded));
   }, [isExpanded]);
 
-  // Listen for activePanel changes from SpatialInterface
+  // Listen for activePanel and isMapView changes from SpatialInterface
   useEffect(() => {
     const handleActivePanelChange = (event) => {
-      if (event.detail && event.detail.activePanel !== undefined) {
-        setActivePanel(event.detail.activePanel);
+      if (event.detail) {
+        if (event.detail.activePanel !== undefined) {
+          setActivePanel(event.detail.activePanel);
+        }
+        if (event.detail.isMapView !== undefined) {
+          setIsMapView(event.detail.isMapView);
+        }
       }
     };
     
@@ -159,20 +165,15 @@ const Sidebar = ({ onPanelChange }) => {
       navigate(targetPath);
     }
     
-    // Special handling for Map View (spatial) - toggle if already active
-    if (panelId === 'spatial' && activePanel === null) {
-      // Already on map view with no panels, do nothing
-      return;
-    }
-    
     // Dispatch event for SpatialInterface to handle
     window.dispatchEvent(new CustomEvent('panelChange', { 
       detail: { panelId, source: 'sidebar' }
     }));
     
-    // Update local activePanel state
+    // Update local state based on panel clicked
     if (panelId === 'spatial') {
-      setActivePanel(null); // Map view means no panels
+      // Map View button toggles the view, don't change activePanel
+      // The isMapView state will be updated via the event listener
     } else if (activePanel === panelId) {
       setActivePanel(null); // Toggle off if clicking same panel
     } else {
@@ -267,8 +268,8 @@ const Sidebar = ({ onPanelChange }) => {
           // Determine if this item is active
           let isActive = false;
           if (item.id === 'spatial') {
-            // Map View is active when on spatial page with no panels open
-            isActive = (location.pathname === '/spatial' || location.pathname === '/demo/spatial') && activePanel === null;
+            // Map View is active when map view is enabled
+            isActive = isMapView;
           } else if (item.id === 'settings') {
             // Settings is active when on settings page
             isActive = location.pathname === '/settings';
