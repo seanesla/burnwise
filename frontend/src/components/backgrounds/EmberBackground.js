@@ -1,179 +1,147 @@
 /**
- * EmberBackground.js - Animated ember particle background
- * Creates floating ember effects for dark backgrounds throughout the app
- * Optimized canvas animation with subtle blur for depth
+ * EmberBackground.js - VISIBLE animated ember particle background
+ * Creates bright glowing ember effects that are actually visible
+ * Using bright colors and no black clearing
  */
 
 import React, { useEffect, useRef } from 'react';
 import './EmberBackground.css';
 
-class Particle {
+class Ember {
   constructor(canvas) {
     this.canvas = canvas;
     this.reset();
-    // Start particles at random positions initially
+    // Start particles at random positions for immediate visibility
     this.y = Math.random() * canvas.height;
   }
 
   reset() {
     this.x = Math.random() * this.canvas.width;
-    this.y = this.canvas.height + 10;
-    this.size = Math.random() * 3 + 1;
-    this.speedY = Math.random() * 1.5 + 0.5;
-    this.speedX = (Math.random() - 0.5) * 0.5;
-    this.opacity = Math.random() * 0.6 + 0.4;
-    this.fadeRate = Math.random() * 0.005 + 0.002;
-    this.hue = Math.random() * 30 + 10; // Orange to red range
-    this.brightness = Math.random() * 50 + 50;
-    this.twinkle = Math.random() * 0.02 + 0.01;
-    this.twinklePhase = Math.random() * Math.PI * 2;
-    this.lifespan = Math.random() * 200 + 100;
+    this.y = this.canvas.height + 20;
+    this.size = Math.random() * 6 + 3; // Even bigger particles (3-9px)
+    this.speedY = Math.random() * 3 + 1.5; // Faster movement
+    this.speedX = (Math.random() - 0.5) * 1.5;
+    this.opacity = 1; // Full opacity
+    this.fadeRate = Math.random() * 0.002 + 0.001;
+    this.color = this.getEmberColor();
+    this.glow = Math.random() * 20 + 10; // Bigger glow
+    this.flickerSpeed = Math.random() * 0.1 + 0.05;
+    this.flickerPhase = Math.random() * Math.PI * 2;
+    this.lifespan = Math.random() * 400 + 300;
     this.age = 0;
+  }
+
+  getEmberColor() {
+    const colors = [
+      { r: 255, g: 120, b: 50 },  // Bright orange
+      { r: 255, g: 160, b: 30 },   // Golden orange  
+      { r: 255, g: 90, b: 20 },    // Red-orange
+      { r: 255, g: 200, b: 50 },   // Yellow-orange
+      { r: 255, g: 255, b: 150 }   // Yellow-white (hot)
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
   }
 
   update(deltaTime) {
     this.age += deltaTime;
     
-    // Float upward with slight horizontal drift
-    this.y -= this.speedY * deltaTime * 0.06;
-    this.x += this.speedX * deltaTime * 0.06;
+    // Float upward with wavy motion
+    this.y -= this.speedY * deltaTime * 0.08;
+    this.x += this.speedX * deltaTime * 0.08;
+    this.x += Math.sin(this.age * 0.002) * 0.8;
     
-    // Add subtle floating motion
-    this.x += Math.sin(this.age * 0.001) * 0.2;
+    // Flicker effect
+    this.flickerPhase += this.flickerSpeed;
+    const flicker = Math.sin(this.flickerPhase) * 0.2 + 0.8;
     
-    // Twinkle effect
-    this.twinklePhase += this.twinkle;
-    const twinkleFactor = Math.sin(this.twinklePhase) * 0.3 + 0.7;
-    
-    // Fade as particle rises
-    if (this.y < this.canvas.height * 0.3) {
-      this.opacity -= this.fadeRate * deltaTime * 0.1;
+    // Fade only near top
+    if (this.y < 150) {
+      this.opacity -= this.fadeRate * deltaTime * 0.15;
     }
     
-    // Reset when particle goes off screen or fades out
-    if (this.y < -10 || this.opacity <= 0 || this.x < -10 || this.x > this.canvas.width + 10) {
+    // Reset if out of bounds
+    if (this.y < -20 || this.opacity <= 0 || this.age > this.lifespan) {
       this.reset();
     }
     
-    return twinkleFactor;
+    return flicker;
   }
 
-  draw(ctx, twinkleFactor) {
-    // Glow effect
-    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
-    gradient.addColorStop(0, `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.opacity * twinkleFactor})`);
-    gradient.addColorStop(0.4, `hsla(${this.hue}, 100%, ${this.brightness * 0.8}%, ${this.opacity * 0.5 * twinkleFactor})`);
-    gradient.addColorStop(1, `hsla(${this.hue}, 100%, ${this.brightness * 0.6}%, 0)`);
+  draw(ctx, flicker) {
+    const actualOpacity = Math.min(1, this.opacity * flicker);
     
+    // Save context state
+    ctx.save();
+    
+    // Large bright glow effect
+    const gradient = ctx.createRadialGradient(
+      this.x, this.y, 0,
+      this.x, this.y, this.glow
+    );
+    gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${actualOpacity})`);
+    gradient.addColorStop(0.3, `rgba(${this.color.r}, ${this.color.g * 0.9}, ${this.color.b * 0.8}, ${actualOpacity * 0.6})`);
+    gradient.addColorStop(0.6, `rgba(${this.color.r * 0.8}, ${this.color.g * 0.7}, ${this.color.b * 0.6}, ${actualOpacity * 0.3})`);
+    gradient.addColorStop(1, `rgba(${this.color.r * 0.6}, ${this.color.g * 0.5}, ${this.color.b * 0.4}, 0)`);
+    
+    ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, this.glow, 0, Math.PI * 2);
     ctx.fill();
     
-    // Core ember
-    ctx.fillStyle = `hsla(${this.hue}, 100%, ${Math.min(100, this.brightness + 20)}%, ${this.opacity * twinkleFactor})`;
+    // Main bright ember
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${actualOpacity})`;
+    ctx.shadowColor = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 1)`;
+    ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
-  }
-}
-
-class SmokeParticle {
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.reset();
-    this.y = Math.random() * canvas.height;
-  }
-
-  reset() {
-    this.x = Math.random() * this.canvas.width;
-    this.y = this.canvas.height + 50;
-    this.size = Math.random() * 80 + 40;
-    this.speedY = Math.random() * 0.3 + 0.1;
-    this.speedX = (Math.random() - 0.5) * 0.2;
-    this.opacity = Math.random() * 0.02 + 0.01;
-    this.rotation = Math.random() * Math.PI * 2;
-    this.rotationSpeed = (Math.random() - 0.5) * 0.001;
-  }
-
-  update(deltaTime) {
-    this.y -= this.speedY * deltaTime * 0.06;
-    this.x += this.speedX * deltaTime * 0.06;
-    this.rotation += this.rotationSpeed * deltaTime;
-    this.size += deltaTime * 0.002;
     
-    if (this.y < -this.size || this.x < -this.size || this.x > this.canvas.width + this.size) {
-      this.reset();
-    }
-  }
-
-  draw(ctx) {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rotation);
+    // White hot core
+    ctx.fillStyle = `rgba(255, 255, 220, ${actualOpacity})`;
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * 0.4, 0, Math.PI * 2);
+    ctx.fill();
     
-    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
-    gradient.addColorStop(0, `rgba(255, 107, 53, ${this.opacity})`);
-    gradient.addColorStop(0.5, `rgba(255, 87, 34, ${this.opacity * 0.5})`);
-    gradient.addColorStop(1, `rgba(255, 67, 0, 0)`);
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(-this.size, -this.size, this.size * 2, this.size * 2);
+    // Restore context
     ctx.restore();
   }
 }
 
-const EmberBackground = ({ intensity = 1, blur = true }) => {
+const EmberBackground = ({ intensity = 1, blur = false }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const particlesRef = useRef([]);
-  const smokeParticlesRef = useRef([]);
   const lastTimeRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    
-    const handleResize = () => {
+    const ctx = canvas.getContext('2d', { alpha: true });
+    const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      
-      // Reinitialize particles on resize
-      const particleCount = Math.floor((canvas.width * canvas.height) / 15000) * intensity;
-      const smokeCount = Math.floor(particleCount / 10);
-      
-      particlesRef.current = Array.from({ length: Math.min(particleCount, 100) }, 
-        () => new Particle(canvas)
-      );
-      
-      smokeParticlesRef.current = Array.from({ length: Math.min(smokeCount, 10) }, 
-        () => new SmokeParticle(canvas)
-      );
     };
+    resizeCanvas();
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
+    // Create many visible particles
+    const particleCount = Math.floor(80 * intensity); // Lots of particles
+    particlesRef.current = Array.from({ length: particleCount }, () => new Ember(canvas));
 
     const animate = (currentTime) => {
       const deltaTime = currentTime - lastTimeRef.current;
       lastTimeRef.current = currentTime;
 
-      // Clear canvas with slight fade for trail effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Clear canvas completely
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw smoke particles (background layer)
-      smokeParticlesRef.current.forEach(particle => {
-        particle.update(deltaTime);
-        particle.draw(ctx);
-      });
-
-      // Draw ember particles
+      // Update and draw all particles
       particlesRef.current.forEach(particle => {
-        const twinkleFactor = particle.update(deltaTime);
-        particle.draw(ctx, twinkleFactor);
+        const flicker = particle.update(deltaTime);
+        particle.draw(ctx, flicker);
       });
 
       animationRef.current = requestAnimationFrame(animate);
@@ -181,29 +149,31 @@ const EmberBackground = ({ intensity = 1, blur = true }) => {
 
     animate(0);
 
+    window.addEventListener('resize', resizeCanvas);
+
     return () => {
-      window.removeEventListener('resize', handleResize);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+      window.removeEventListener('resize', resizeCanvas);
     };
   }, [intensity]);
 
   return (
     <div className={`ember-background ${blur ? 'ember-blur' : ''}`}>
-      <canvas 
+      <canvas
         ref={canvasRef}
         className="ember-canvas"
-        style={{ 
+        style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          opacity: 1
         }}
       />
-      <div className="ember-overlay" />
     </div>
   );
 };
