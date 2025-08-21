@@ -65,7 +65,7 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
           transition={{ delay: 0.2 }}
         >
           <div className="card-header">
-            <span className="weather-icon">🌤️</span>
+            <AnimatedFlameLogo size={20} animated={false} />
             <h3>Weather Conditions</h3>
           </div>
           <div className="card-content">
@@ -104,27 +104,27 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
           transition={{ delay: 0.3 }}
         >
           <div className="card-header">
-            <span className="alert-icon">🔔</span>
+            <AnimatedFlameLogo size={20} animated={false} />
             <h3>Active Alerts</h3>
           </div>
           <div className="card-content">
             <div className="alerts-list">
               <div className="alert-item warning">
-                <span className="alert-badge">⚠️</span>
+                <span className="alert-badge">!</span>
                 <div className="alert-content">
                   <div className="alert-title">Wind Advisory</div>
                   <div className="alert-desc">Winds 15-20 mph after 3 PM</div>
                 </div>
               </div>
               <div className="alert-item success">
-                <span className="alert-badge">✓</span>
+                <span className="alert-badge">OK</span>
                 <div className="alert-content">
                   <div className="alert-title">Air Quality Good</div>
                   <div className="alert-desc">PM2.5 within safe limits</div>
                 </div>
               </div>
               <div className="alert-item info">
-                <span className="alert-badge">ℹ️</span>
+                <span className="alert-badge">i</span>
                 <div className="alert-content">
                   <div className="alert-title">Neighbor Activity</div>
                   <div className="alert-desc">Golden Fields burn at 2 PM</div>
@@ -142,7 +142,7 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
           transition={{ delay: 0.4 }}
         >
           <div className="card-header">
-            <span className="stats-icon">📊</span>
+            <AnimatedFlameLogo size={20} animated={false} />
             <h3>Quick Stats</h3>
           </div>
           <div className="card-content">
@@ -160,7 +160,7 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
                 <div className="stat-label">Acres Managed</div>
               </div>
               <div className="stat-block">
-                <div className="stat-number status-good">✓</div>
+                <div className="stat-number status-good">OK</div>
                 <div className="stat-label">System Status</div>
               </div>
             </div>
