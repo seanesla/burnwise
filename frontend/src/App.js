@@ -14,7 +14,8 @@ import './styles/App.css';
 const Landing = lazy(() => import('./components/Landing'));
 const Login = lazy(() => import('./components/Login'));
 const SignUp = lazy(() => import('./components/SignUp'));
-const Onboarding = lazy(() => import('./components/Onboarding'));
+const OnboardingChat = lazy(() => import('./components/OnboardingChat'));
+const OnboardingForm = lazy(() => import('./components/Onboarding')); // Keep old form as fallback
 const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
 const DemoInitializer = lazy(() => import('./components/DemoInitializer'));
@@ -75,10 +76,15 @@ function AppContent() {
               <Route path="/demo/try" element={<DemoInitializer />} />
               <Route path="/demo/spatial" element={<SpatialInterface />} />
               
-              {/* Onboarding Route - requires auth but special handling */}
+              {/* Onboarding Routes - Conversational AI and form fallback */}
               <Route path="/onboarding" element={
                 <ProtectedRoute requireOnboarding={true}>
-                  <Onboarding />
+                  <OnboardingChat />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding-form" element={
+                <ProtectedRoute requireOnboarding={true}>
+                  <OnboardingForm />
                 </ProtectedRoute>
               } />
               

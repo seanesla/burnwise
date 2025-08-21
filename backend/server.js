@@ -42,6 +42,8 @@ const agentsRoutes = require('./api/agents');
 console.log('Agents routes loaded');
 const demoRoutes = require('./api/demo');
 console.log('Demo routes loaded');
+const onboardingRoutes = require('./api/onboarding');
+console.log('Onboarding routes loaded');
 
 // Import agents for initialization
 console.log('Loading agents...');
@@ -191,6 +193,7 @@ app.use('/api/analytics', optionalAuth, analyticsRoutes); // Analytics can be pu
 app.use('/api/agents', optionalAuth, agentsRoutes); // Agent API for 5-agent system
 app.use('/api/predictor', optionalAuth, require('./api/predictor')); // Gaussian plume model API
 app.use('/api/demo', demoRoutes); // Demo mode with real TiDB integration
+app.use('/api/onboarding', onboardingRoutes); // Conversational onboarding with OpenAI Agents SDK
 
 // Socket.io setup for real-time updates
 console.log('Setting up Socket.io...');
