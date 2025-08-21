@@ -9,9 +9,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMap } from '../contexts/MapContext';
 import FloatingAI from './FloatingAI';
 import DockNavigation from './DockNavigation';
 import TimelineScrubber from './TimelineScrubber';
+import DemoSessionBanner from './DemoSessionBanner';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './SpatialInterface.css';
@@ -21,11 +23,12 @@ mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
 const SpatialInterface = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const { mapCenter, updateMapCenter, setSelectedFarm: setGlobalSelectedFarm } = useMap();
   
-  // Map state
-  const [lng, setLng] = useState(-121.740); // California Central Valley
-  const [lat, setLat] = useState(38.544);
-  const [zoom, setZoom] = useState(10);
+  // Map state - initialize from context
+  const [lng, setLng] = useState(mapCenter.lng);
+  const [lat, setLat] = useState(mapCenter.lat);
+  const [zoom, setZoom] = useState(mapCenter.zoom);
   
   // UI state
   const [activePanel, setActivePanel] = useState(null);
@@ -33,11 +36,50 @@ const SpatialInterface = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [weatherOverlay, setWeatherOverlay] = useState(true);
   const [smokeOverlay, setSmokeOverlay] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
   
   // Data state
   const [farms, setFarms] = useState([]);
   const [burns, setBurns] = useState([]);
   const [weatherData, setWeatherData] = useState(null);
+  
+  // Check if in demo mode
+  useEffect(() => {
+    const demoContext = sessionStorage.getItem('burnwise_demo_context');
+    setIsDemo(!!demoContext && window.location.pathname.startsWith('/demo'));
+  }, []);
+  
+  // Listen for panel change events from Sidebar
+  useEffect(() => {
+    const handlePanelChange = (event) => {
+      const { panelId } = event.detail;
+      console.log('Panel change event received:', panelId);
+      
+      // Handle 'spatial' as closing all panels
+      if (panelId === 'spatial') {
+        setActivePanel(null);
+      } else if (activePanel === panelId) {
+        // Toggle the panel - if it's already active, close it
+        setActivePanel(null);
+      } else {
+        // Open the new panel
+        setActivePanel(panelId);
+      }
+    };
+    
+    window.addEventListener('panelChange', handlePanelChange);
+    
+    return () => {
+      window.removeEventListener('panelChange', handlePanelChange);
+    };
+  }, [activePanel]);
+  
+  // Emit activePanel changes to Sidebar
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('activePanelChanged', {
+      detail: { activePanel }
+    }));
+  }, [activePanel]);
   
   // Initialize map
   useEffect(() => {
@@ -85,11 +127,21 @@ const SpatialInterface = () => {
       setupMapInteractions();
     });
     
-    // Update coordinates display
+    // Update coordinates display and global map context
     map.current.on('move', () => {
-      setLng(map.current.getCenter().lng.toFixed(4));
-      setLat(map.current.getCenter().lat.toFixed(4));
-      setZoom(map.current.getZoom().toFixed(2));
+      const center = map.current.getCenter();
+      const currentZoom = map.current.getZoom();
+      
+      const newLng = parseFloat(center.lng.toFixed(4));
+      const newLat = parseFloat(center.lat.toFixed(4));
+      const newZoom = parseFloat(currentZoom.toFixed(2));
+      
+      setLng(newLng);
+      setLat(newLat);
+      setZoom(newZoom);
+      
+      // Update global map context for weather and other location-based features
+      updateMapCenter(newLat, newLng, newZoom);
     });
     
     // Handle window resize
@@ -313,6 +365,7 @@ const SpatialInterface = () => {
       marker.getElement().addEventListener('click', () => {
         popup.addTo(map.current);
         setSelectedFarm(farm);
+        setGlobalSelectedFarm(farm); // Update global context for weather
       });
     });
   };
@@ -535,6 +588,7 @@ const SpatialInterface = () => {
       if (e.features.length > 0) {
         const feature = e.features[0];
         setSelectedFarm(feature.properties);
+        setGlobalSelectedFarm(feature.properties); // Update global context for weather
         
         // Fly to farm
         map.current.flyTo({
@@ -616,6 +670,9 @@ const SpatialInterface = () => {
   
   return (
     <div className="spatial-interface">
+      {/* Demo Session Banner - only show in demo mode */}
+      {isDemo && <DemoSessionBanner />}
+      
       {/* Main Map Container */}
       <div ref={mapContainer} className="map-container" />
       
@@ -640,7 +697,10 @@ const SpatialInterface = () => {
             <div className="card-header">
               <AnimatedFlameLogo size={20} animated={false} />
               <h3>{selectedFarm.name}</h3>
-              <button onClick={() => setSelectedFarm(null)}>×</button>
+              <button onClick={() => {
+                setSelectedFarm(null);
+                setGlobalSelectedFarm(null); // Clear global context
+              }}>×</button>
             </div>
             <div className="card-content">
               <p>Owner: {selectedFarm.owner}</p>
@@ -710,7 +770,7 @@ const SpatialInterface = () => {
             }}
             style={{
               position: 'fixed',
-              left: '20px',
+              left: '270px',
               top: '100px',
               width: '280px',
               background: 'rgba(0, 0, 0, 0.7)',
@@ -720,7 +780,7 @@ const SpatialInterface = () => {
               borderRadius: '12px',
               padding: '20px',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-              zIndex: 500
+              zIndex: 1100
             }}
           >
             <h3 style={{ margin: '0 0 15px 0', color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>Map Layers</h3>
@@ -956,6 +1016,310 @@ const SpatialInterface = () => {
         )}
       </AnimatePresence>
       
+      {/* Weather Panel */}
+      <AnimatePresence>
+        {activePanel === 'weather' && (
+          <motion.div 
+            className="weather-panel"
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 100,
+              damping: 30,
+              restDelta: 0.001
+            }}
+            style={{
+              position: 'fixed',
+              left: '270px',
+              top: '100px',
+              width: '280px',
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 107, 53, 0.15)',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+              zIndex: 1100
+            }}
+          >
+            <h3 style={{ margin: '0 0 15px 0', color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>Weather Conditions</h3>
+            <div className="weather-content" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              {weatherData ? (
+                <>
+                  <div style={{ marginBottom: '15px', padding: '10px', background: 'rgba(255, 107, 53, 0.1)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px' }}>
+                      {Math.round(weatherData.temperature || 75)}°F
+                    </div>
+                    <div style={{ fontSize: '14px', opacity: 0.8 }}>
+                      {weatherData.condition || 'Clear'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
+                      <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Wind</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.windSpeed || '5'} mph</div>
+                    </div>
+                    <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
+                      <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Humidity</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.humidity || '45'}%</div>
+                    </div>
+                    <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
+                      <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Visibility</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.visibility || '10'} mi</div>
+                    </div>
+                    <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
+                      <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Pressure</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.pressure || '30.1'} in</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(76, 175, 80, 0.2)', borderRadius: '6px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
+                    <div style={{ fontSize: '12px', color: '#4caf50', fontWeight: '600', marginBottom: '5px' }}>BURN CONDITIONS</div>
+                    <div style={{ fontSize: '14px' }}>Favorable - Low wind, good visibility</div>
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', opacity: 0.7 }}>
+                  Loading weather data...
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={() => setActivePanel(null)}
+              style={{
+                width: '100%',
+                marginTop: '15px',
+                padding: '10px',
+                background: 'linear-gradient(135deg, #ff6b35 0%, #ff5722 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Close Panel
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Alerts Panel */}
+      <AnimatePresence>
+        {activePanel === 'alerts' && (
+          <motion.div 
+            className="alerts-panel"
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 100,
+              damping: 30,
+              restDelta: 0.001
+            }}
+            style={{
+              position: 'fixed',
+              left: '270px',
+              top: '100px',
+              width: '280px',
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 107, 53, 0.15)',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+              zIndex: 1100
+            }}
+          >
+            <h3 style={{ margin: '0 0 15px 0', color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>Active Alerts</h3>
+            <div className="alerts-content">
+              <div style={{ 
+                padding: '12px', 
+                background: 'rgba(255, 193, 7, 0.15)', 
+                border: '1px solid rgba(255, 193, 7, 0.3)',
+                borderRadius: '8px',
+                marginBottom: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#ffc107' }}>⚠️ Wind Advisory</span>
+                </div>
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.4' }}>
+                  Winds expected to increase to 15-20 mph after 3 PM. Consider completing burns before noon.
+                </div>
+              </div>
+              
+              <div style={{ 
+                padding: '12px', 
+                background: 'rgba(76, 175, 80, 0.15)', 
+                border: '1px solid rgba(76, 175, 80, 0.3)',
+                borderRadius: '8px',
+                marginBottom: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#4caf50' }}>✓ Air Quality Good</span>
+                </div>
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.4' }}>
+                  PM2.5 levels within safe limits. Conditions favorable for controlled burns.
+                </div>
+              </div>
+              
+              <div style={{ 
+                padding: '12px', 
+                background: 'rgba(33, 150, 243, 0.15)', 
+                border: '1px solid rgba(33, 150, 243, 0.3)',
+                borderRadius: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#2196f3' }}>ℹ️ Neighbor Activity</span>
+                </div>
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.4' }}>
+                  Golden Fields Farm has a burn scheduled for 2 PM today. Coordinate timing to avoid smoke overlap.
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={() => setActivePanel(null)}
+              style={{
+                width: '100%',
+                marginTop: '15px',
+                padding: '10px',
+                background: 'linear-gradient(135deg, #ff6b35 0%, #ff5722 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Close Panel
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Settings Panel (Demo Mode) */}
+      <AnimatePresence>
+        {activePanel === 'settings' && isDemo && (
+          <motion.div 
+            className="settings-panel"
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 100,
+              damping: 30,
+              restDelta: 0.001
+            }}
+            style={{
+              position: 'absolute',
+              top: isDemo ? '120px' : '80px', // Account for demo banner
+              left: '90px',
+              width: '350px',
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+              border: '1px solid rgba(255, 107, 53, 0.15)',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+              zIndex: 500
+            }}
+          >
+            <h3 style={{ margin: '0 0 15px 0', color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>Demo Settings</h3>
+            <div className="settings-content">
+              <div style={{ 
+                padding: '12px', 
+                background: 'rgba(255, 152, 0, 0.15)', 
+                border: '1px solid rgba(255, 152, 0, 0.3)',
+                borderRadius: '8px',
+                marginBottom: '12px'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#ff9800', marginBottom: '8px' }}>
+                  🎮 Demo Mode Active
+                </div>
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.4' }}>
+                  You're in a demo session. Settings are limited to maintain the demo experience.
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px' }}>
+                  Map Style
+                </label>
+                <select 
+                  disabled
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    cursor: 'not-allowed'
+                  }}
+                >
+                  <option>Satellite (Demo Default)</option>
+                </select>
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px' }}>
+                  Units
+                </label>
+                <select 
+                  disabled
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    cursor: 'not-allowed'
+                  }}
+                >
+                  <option>Imperial (Demo Default)</option>
+                </select>
+              </div>
+              
+              <div style={{ 
+                padding: '12px', 
+                background: 'rgba(33, 150, 243, 0.1)', 
+                border: '1px solid rgba(33, 150, 243, 0.2)',
+                borderRadius: '8px'
+              }}>
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.4' }}>
+                  To access full settings, create a free account after your demo session.
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={() => setActivePanel(null)}
+              style={{
+                width: '100%',
+                marginTop: '15px',
+                padding: '10px',
+                background: 'linear-gradient(135deg, #ff6b35 0%, #ff5722 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Close Panel
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Floating AI Assistant */}
       <FloatingAI 

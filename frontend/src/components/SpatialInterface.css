@@ -60,10 +60,11 @@
   top: 80px;
   left: 20px;
   width: 300px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   z-index: 200;
 }
@@ -103,7 +104,7 @@
 
 .card-content p {
   margin: 10px 0;
-  color: #333;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .card-actions {
@@ -135,13 +136,14 @@
   right: 20px;
   width: 320px;
   max-height: 60vh;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   padding: 20px;
   overflow-y: auto;
-  z-index: 200;
+  z-index: 1100;
 }
 
 .burns-panel h3 {
@@ -167,7 +169,7 @@
 }
 
 .burn-item span {
-  color: #333;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .burn-item span:last-child {
