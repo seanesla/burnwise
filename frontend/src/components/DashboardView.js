@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import EmberBackground from './backgrounds/EmberBackground';
 import './DashboardView.css';
 
 const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
@@ -28,7 +28,6 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
           transition={{ delay: 0.1 }}
         >
           <div className="card-header">
-            <AnimatedFlameLogo size={20} animated={true} />
             <h3>Active Burns</h3>
           </div>
           <div className="card-content">
@@ -65,7 +64,6 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
           transition={{ delay: 0.2 }}
         >
           <div className="card-header">
-            <AnimatedFlameLogo size={20} animated={false} />
             <h3>Weather Conditions</h3>
           </div>
           <div className="card-content">
@@ -104,7 +102,6 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
           transition={{ delay: 0.3 }}
         >
           <div className="card-header">
-            <AnimatedFlameLogo size={20} animated={false} />
             <h3>Active Alerts</h3>
           </div>
           <div className="card-content">
@@ -142,7 +139,6 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
           transition={{ delay: 0.4 }}
         >
           <div className="card-header">
-            <AnimatedFlameLogo size={20} animated={false} />
             <h3>Quick Stats</h3>
           </div>
           <div className="card-content">
@@ -166,6 +162,11 @@ const DashboardView = ({ burns, weatherData, farms, activePanel }) => {
             </div>
           </div>
         </motion.div>
+      </div>
+      
+      {/* Ember particle background - rendered last with custom z-index */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+        <EmberBackground intensity={1.0} blur={true} />
       </div>
     </div>
   );

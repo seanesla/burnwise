@@ -14,8 +14,11 @@ import './Settings.css';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, endDemoSession, resetOnboarding } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  // Check if we're in demo mode
+  const isDemo = sessionStorage.getItem('isDemo') === 'true' || sessionStorage.getItem('burnwise_demo_context') !== null;
   
   const [settings, setSettings] = useState({
     profile: {
@@ -117,27 +120,13 @@ const Settings = () => {
   };
 
   const handleLogout = async () => {
-    // Check if user is in demo mode
-    const demoContext = sessionStorage.getItem('burnwise_demo_context');
-    const isDemoMode = !!demoContext;
-
-    const logoutMessage = isDemoMode 
-      ? `Are you sure you want to logout of your DEMO session?
-
-This will:
-• End your current demo session
-• Clear all local demo data
-• Return you to the login page
-
-Note: Your demo data in TiDB will remain until it expires in 24 hours.`
-      : `Are you sure you want to logout?
+    const logoutMessage = `Are you sure you want to logout?
 
 This will:
 • Sign you out of BURNWISE
-• Clear your local session
 • Return you to the login page
 
-Your farm data will remain safely stored.`;
+${isDemo ? 'Your demo session will remain active and you can return anytime.' : 'Your farm data will remain safely stored.'}`;
 
     const confirmed = window.confirm(logoutMessage);
     
@@ -146,14 +135,7 @@ Your farm data will remain safely stored.`;
     setIsLoggingOut(true);
     
     try {
-      // Clear demo context if in demo mode
-      if (isDemoMode) {
-        sessionStorage.removeItem('burnwise_demo_context');
-        sessionStorage.removeItem('demo_encryption_key');
-        toast.success('Demo session ended');
-      } else {
-        toast.success('Logged out successfully');
-      }
+      toast.success('Logged out successfully');
       
       // Call logout from AuthContext
       await logout();
@@ -164,6 +146,63 @@ Your farm data will remain safely stored.`;
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleRedoOnboarding = () => {
+    const confirmed = window.confirm(`Are you sure you want to redo the onboarding?
+
+This will:
+• Reset your onboarding completion status
+• Redirect you to the onboarding assistant
+• Allow you to update your farm information
+
+Your existing data will not be deleted.`);
+    
+    if (!confirmed) return;
+    
+    // Reset onboarding status
+    resetOnboarding();
+    
+    // Redirect to onboarding
+    navigate('/onboarding');
+  };
+
+  const handleEndDemoSession = async () => {
+    const confirmed = window.confirm(`Are you sure you want to end your demo session?
+
+This will:
+• Permanently end your demo session
+• Clear all local demo data
+• Return you to the login page
+
+Note: Your demo data in TiDB will remain until automatic cleanup (24 hours).
+
+To start a new demo, you'll need to click "Use Demo Account" again.`);
+    
+    if (!confirmed) return;
+
+    setIsLoggingOut(true);
+    
+    try {
+      // Clear demo context
+      sessionStorage.removeItem('burnwise_demo_context');
+      sessionStorage.removeItem('demo_encryption_key');
+      sessionStorage.removeItem('isDemo');
+      
+      toast.success('Demo session ended');
+      
+      // Call endDemoSession from AuthContext
+      await endDemoSession();
+      
+      // Navigate to login page
+      navigate('/login');
+      
+    } catch (error) {
+      console.error('End demo session error:', error);
+      toast.error('Failed to end demo session. Please try again.');
     } finally {
       setIsLoggingOut(false);
     }
@@ -341,12 +380,20 @@ Your farm data will remain safely stored.`;
                       <FaKey />
                       Change Password
                     </button>
+                    
+                    <button
+                      className="btn-secondary account-action-btn"
+                      onClick={handleRedoOnboarding}
+                    >
+                      <FaRedo />
+                      Redo Onboarding
+                    </button>
                   </div>
 
                   <div className="account-action-group danger-zone">
                     <h4>Session Management</h4>
                     <p className="danger-zone-description">
-                      Sign out of your BURNWISE account
+                      Manage your BURNWISE session
                     </p>
                     
                     <motion.button
@@ -364,15 +411,42 @@ Your farm data will remain safely stored.`;
                       ) : (
                         <>
                           <FaSignOutAlt />
-                          {sessionStorage.getItem('burnwise_demo_context') ? 'End Demo Session' : 'Logout'}
+                          Sign Out
                         </>
                       )}
                     </motion.button>
                     
+                    {isDemo && (
+                      <>
+                        <motion.button
+                          className="btn-danger demo-end-button"
+                          onClick={handleEndDemoSession}
+                          disabled={isLoggingOut}
+                          whileHover={!isLoggingOut ? { scale: 1.02 } : {}}
+                          whileTap={!isLoggingOut ? { scale: 0.98 } : {}}
+                        >
+                          {isLoggingOut ? (
+                            <>
+                              <LoadingSpinner size="small" color="#fff" />
+                              Ending Demo...
+                            </>
+                          ) : (
+                            <>
+                              <FaTrash />
+                              End Demo Session
+                            </>
+                          )}
+                        </motion.button>
+                        <p className="demo-end-warning">
+                          ⚠️ Ending demo session is permanent. You can sign out and return anytime without ending the demo.
+                        </p>
+                      </>
+                    )}
+                    
                     <p className="logout-disclaimer">
-                      {sessionStorage.getItem('burnwise_demo_context') 
-                        ? 'Your demo data will remain in TiDB until automatic cleanup (24 hours)'
-                        : 'Your farm data will remain safely stored and accessible on next login'
+                      {isDemo 
+                        ? 'Sign out to leave temporarily, or end session to permanently remove demo.'
+                        : 'Your farm data will remain safely stored and accessible on next login.'
                       }
                     </p>
                   </div>

@@ -69,7 +69,12 @@ export const AuthProvider = ({ children }) => {
           
           setUser(demoUser);
           setIsAuthenticated(true);
-          setOnboardingComplete(true); // Skip onboarding for demo
+          
+          // Check if demo user has completed onboarding
+          const demoOnboardingKey = `burnwise_demo_onboarding_${demoData.farmId}`;
+          const hasDemoOnboarded = localStorage.getItem(demoOnboardingKey) === 'true';
+          setOnboardingComplete(hasDemoOnboarded);
+          
           setLoading(false);
           return;
         }
@@ -238,8 +243,10 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('authToken', response.data.token);
         }
         
-        // Skip onboarding for demo
-        setOnboardingComplete(true);
+        // Check if demo user has completed onboarding
+        const demoOnboardingKey = `burnwise_demo_onboarding_${userData.farmId}`;
+        const hasDemoOnboarded = localStorage.getItem(demoOnboardingKey) === 'true';
+        setOnboardingComplete(hasDemoOnboarded);
         
         return { success: true };
       }
@@ -315,8 +322,21 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      // Clear client state regardless
+      // Preserve demo session data before clearing
+      const isDemoSession = sessionStorage.getItem('isDemo') === 'true';
+      const demoContext = sessionStorage.getItem('burnwise_demo_context');
+      
+      // Clear client state
       clearAuth();
+      
+      // Restore demo markers if this was a demo session
+      // This allows users to log out and log back in to the same demo
+      if (isDemoSession) {
+        sessionStorage.setItem('isDemo', 'true');
+        if (demoContext) {
+          sessionStorage.setItem('burnwise_demo_context', demoContext);
+        }
+      }
     }
   };
 
@@ -336,8 +356,8 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.removeItem('burnwise_demo_context');
       localStorage.removeItem('authToken');
       
-      // Force redirect to login
-      window.location.href = '/login';
+      // Don't redirect here - let the calling component handle navigation
+      // This prevents page refresh and allows for proper cleanup
     }
   };
 
@@ -345,11 +365,20 @@ export const AuthProvider = ({ children }) => {
   const completeOnboarding = (data) => {
     if (!user) return;
     
-    const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${user.farmId}`;
-    const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${user.farmId}`;
-    
-    localStorage.setItem(userOnboardingKey, 'true');
-    localStorage.setItem(userOnboardingDataKey, JSON.stringify(data));
+    // Handle demo sessions differently
+    if (user.isDemo || sessionStorage.getItem('isDemo') === 'true') {
+      const demoOnboardingKey = `burnwise_demo_onboarding_${user.farmId}`;
+      const demoOnboardingDataKey = `burnwise_demo_onboarding_data_${user.farmId}`;
+      
+      localStorage.setItem(demoOnboardingKey, 'true');
+      localStorage.setItem(demoOnboardingDataKey, JSON.stringify(data));
+    } else {
+      const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${user.farmId}`;
+      const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${user.farmId}`;
+      
+      localStorage.setItem(userOnboardingKey, 'true');
+      localStorage.setItem(userOnboardingDataKey, JSON.stringify(data));
+    }
     
     setOnboardingComplete(true);
     setOnboardingData(data);
@@ -359,11 +388,20 @@ export const AuthProvider = ({ children }) => {
   const resetOnboarding = () => {
     if (!user) return;
     
-    const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${user.farmId}`;
-    const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${user.farmId}`;
-    
-    localStorage.removeItem(userOnboardingKey);
-    localStorage.removeItem(userOnboardingDataKey);
+    // Handle demo sessions differently
+    if (user.isDemo || sessionStorage.getItem('isDemo') === 'true') {
+      const demoOnboardingKey = `burnwise_demo_onboarding_${user.farmId}`;
+      const demoOnboardingDataKey = `burnwise_demo_onboarding_data_${user.farmId}`;
+      
+      localStorage.removeItem(demoOnboardingKey);
+      localStorage.removeItem(demoOnboardingDataKey);
+    } else {
+      const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${user.farmId}`;
+      const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${user.farmId}`;
+      
+      localStorage.removeItem(userOnboardingKey);
+      localStorage.removeItem(userOnboardingDataKey);
+    }
     
     setOnboardingComplete(false);
     setOnboardingData(null);

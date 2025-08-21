@@ -16,6 +16,7 @@ import TimelineScrubber from './TimelineScrubber';
 import DemoSessionBanner from './DemoSessionBanner';
 import DashboardView from './DashboardView';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import EmberBackground from './backgrounds/EmberBackground';
 import TutorialOverlay from './TutorialOverlay';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './SpatialInterface.css';
@@ -89,7 +90,17 @@ const SpatialInterface = () => {
   
   // Initialize map
   useEffect(() => {
-    if (map.current) return;
+    // Only initialize map when in map view
+    if (!isMapView) return;
+    
+    // Clean up existing map if it exists
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
+    
+    // Wait for container to be available
+    if (!mapContainer.current) return;
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -168,8 +179,13 @@ const SpatialInterface = () => {
     
     return () => {
       window.removeEventListener('resize', handleResize);
+      // Clean up map when component unmounts or isMapView changes
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
     };
-  }, []);
+  }, [isMapView]); // Re-initialize when isMapView changes
   
   // Load farms data
   const loadFarms = async () => {
@@ -680,6 +696,9 @@ const SpatialInterface = () => {
   
   return (
     <div className="spatial-interface">
+      {/* Ember particle background - only show when not in map view */}
+      {!isMapView && <EmberBackground intensity={0.7} blur={false} />}
+      
       {/* Demo Session Banner - only show in demo mode */}
       {isDemo && <DemoSessionBanner />}
       

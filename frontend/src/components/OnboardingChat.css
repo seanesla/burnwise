@@ -10,7 +10,8 @@
   margin: 0 auto;
   padding: 2rem;
   height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: transparent;
+  position: relative;
 }
 
 .onboarding-chat {
@@ -216,6 +217,8 @@
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 10;
 }
 
 .onboarding-tips h3 {

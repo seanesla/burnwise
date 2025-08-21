@@ -165,6 +165,68 @@ router.post('/reset/:sessionId', (req, res) => {
   });
 });
 
+/**
+ * POST /api/onboarding/extract
+ * Extract form data from natural text using AI (optional enhancement)
+ * Falls back gracefully if AI unavailable
+ */
+router.post('/extract', async (req, res) => {
+  try {
+    const { text } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        error: 'No text provided'
+      });
+    }
+
+    // Try to use AI if available
+    const agent = OnboardingAgent;
+    if (agent && agent.extractFormData) {
+      const extracted = await agent.extractFormData(text);
+      if (extracted) {
+        return res.json({
+          success: true,
+          extracted: extracted
+        });
+      }
+    }
+
+    // Fallback to simple pattern matching
+    const extracted = {};
+    
+    // Extract acreage
+    const acreMatch = text.match(/(\d+)\s*(?:acres?|acre)/i);
+    if (acreMatch) extracted.acreage = acreMatch[1];
+    
+    // Extract email
+    const emailMatch = text.match(/([^\s@]+@[^\s@]+\.[^\s@]+)/);
+    if (emailMatch) extracted.email = emailMatch[1];
+    
+    // Extract phone
+    const phoneMatch = text.match(/(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/);
+    if (phoneMatch) extracted.phone = phoneMatch[1];
+    
+    // Extract location
+    const locationMatch = text.match(/(?:in|at|near|located in)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,?\s*[A-Z]{2})/i);
+    if (locationMatch) extracted.location = locationMatch[1];
+    
+    res.json({
+      success: true,
+      extracted: extracted,
+      method: 'pattern_matching'
+    });
+
+  } catch (error) {
+    logger.error('Failed to extract form data', { error: error.message });
+    res.status(200).json({
+      success: false,
+      error: 'Extraction failed, please fill manually'
+    });
+  }
+});
+
 // Clean up old sessions periodically
 setInterval(() => {
   const now = Date.now();

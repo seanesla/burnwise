@@ -7,11 +7,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import EmberBackground from './backgrounds/EmberBackground';
 import './OnboardingChat.css';
 
 const OnboardingChat = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, completeOnboarding, user, isDemo } = useAuth();
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -99,6 +100,17 @@ const OnboardingChat = () => {
         if (response.data.completed) {
           setIsCompleted(true);
           
+          // Save onboarding data to context
+          const onboardingData = {
+            sessionId,
+            completedAt: new Date().toISOString(),
+            farmData: response.data.farmData || {},
+            preferences: response.data.preferences || {}
+          };
+          
+          // Mark onboarding as complete
+          completeOnboarding(onboardingData);
+          
           // Extract credentials from the message if available
           const passwordMatch = response.data.message.match(/Your temporary password is: (\S+)/);
           if (passwordMatch) {
@@ -125,6 +137,22 @@ const OnboardingChat = () => {
   };
 
   const handleCompletion = async (email, password) => {
+    // For demo users, just navigate to spatial interface
+    if (isDemo || user?.isDemo) {
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: 'Onboarding complete! Redirecting to your farm dashboard...',
+        timestamp: new Date()
+      }]);
+      
+      setTimeout(() => {
+        const isDemoRoute = window.location.pathname.startsWith('/demo');
+        navigate(isDemoRoute ? '/demo/spatial' : '/spatial');
+      }, 1500);
+      return;
+    }
+    
+    // For regular users, handle login
     if (email && password) {
       // Auto-login with the credentials
       setMessages(prev => [...prev, {
@@ -134,7 +162,7 @@ const OnboardingChat = () => {
       }]);
 
       try {
-        const loginResult = await login({ email, password });
+        const loginResult = await login(email, password);
         if (loginResult.success) {
           setMessages(prev => [...prev, {
             role: 'system',
@@ -256,6 +284,9 @@ const OnboardingChat = () => {
           <li>This is the only way to set up your farm - no forms needed</li>
         </ul>
       </div>
+      
+      {/* Ember particle background - rendered last */}
+      <EmberBackground intensity={1.0} blur={true} />
     </div>
   );
 };

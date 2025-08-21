@@ -1,0 +1,401 @@
+/**
+ * HybridOnboarding.css - Styles for smart form with optional AI
+ * Split layout with form on left, collapsible AI on right
+ */
+
+.hybrid-onboarding-container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #000;
+  overflow: hidden;
+}
+
+.hybrid-onboarding {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 30px;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+/* Header */
+.onboarding-header {
+  padding: 40px;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 165, 0, 0.05) 100%);
+  border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+  text-align: center;
+}
+
+.onboarding-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.onboarding-header p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Content Layout */
+.onboarding-content {
+  display: flex;
+  position: relative;
+}
+
+/* Form Section */
+.form-section {
+  flex: 1;
+  padding: 40px;
+  min-height: 600px;
+}
+
+.form-group {
+  margin-bottom: 40px;
+}
+
+.form-group h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ff6b35;
+  margin: 0 0 20px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+/* Form Fields */
+.form-field {
+  margin-bottom: 20px;
+}
+
+.form-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 8px;
+}
+
+.form-field .required {
+  color: #ff6b35;
+  margin-left: 4px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #ff6b35;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.form-field input.error,
+.form-field select.error,
+.form-field textarea.error {
+  border-color: #ff4444;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.error-message {
+  display: block;
+  font-size: 12px;
+  color: #ff4444;
+  margin-top: 6px;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary,
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b35 0%, #ffa500 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* AI Section */
+.ai-section {
+  position: relative;
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.ai-section.active {
+  width: 400px;
+  border-left: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.ai-toggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  background: rgba(255, 107, 53, 0.2);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  color: #ff6b35;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.ai-toggle:hover {
+  background: rgba(255, 107, 53, 0.3);
+  padding-left: 12px;
+}
+
+.ai-toggle svg {
+  font-size: 20px;
+}
+
+/* AI Panel */
+.ai-panel {
+  height: 100%;
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.ai-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ff6b35;
+  margin: 0 0 10px 0;
+}
+
+.ai-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+/* AI Input Group */
+.ai-input-group {
+  margin-bottom: 24px;
+}
+
+.ai-input-group textarea {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #ffffff;
+  resize: vertical;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.ai-input-group textarea:focus {
+  outline: none;
+  border-color: #ff6b35;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.ai-input-group textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ai {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ff6b35 0%, #ffa500 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-ai:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-ai:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* AI Tips */
+.ai-tips {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.ai-tips h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ff6b35;
+  margin: 0 0 12px 0;
+}
+
+.ai-tips ul {
+  margin: 0;
+  padding: 0 0 0 20px;
+}
+
+.ai-tips li {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.ai-tips li:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .hybrid-onboarding {
+    max-width: 90%;
+  }
+  
+  .ai-section.active {
+    width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .onboarding-content {
+    flex-direction: column;
+  }
+  
+  .ai-section {
+    width: 100% !important;
+    border-left: none;
+    border-top: 1px solid rgba(255, 107, 53, 0.2);
+  }
+  
+  .ai-toggle {
+    position: static;
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    transform: none;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid rgba(255, 107, 53, 0.2);
+  }
+  
+  .form-section,
+  .ai-panel {
+    padding: 20px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-group {
+  animation: fadeIn 0.5s ease forwards;
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+
+.form-group:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.form-group:nth-child(3) {
+  animation-delay: 0.3s;
+}

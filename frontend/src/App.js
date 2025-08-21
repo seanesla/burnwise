@@ -13,7 +13,7 @@ import './styles/App.css';
 // Lazy load route components
 const Landing = lazy(() => import('./components/Landing'));
 const Login = lazy(() => import('./components/Login'));
-const OnboardingChat = lazy(() => import('./components/OnboardingChat'));
+const HybridOnboarding = lazy(() => import('./components/HybridOnboarding'));
 const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
 const DemoInitializer = lazy(() => import('./components/DemoInitializer'));
@@ -69,7 +69,7 @@ function AppContent() {
               <Route path="/login" element={<Login />} />
               
               {/* Onboarding Route - Public Access for New Users */}
-              <Route path="/onboarding" element={<OnboardingChat />} />
+              <Route path="/onboarding" element={<HybridOnboarding />} />
               
               {/* Demo Routes - Public Access */}
               <Route path="/demo/initialize" element={<DemoInitializer />} />

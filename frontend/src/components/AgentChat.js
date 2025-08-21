@@ -9,6 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import ApprovalModal from './ApprovalModal';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import EmberBackground from './backgrounds/EmberBackground';
 import './AgentChat.css';
 
 const AgentChat = () => {
@@ -478,6 +479,9 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
           )}
         </button>
       </div>
+      
+      {/* Ember particle background - rendered last */}
+      <EmberBackground intensity={1.0} blur={true} />
     </div>
     </>
   );
