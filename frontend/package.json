@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@mapbox/mapbox-gl-draw": "^1.4.3",
+    "@mapbox/mapbox-gl-draw": "^1.5.0",
     "@openai/agents": "^0.0.17",
     "@react-three/drei": "^9.88.0",
     "@react-three/fiber": "^8.15.0",
@@ -12,6 +12,7 @@
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/updater-color": "^3.9.1",
     "@tsparticles/updater-opacity": "^3.9.1",
+    "@turf/turf": "^7.2.0",
     "axios": "^1.6.7",
     "cannon-es": "^0.20.0",
     "cmdk": "^1.1.1",

@@ -11,9 +11,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, 
   FaTree, FaRobot, FaChevronRight, FaChevronLeft,
-  FaMagic, FaCheck, FaTimes
+  FaMagic, FaCheck, FaTimes, FaMap
 } from 'react-icons/fa';
 import axios from 'axios';
+import FarmBoundaryDrawer from './FarmBoundaryDrawer';
 import EmberBackground from './backgrounds/EmberBackground';
 import './HybridOnboarding.css';
 
@@ -29,12 +30,14 @@ const HybridOnboarding = () => {
     phone: '',
     location: '',
     acreage: '',
+    farmBoundary: null, // GeoJSON boundary
     primaryCrops: '',
     burnFrequency: 'seasonal'
   });
   
   // UI state
   const [showAI, setShowAI] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
@@ -43,8 +46,9 @@ const HybridOnboarding = () => {
 
   // Check form completion
   useEffect(() => {
-    const required = ['farmName', 'ownerName', 'email', 'location', 'acreage'];
-    const isComplete = required.every(field => formData[field]?.trim());
+    const required = ['farmName', 'ownerName', 'email'];
+    const hasLocation = formData.farmBoundary || (formData.location?.trim() && formData.acreage?.trim());
+    const isComplete = required.every(field => formData[field]?.trim()) && hasLocation;
     setFormComplete(isComplete);
   }, [formData]);
 
@@ -56,6 +60,27 @@ const HybridOnboarding = () => {
       setValidationErrors(prev => {
         const next = { ...prev };
         delete next[field];
+        return next;
+      });
+    }
+  };
+
+  // Handle boundary completion from map
+  const handleBoundaryComplete = (boundaryData) => {
+    if (boundaryData) {
+      setFormData(prev => ({
+        ...prev,
+        farmBoundary: boundaryData,
+        acreage: boundaryData.properties?.totalAcres?.toFixed(2) || '',
+        // Extract rough location from boundary center
+        location: prev.location || 'Map-defined boundary'
+      }));
+      
+      // Clear location/acreage validation errors
+      setValidationErrors(prev => {
+        const next = { ...prev };
+        delete next.location;
+        delete next.acreage;
         return next;
       });
     }
@@ -79,14 +104,18 @@ const HybridOnboarding = () => {
       errors.email = 'Invalid email format';
     }
     
-    if (!formData.location.trim()) {
-      errors.location = 'Location is required';
+    // Either boundary or text location is required
+    if (!formData.farmBoundary && !formData.location.trim()) {
+      errors.location = 'Farm location or boundary is required';
     }
     
-    if (!formData.acreage.trim()) {
-      errors.acreage = 'Acreage is required';
-    } else if (isNaN(formData.acreage) || parseFloat(formData.acreage) <= 0) {
-      errors.acreage = 'Acreage must be a positive number';
+    // If no boundary, acreage is required
+    if (!formData.farmBoundary) {
+      if (!formData.acreage.trim()) {
+        errors.acreage = 'Acreage is required (or draw boundary on map)';
+      } else if (isNaN(formData.acreage) || parseFloat(formData.acreage) <= 0) {
+        errors.acreage = 'Acreage must be a positive number';
+      }
     }
     
     if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
@@ -260,36 +289,63 @@ const HybridOnboarding = () => {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="location">
-                    Location <span className="required">*</span>
+                  <label>
+                    Farm Boundary <span className="required">*</span>
                   </label>
-                  <input
-                    id="location"
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => handleFieldChange('location', e.target.value)}
-                    placeholder="Sacramento, CA"
-                    className={validationErrors.location ? 'error' : ''}
-                  />
-                  {validationErrors.location && (
-                    <span className="error-message">{validationErrors.location}</span>
+                  <div className="boundary-options">
+                    <button
+                      type="button"
+                      onClick={() => setShowMap(!showMap)}
+                      className={`btn-boundary ${showMap ? 'active' : ''}`}
+                    >
+                      <FaMap />
+                      {showMap ? 'Hide Map' : 'Draw on Map'}
+                    </button>
+                    {formData.farmBoundary && (
+                      <span className="boundary-status">
+                        <FaCheck /> Boundary drawn ({formData.acreage} acres)
+                      </span>
+                    )}
+                  </div>
+                  
+                  {showMap && (
+                    <FarmBoundaryDrawer
+                      onBoundaryComplete={handleBoundaryComplete}
+                      initialBoundary={formData.farmBoundary}
+                      initialLocation={formData.location}
+                    />
                   )}
-                </div>
-
-                <div className="form-field">
-                  <label htmlFor="acreage">
-                    Total Acreage <span className="required">*</span>
-                  </label>
-                  <input
-                    id="acreage"
-                    type="text"
-                    value={formData.acreage}
-                    onChange={(e) => handleFieldChange('acreage', e.target.value)}
-                    placeholder="500"
-                    className={validationErrors.acreage ? 'error' : ''}
-                  />
-                  {validationErrors.acreage && (
-                    <span className="error-message">{validationErrors.acreage}</span>
+                  
+                  {!showMap && (
+                    <>
+                      <div className="form-field-group">
+                        <input
+                          id="location"
+                          type="text"
+                          value={formData.location}
+                          onChange={(e) => handleFieldChange('location', e.target.value)}
+                          placeholder="Location (e.g., Sacramento, CA)"
+                          className={validationErrors.location ? 'error' : ''}
+                        />
+                        <input
+                          id="acreage"
+                          type="text"
+                          value={formData.acreage}
+                          onChange={(e) => handleFieldChange('acreage', e.target.value)}
+                          placeholder="Acres (e.g., 500)"
+                          className={validationErrors.acreage ? 'error' : ''}
+                        />
+                      </div>
+                      <p className="field-hint">
+                        Or click "Draw on Map" for precise boundary definition
+                      </p>
+                    </>
+                  )}
+                  
+                  {(validationErrors.location || validationErrors.acreage) && (
+                    <span className="error-message">
+                      {validationErrors.location || validationErrors.acreage}
+                    </span>
                   )}
                 </div>
 
