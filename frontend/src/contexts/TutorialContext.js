@@ -38,18 +38,18 @@ const TUTORIAL_STEPS = [
   {
     id: 'select-farm',
     title: 'Step 1: Select Your Farm',
-    targetSelector: '.mapboxgl-canvas',
+    targetSelector: null, // Don't highlight specific element, use whole map
     position: 'center',
     content: (data) => {
       if (data.farmsVisible === 0) {
         return 'No farms visible on the map. Try zooming in or panning to see farm locations. Look for red circles marking farm boundaries.';
       }
-      return `Click on any of the ${data.farmsVisible} farm markers (red circles) to begin your burn request. ${data.nearestFarm ? `Try ${data.nearestFarm}.` : ''}`;
+      return `There are ${data.farmsVisible} farms on the map. Click on ANY red circular marker with a farm icon to select it and view details. These markers represent different farms you can manage.`;
     },
     action: 'click-farm',
     nextTrigger: 'action',
     requiredState: { farmPopupOpen: true },
-    waitingContent: 'Click on any red farm marker on the map to continue...',
+    waitingContent: 'Click on any red farm marker on the map to see farm details...',
     canSkipStep: false
   },
   {
@@ -235,22 +235,6 @@ export const TutorialProvider = ({ children }) => {
   const stateCheckInterval = useRef(null);
   const rafRef = useRef(null);
   
-  // Load tutorial completion status
-  useEffect(() => {
-    const completed = localStorage.getItem('burnwise_tutorial_completed');
-    const skipTutorial = localStorage.getItem('burnwise_tutorial_skip');
-    
-    // Auto-start for new users unless they've completed or skipped
-    if (!completed && !skipTutorial && user && !isActive) {
-      // Wait 3 seconds after login before showing
-      setTimeout(() => {
-        if (!localStorage.getItem('burnwise_tutorial_skip')) {
-          startTutorial();
-        }
-      }, 3000);
-    }
-  }, [user]);
-  
   // Fetch dynamic data for tutorial
   const fetchTutorialData = async () => {
     try {
@@ -369,39 +353,21 @@ export const TutorialProvider = ({ children }) => {
   
   // Start monitoring when tutorial is active
   useEffect(() => {
-    if (isActive) {
-      // Fetch fresh data
-      fetchTutorialData();
-      
-      // Start monitoring interval
-      stateCheckInterval.current = setInterval(monitorAppState, 1000);
-      
-      // Set up mutation observer for DOM changes
-      observerRef.current = new MutationObserver(() => {
-        // Debounce mutation observer calls
-        clearTimeout(rafRef.current);
-        rafRef.current = setTimeout(monitorAppState, 100);
-      });
-      observerRef.current.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class', 'data-layer', 'data-value']
-      });
-      
-      return () => {
-        if (stateCheckInterval.current) {
-          clearInterval(stateCheckInterval.current);
-        }
-        if (observerRef.current) {
-          observerRef.current.disconnect();
-        }
-        if (rafRef.current) {
-          clearTimeout(rafRef.current);
-        }
-      };
-    }
-  }, [isActive, monitorAppState]);
+    if (!isActive) return;
+    
+    // Fetch fresh data
+    fetchTutorialData();
+    
+    // Start monitoring interval
+    const interval = setInterval(() => {
+      monitorAppState();
+    }, 1000);
+    
+    return () => {
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]); // Don't include monitorAppState in deps to avoid infinite loop
   
   // Start tutorial
   const startTutorial = useCallback(() => {
@@ -443,12 +409,14 @@ export const TutorialProvider = ({ children }) => {
   
   // Navigate to next step
   const nextStep = useCallback(() => {
-    const newCompleted = new Set(completedSteps);
-    newCompleted.add(currentStep);
-    setCompletedSteps(newCompleted);
+    setCompletedSteps(prev => {
+      const newCompleted = new Set(prev);
+      newCompleted.add(currentStep);
+      return newCompleted;
+    });
     
     if (currentStep < TUTORIAL_STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep(prev => prev + 1);
       // Debounce data fetch to prevent rapid calls
       setTimeout(() => {
         fetchTutorialData();
@@ -456,7 +424,7 @@ export const TutorialProvider = ({ children }) => {
     } else {
       endTutorial();
     }
-  }, [currentStep, completedSteps, endTutorial]);
+  }, [currentStep, endTutorial]);
   
   // Navigate to previous step
   const previousStep = useCallback(() => {
@@ -474,9 +442,36 @@ export const TutorialProvider = ({ children }) => {
     }
   }, []);
   
+  // Load tutorial completion status
+  useEffect(() => {
+    const completed = localStorage.getItem('burnwise_tutorial_completed');
+    const skipTutorial = localStorage.getItem('burnwise_tutorial_skip');
+    
+    // Auto-start for new users unless they've completed or skipped
+    if (!completed && !skipTutorial && user && !isActive) {
+      // Wait 3 seconds after login before showing
+      const timer = setTimeout(() => {
+        if (!localStorage.getItem('burnwise_tutorial_skip')) {
+          startTutorial();
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, isActive, startTutorial]);
+  
   // Check step requirements and auto-advance
+  const prevStepRef = useRef(currentStep);
+  const prevRequirementsMetRef = useRef(false);
+  
   useEffect(() => {
     if (!isActive) return;
+    
+    // Reset tracking when step changes
+    if (prevStepRef.current !== currentStep) {
+      prevStepRef.current = currentStep;
+      prevRequirementsMetRef.current = false;
+      return;
+    }
     
     const step = TUTORIAL_STEPS[currentStep];
     if (!step || !step.requiredState || step.nextTrigger !== 'action') return;
@@ -485,14 +480,28 @@ export const TutorialProvider = ({ children }) => {
       key => appState[key] === step.requiredState[key]
     );
     
-    if (requirementsMet && !completedSteps.has(currentStep)) {
+    // Only advance if requirements just became met (not if they were already met)
+    if (requirementsMet && !prevRequirementsMetRef.current) {
+      prevRequirementsMetRef.current = true;
       // Delay auto-advance to prevent race conditions
       const timer = setTimeout(() => {
-        nextStep();
+        // Directly update state instead of calling nextStep
+        setCompletedSteps(prev => {
+          const newCompleted = new Set(prev);
+          newCompleted.add(currentStep);
+          return newCompleted;
+        });
+        
+        if (currentStep < TUTORIAL_STEPS.length - 1) {
+          setCurrentStep(prev => prev + 1);
+        }
       }, 1000);
       return () => clearTimeout(timer);
+    } else if (!requirementsMet) {
+      prevRequirementsMetRef.current = false;
     }
-  }, [isActive, currentStep, appState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, currentStep, appState]); // Remove nextStep from dependencies
   
   // Get current step with dynamic content
   const getCurrentStep = useCallback(() => {
