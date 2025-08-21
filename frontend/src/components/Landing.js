@@ -197,17 +197,17 @@ const Landing = ({ isInitialLoad = true }) => {
     transitioning: {
       x: viewportCenterX,
       y: viewportCenterY,
-      scale: 0.361,
+      scale: 1,  // Keep full size, no shrinking
       opacity: 1,
       transition: { 
         duration: 1.5, 
-        ease: [0.43, 0.13, 0.23, 0.96] // Custom ease for smooth scaling
+        ease: [0.43, 0.13, 0.23, 0.96]
       }
     },
     disappearing: {
       x: viewportCenterX,  // Stay at center, no movement
       y: viewportCenterY,  // Stay at center, no movement
-      scale: 0.361,  // Keep same size, no shrinking
+      scale: 1,  // Keep full size, no shrinking
       opacity: 0,  // Fade out
       transition: { 
         duration: 1,
@@ -220,7 +220,7 @@ const Landing = ({ isInitialLoad = true }) => {
     complete: {
       x: viewportCenterX,  // Stay at center
       y: viewportCenterY,  // Stay at center
-      scale: 0.361,  // Keep same size
+      scale: 1,  // Keep full size
       opacity: 0,
     }
   };
