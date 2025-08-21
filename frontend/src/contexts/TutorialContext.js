@@ -354,23 +354,23 @@ export const TutorialProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
   
-  // Start monitoring when tutorial is active
-  useEffect(() => {
-    if (!isActive) return;
+  // Start monitoring when tutorial is active - DISABLED TO FIX INFINITE LOOP
+  // useEffect(() => {
+  //   if (!isActive) return;
     
-    // Fetch fresh data
-    fetchTutorialData();
+  //   // Fetch fresh data
+  //   fetchTutorialData();
     
-    // Start monitoring interval
-    const interval = setInterval(() => {
-      monitorAppState();
-    }, 1000);
+  //   // Start monitoring interval
+  //   const interval = setInterval(() => {
+  //     monitorAppState();
+  //   }, 1000);
     
-    return () => {
-      clearInterval(interval);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive]); // Don't include monitorAppState in deps to avoid infinite loop
+  //   return () => {
+  //     clearInterval(interval);
+  //   };
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isActive]); // Don't include monitorAppState in deps to avoid infinite loop
   
   // Start tutorial
   const startTutorial = useCallback(() => {
@@ -445,73 +445,73 @@ export const TutorialProvider = ({ children }) => {
     }
   }, []);
   
-  // Load tutorial completion status
-  useEffect(() => {
-    if (!user) return;
+  // Load tutorial completion status - TEMPORARILY DISABLED TO DEBUG
+  // useEffect(() => {
+  //   if (!user) return;
     
-    const completed = localStorage.getItem('burnwise_tutorial_completed');
-    const skipTutorial = localStorage.getItem('burnwise_tutorial_skip');
+  //   const completed = localStorage.getItem('burnwise_tutorial_completed');
+  //   const skipTutorial = localStorage.getItem('burnwise_tutorial_skip');
     
-    // Auto-start for new users unless they've completed or skipped
-    if (!completed && !skipTutorial && !isActive) {
-      // Wait 3 seconds after login before showing
-      const timer = setTimeout(() => {
-        if (!localStorage.getItem('burnwise_tutorial_skip')) {
-          setIsActive(true);
-          setCurrentStep(0);
-          setCompletedSteps(new Set());
-          fetchTutorialData();
-          window.dispatchEvent(new CustomEvent('tutorialStarted'));
-        }
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Only depend on user to avoid circular dependencies
+  //   // Auto-start for new users unless they've completed or skipped
+  //   if (!completed && !skipTutorial && !isActive) {
+  //     // Wait 3 seconds after login before showing
+  //     const timer = setTimeout(() => {
+  //       if (!localStorage.getItem('burnwise_tutorial_skip')) {
+  //         setIsActive(true);
+  //         setCurrentStep(0);
+  //         setCompletedSteps(new Set());
+  //         fetchTutorialData();
+  //         window.dispatchEvent(new CustomEvent('tutorialStarted'));
+  //       }
+  //     }, 3000);
+  //     return () => clearTimeout(timer);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [user]); // Only depend on user to avoid circular dependencies
   
-  // Check step requirements and auto-advance
-  const prevStepRef = useRef(currentStep);
-  const prevRequirementsMetRef = useRef(false);
+  // Check step requirements and auto-advance - DISABLED TO FIX INFINITE LOOP
+  // const prevStepRef = useRef(currentStep);
+  // const prevRequirementsMetRef = useRef(false);
   
-  useEffect(() => {
-    if (!isActive) return;
+  // useEffect(() => {
+  //   if (!isActive) return;
     
-    // Reset tracking when step changes
-    if (prevStepRef.current !== currentStep) {
-      prevStepRef.current = currentStep;
-      prevRequirementsMetRef.current = false;
-      return;
-    }
+  //   // Reset tracking when step changes
+  //   if (prevStepRef.current !== currentStep) {
+  //     prevStepRef.current = currentStep;
+  //     prevRequirementsMetRef.current = false;
+  //     return;
+  //   }
     
-    const step = TUTORIAL_STEPS[currentStep];
-    if (!step || !step.requiredState || step.nextTrigger !== 'action') return;
+  //   const step = TUTORIAL_STEPS[currentStep];
+  //   if (!step || !step.requiredState || step.nextTrigger !== 'action') return;
     
-    const requirementsMet = Object.keys(step.requiredState).every(
-      key => appState[key] === step.requiredState[key]
-    );
+  //   const requirementsMet = Object.keys(step.requiredState).every(
+  //     key => appState[key] === step.requiredState[key]
+  //   );
     
-    // Only advance if requirements just became met (not if they were already met)
-    if (requirementsMet && !prevRequirementsMetRef.current) {
-      prevRequirementsMetRef.current = true;
-      // Delay auto-advance to prevent race conditions
-      const timer = setTimeout(() => {
-        // Directly update state instead of calling nextStep
-        setCompletedSteps(prev => {
-          const newCompleted = new Set(prev);
-          newCompleted.add(currentStep);
-          return newCompleted;
-        });
+  //   // Only advance if requirements just became met (not if they were already met)
+  //   if (requirementsMet && !prevRequirementsMetRef.current) {
+  //     prevRequirementsMetRef.current = true;
+  //     // Delay auto-advance to prevent race conditions
+  //     const timer = setTimeout(() => {
+  //       // Directly update state instead of calling nextStep
+  //       setCompletedSteps(prev => {
+  //         const newCompleted = new Set(prev);
+  //         newCompleted.add(currentStep);
+  //         return newCompleted;
+  //       });
         
-        if (currentStep < TUTORIAL_STEPS.length - 1) {
-          setCurrentStep(prev => prev + 1);
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (!requirementsMet) {
-      prevRequirementsMetRef.current = false;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive, currentStep, appState]); // Remove nextStep from dependencies
+  //       if (currentStep < TUTORIAL_STEPS.length - 1) {
+  //         setCurrentStep(prev => prev + 1);
+  //       }
+  //     }, 1000);
+  //     return () => clearTimeout(timer);
+  //   } else if (!requirementsMet) {
+  //     prevRequirementsMetRef.current = false;
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isActive, currentStep, appState]); // Remove nextStep from dependencies
   
   // Get current step with dynamic content
   const getCurrentStep = useCallback(() => {
