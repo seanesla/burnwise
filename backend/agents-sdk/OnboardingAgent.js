@@ -261,8 +261,8 @@ class OnboardingAgent {
       if (!client) {
         return {
           success: false,
-          message: 'Onboarding assistant is currently unavailable. Please use the manual form.',
-          fallback: true
+          message: 'OpenAI API key not configured. Onboarding requires AI to be properly configured.',
+          requiresAI: true
         };
       }
 

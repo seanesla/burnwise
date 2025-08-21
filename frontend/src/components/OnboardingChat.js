@@ -20,8 +20,6 @@ const OnboardingChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [showFallback, setShowFallback] = useState(false);
-
   // Scroll to bottom when messages change
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,27 +48,20 @@ const OnboardingChat = () => {
             timestamp: new Date()
           }
         ]);
-      } else {
-        handleFallback();
       }
     } catch (error) {
       console.error('Failed to start onboarding:', error);
-      handleFallback();
+      setMessages([
+        {
+          role: 'assistant',
+          content: 'The onboarding service is temporarily unavailable. Please refresh the page and try again in a moment.',
+          timestamp: new Date(),
+          isError: true
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFallback = () => {
-    setShowFallback(true);
-    setMessages([
-      {
-        role: 'assistant',
-        content: 'The AI assistant is currently unavailable. Please use the manual form to set up your farm.',
-        timestamp: new Date(),
-        isError: true
-      }
-    ]);
   };
 
   const sendMessage = async (e) => {
@@ -146,15 +137,6 @@ const OnboardingChat = () => {
     }, 2000);
   };
 
-  const handleSkip = () => {
-    completeOnboarding({ skipped: true });
-    navigate('/spatial');
-  };
-
-  const handleUseForm = () => {
-    navigate('/onboarding-form');
-  };
-
   return (
     <div className="onboarding-chat-container">
       <div className="onboarding-chat">
@@ -194,7 +176,7 @@ const OnboardingChat = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {!isCompleted && !showFallback && (
+        {!isCompleted && (
           <form onSubmit={sendMessage} className="chat-input-form">
             <input
               ref={inputRef}
@@ -215,27 +197,6 @@ const OnboardingChat = () => {
           </form>
         )}
 
-        {showFallback && (
-          <div className="fallback-actions">
-            <button onClick={handleUseForm} className="use-form-button">
-              Use Manual Form
-            </button>
-            <button onClick={handleSkip} className="skip-button">
-              Skip Setup
-            </button>
-          </div>
-        )}
-
-        {!isCompleted && !showFallback && (
-          <div className="chat-actions">
-            <button onClick={handleUseForm} className="action-link">
-              Prefer a form? Use manual setup
-            </button>
-            <button onClick={handleSkip} className="action-link">
-              Skip for now
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Quick tips sidebar */}
@@ -246,6 +207,7 @@ const OnboardingChat = () => {
           <li>Example: "My farm is Green Valley Farm, 250 acres near Sacramento"</li>
           <li>The assistant will ask for any missing information</li>
           <li>Your data is saved automatically as you go</li>
+          <li>This is the only way to set up your farm - no forms needed</li>
         </ul>
       </div>
     </div>

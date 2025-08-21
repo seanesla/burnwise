@@ -206,64 +206,7 @@
   cursor: not-allowed;
 }
 
-.chat-actions {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.action-link {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.85rem;
-  cursor: pointer;
-  text-decoration: underline;
-  transition: color 0.2s ease;
-}
-
-.action-link:hover {
-  color: #ff6b35;
-}
-
-.fallback-actions {
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-  justify-content: center;
-}
-
-.use-form-button,
-.skip-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.use-form-button {
-  background: rgba(255, 107, 53, 0.2);
-  border: 1px solid rgba(255, 107, 53, 0.4);
-  color: #ff6b35;
-}
-
-.use-form-button:hover {
-  background: rgba(255, 107, 53, 0.3);
-}
-
-.skip-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.skip-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
+/* No fallback styles - pure AI approach */
 
 .onboarding-tips {
   width: 300px;

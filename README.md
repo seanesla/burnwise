@@ -50,13 +50,14 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
 - **One Question at a Time** - No overwhelming 18-field forms
 - **Smart Suggestions** - "Tomorrow has high winds, but Thursday looks perfect"
 
-### Conversational Onboarding (NEW)
-- **AI-Powered Setup** - OnboardingAgent using OpenAI Agents SDK replaces traditional forms
+### Conversational Onboarding (PURE AI - NO FALLBACKS)
+- **AI-Only Setup** - OnboardingAgent using OpenAI Agents SDK is the ONLY way to onboard
 - **Natural Language** - Just chat with the agent to set up your farm
 - **Smart Data Extraction** - Agent extracts structured data from conversational input
 - **Location Understanding** - Handles descriptions like "near Sacramento" or "Yolo County"
-- **Fallback to Form** - Manual form available if AI unavailable
-- **Session Management** - Maintains conversation context for 30 minutes
+- **No Compromises** - If AI unavailable, onboarding waits - no manual forms, no shortcuts
+- **Session Management** - Maintains conversation context for 30-minute sessions
+- **Philosophical Commitment** - Real AI or nothing, aligning with hackathon's genuine AI focus
 
 ### Interactive Tutorial System
 - **Guided Walkthrough** - Step-by-step introduction to key features

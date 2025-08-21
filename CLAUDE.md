@@ -146,11 +146,12 @@ GPT-5-nano is FUNDAMENTALLY INCOMPATIBLE with structured JSON tasks:
 **TOOLS**: `save_farm_data`, `validate_location`, `check_email_availability`
 **CONVERSATION**: Natural language interface asks questions one at a time
 **DATA COLLECTION**: Farm name, owner, email, location, acreage, crops, burn preferences
-**FALLBACK**: Manual form available if AI unavailable (OnboardingForm.js)
+**NO FALLBACKS**: Pure AI-driven - if AI unavailable, onboarding cannot proceed (architectural decision)
 **STORAGE**: Creates farm record in TiDB with preferences in farm_preferences table
 **UI**: Chat interface with glass morphism matching spatial interface design
 **SESSION**: Maintains conversation state for 30-minute sessions
 **REQUIREMENTS**: All Zod schema fields must use `.nullable()` not `.optional()` for OpenAI SDK
+**PHILOSOPHY**: No compromises - real AI or nothing, aligns with hackathon focus on genuine AI agents
 
 ## Development Standards
 
