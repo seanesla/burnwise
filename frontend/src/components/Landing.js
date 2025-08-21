@@ -108,16 +108,21 @@ const Landing = ({ isInitialLoad = true }) => {
         console.log('Moving to revealing phase');
         setAnimationPhase('revealing');
       }, 4000);
+      const disappearTimer = setTimeout(() => {
+        console.log('Moving to disappearing phase');
+        setAnimationPhase('disappearing');
+      }, 5500);
       const completeTimer = setTimeout(() => {
         console.log('Animation complete');
         setAnimationPhase('complete');
         document.body.style.overflow = '';
         document.documentElement.style.overflow = '';
-      }, 5500);
+      }, 6500);
       
       return () => {
         clearTimeout(phase2Timer);
         clearTimeout(phase3Timer);
+        clearTimeout(disappearTimer);
         clearTimeout(completeTimer);
         document.body.style.overflow = '';
         document.documentElement.style.overflow = '';
@@ -162,6 +167,10 @@ const Landing = ({ isInitialLoad = true }) => {
     revealing: {
       opacity: 0,
       transition: { duration: 1.5, ease: 'easeInOut' }
+    },
+    disappearing: {
+      opacity: 0,
+      transition: { duration: 0.5, ease: 'easeOut' }
     },
     complete: {
       opacity: 0,
@@ -231,11 +240,33 @@ const Landing = ({ isInitialLoad = true }) => {
         opacity: { duration: 0.1 } // Keep opacity constant
       }
     },
+    disappearing: {
+      x: finalFlameX,
+      y: finalFlameYAbsolute - 30,  // Float upward slightly
+      scale: 0,  // Shrink to nothing
+      opacity: 0,  // Fade out
+      transition: { 
+        duration: 1,
+        ease: [0.43, 0.13, 0.23, 0.96],
+        y: {
+          duration: 1,
+          ease: "easeOut"
+        },
+        scale: {
+          duration: 0.8,
+          ease: "easeInOut"
+        },
+        opacity: {
+          duration: 0.6,
+          ease: "easeIn"
+        }
+      }
+    },
     complete: {
       x: finalFlameX,
-      y: finalFlameYAbsolute,  // Use page coordinates for absolute positioning
-      scale: 0.361,
-      opacity: 1,
+      y: finalFlameYAbsolute,
+      scale: 0,
+      opacity: 0,
     }
   };
   
@@ -246,6 +277,7 @@ const Landing = ({ isInitialLoad = true }) => {
       opacity: 1,
       transition: { duration: 1.5, ease: 'easeOut' }
     },
+    disappearing: { opacity: 1 },
     complete: { opacity: 1 }
   };
   
@@ -256,13 +288,14 @@ const Landing = ({ isInitialLoad = true }) => {
       opacity: videoOpacity,
       transition: { duration: 2, ease: 'easeOut', delay: 0.5 }
     },
+    disappearing: { opacity: videoOpacity },
     complete: { opacity: videoOpacity }
   };
 
   return (
     <div className="landing-container visible">
       {/* Black background overlay */}
-      {(animationPhase === 'startup' || animationPhase === 'transitioning' || animationPhase === 'revealing') && (
+      {(animationPhase === 'startup' || animationPhase === 'transitioning' || animationPhase === 'revealing' || animationPhase === 'disappearing') && (
         <motion.div
           variants={backgroundVariants}
           initial="startup"
@@ -281,31 +314,33 @@ const Landing = ({ isInitialLoad = true }) => {
       )}
       
       {/* Single flame instance that animates from center to I */}
-      <motion.div 
-        key="unified-flame"
-        className="unified-flame"
-        variants={flameVariants}
-        initial="startup"
-        animate={animationPhase}
-        style={{
-          position: 'absolute',  // Use absolute positioning to scroll with page
-          top: 0,
-          left: 0,
-          width: 180,
-          height: 180,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          filter: 'drop-shadow(0 0 25px rgba(255, 107, 53, 0.8)) drop-shadow(0 0 15px rgba(255, 87, 34, 0.6))',
-          zIndex: 999999,
-          pointerEvents: 'none',
-        }}
-        onAnimationComplete={() => {
-          console.log('Flame animation complete for phase:', animationPhase);
-        }}
-      >
-        <AnimatedFlameLogo size={180} animated={true} />
-      </motion.div>
+      {animationPhase !== 'complete' && (
+        <motion.div 
+          key="unified-flame"
+          className="unified-flame"
+          variants={flameVariants}
+          initial="startup"
+          animate={animationPhase}
+          style={{
+            position: 'absolute',  // Use absolute positioning to scroll with page
+            top: 0,
+            left: 0,
+            width: 180,
+            height: 180,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            filter: 'drop-shadow(0 0 25px rgba(255, 107, 53, 0.8)) drop-shadow(0 0 15px rgba(255, 87, 34, 0.6))',
+            zIndex: 999999,
+            pointerEvents: 'none',
+          }}
+          onAnimationComplete={() => {
+            console.log('Flame animation complete for phase:', animationPhase);
+          }}
+        >
+          <AnimatedFlameLogo size={180} animated={true} />
+        </motion.div>
+      )}
       
       {/* Layered background system */}
       <motion.div 
