@@ -4,16 +4,27 @@
  * NO EMOJIS - CLEAN PROFESSIONAL UI
  */
 
+/* Global overrides to prevent scrolling on auth pages */
+body:has(.auth-container),
+html:has(.auth-container) {
+  overflow: hidden !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* Container */
 .auth-container {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  position: relative;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow: hidden;
-  width: 100%;
 }
 
 /* Two-card layout container with wrapped band effect */
@@ -25,69 +36,67 @@
   width: 100%;
   position: relative;
   z-index: 10; /* Above all backgrounds */
-  padding: 4rem 2rem;
+  padding: 2rem;
+  perspective: 1000px;
 }
 
-/* Curved band effect - organic wrapped appearance */
+/* Curved horizontal ribbon behind cards */
 .auth-cards-container::before {
   content: '';
   position: absolute;
-  top: -10%;
-  left: -10%;
-  right: -10%;
-  bottom: -10%;
+  top: 50%;
+  left: -50%;
+  right: -50%;
+  height: 400px;
+  transform: translateY(-50%);
   background: radial-gradient(
-    ellipse 140% 50% at 50% 50%,
-    rgba(10, 10, 10, 0.95) 0%,
-    rgba(10, 10, 10, 0.92) 25%,
-    rgba(8, 8, 8, 0.85) 40%,
-    rgba(5, 5, 5, 0.7) 55%,
-    rgba(0, 0, 0, 0.5) 70%,
-    rgba(0, 0, 0, 0.2) 85%,
-    transparent 100%
+    ellipse 200% 100% at 50% 50%,
+    rgba(20, 20, 20, 0.98) 0%,
+    rgba(18, 18, 18, 0.95) 40%,
+    rgba(15, 15, 15, 0.85) 60%,
+    rgba(10, 10, 10, 0.5) 80%,
+    transparent 95%
   );
-  border-radius: 50% / 30%;
-  transform: perspective(1000px) rotateX(8deg) scaleY(1.2);
-  box-shadow: 
-    0 0 100px rgba(0, 0, 0, 0.9),
-    inset 0 0 40px rgba(255, 107, 53, 0.05);
+  /* Make it curve by using clip-path */
+  clip-path: ellipse(100% 60% at 50% 50%);
   z-index: -1;
-  filter: blur(8px);
+  pointer-events: none;
 }
 
-/* Secondary band layer for depth */
+/* Additional shadow layer for depth */
 .auth-cards-container::after {
   content: '';
   position: absolute;
-  top: -5%;
-  left: 5%;
-  right: 5%;
-  bottom: -5%;
+  top: 50%;
+  left: -40%;
+  right: -40%;
+  height: 380px;
+  transform: translateY(-50%);
   background: linear-gradient(
-    90deg,
+    to bottom,
     transparent 0%,
-    rgba(255, 107, 53, 0.03) 20%,
-    rgba(255, 107, 53, 0.05) 50%,
-    rgba(255, 107, 53, 0.03) 80%,
+    rgba(0, 0, 0, 0.3) 20%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.3) 80%,
     transparent 100%
   );
-  border-radius: 50% / 25%;
-  transform: perspective(800px) rotateX(-5deg);
+  /* Create curved edges */
+  -webkit-mask-image: radial-gradient(ellipse 100% 60% at 50% 50%, black 0%, transparent 100%);
+  mask-image: radial-gradient(ellipse 100% 60% at 50% 50%, black 0%, transparent 100%);
   z-index: -2;
-  opacity: 0.5;
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
   .auth-cards-container {
     flex-direction: column;
     gap: 1.5rem;
-    padding: 3rem 1rem;
+    padding: 1rem;
   }
   
   .auth-cards-container::before,
   .auth-cards-container::after {
-    border-radius: 0;
-    transform: none;
+    display: none;
   }
 }
 
@@ -139,7 +148,7 @@
 
 /* Card */
 .auth-card {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(255, 107, 53, 0.05);
   backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 107, 53, 0.25);
   border-radius: 2rem;
@@ -160,7 +169,6 @@
 
 .auth-card-demo {
   flex: 0.8;
-  background: rgba(255, 107, 53, 0.05);
   border-color: rgba(255, 107, 53, 0.3);
 }
 
@@ -499,16 +507,57 @@
 
 .demo-badge-corner {
   position: absolute;
-  top: 20px;
-  right: -30px;
+  top: 25px;
+  right: -35px;
   background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
   color: white;
-  padding: 5px 40px;
+  padding: 8px 50px;
   transform: rotate(45deg);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 1px;
-  box-shadow: 0 4px 10px rgba(255, 107, 53, 0.3);
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* Ribbon fold effect - left side */
+.demo-badge-corner::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 100%;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid #d84315;
+  border-bottom: 10px solid transparent;
+  border-top: 10px solid #d84315;
+  transform: translateX(-15px);
+}
+
+/* Ribbon fold effect - right side */
+.demo-badge-corner::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: 0;
+  height: 0;
+  border-right: 15px solid transparent;
+  border-left: 15px solid #d84315;
+  border-bottom: 10px solid transparent;
+  border-top: 10px solid #d84315;
+  transform: translateX(15px);
+}
+
+/* Inner shadow for depth */
+.demo-badge-corner span {
+  position: relative;
+  z-index: 1;
+  display: block;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .demo-header {

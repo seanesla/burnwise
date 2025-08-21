@@ -198,6 +198,9 @@ const Login = () => {
       <div className="auth-background" />
       <EmberBackground intensity={1.2} blur={false} />
       
+      {/* Add right side ribbon curve */}
+      <div className="ribbon-curve-right" />
+      
       {/* Desktop: Two-card layout */}
       <div className="auth-cards-container">
         {/* Login Card */}
