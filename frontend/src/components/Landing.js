@@ -207,30 +207,20 @@ const Landing = ({ isInitialLoad = true }) => {
     disappearing: {
       x: viewportCenterX,  // Stay at center, no movement
       y: viewportCenterY,  // Stay at center, no movement
-      scale: 0,  // Shrink to nothing
+      scale: 0.361,  // Keep same size, no shrinking
       opacity: 0,  // Fade out
-      rotate: 180,  // Add rotation for visual interest
       transition: { 
         duration: 1,
-        ease: [0.43, 0.13, 0.23, 0.96],
-        scale: {
-          duration: 0.8,
-          ease: "easeInOut"
-        },
         opacity: {
-          duration: 0.6,
+          duration: 0.8,
           ease: "easeIn"
-        },
-        rotate: {
-          duration: 1,
-          ease: "easeOut"
         }
       }
     },
     complete: {
-      x: finalFlameX,
-      y: finalFlameYAbsolute,
-      scale: 0,
+      x: viewportCenterX,  // Stay at center
+      y: viewportCenterY,  // Stay at center
+      scale: 0.361,  // Keep same size
       opacity: 0,
     }
   };
