@@ -223,6 +223,32 @@ const FarmBoundaryDrawer = ({
     }
   };
 
+  // Complete drawing
+  const completeDrawing = () => {
+    if (draw.current) {
+      draw.current.changeMode('simple_select');
+      setIsDrawing(false);
+      calculateArea();
+    }
+  };
+
+  // Cancel drawing
+  const cancelDrawing = () => {
+    if (draw.current) {
+      // Get all features and remove the incomplete one
+      const data = draw.current.getAll();
+      if (data.features.length > 0) {
+        const lastFeature = data.features[data.features.length - 1];
+        // Check if it's an incomplete polygon
+        if (lastFeature.geometry.coordinates[0].length < 4) {
+          draw.current.delete(lastFeature.id);
+        }
+      }
+      draw.current.changeMode('simple_select');
+      setIsDrawing(false);
+    }
+  };
+
   // Clear all drawings
   const clearAll = () => {
     if (draw.current) {
@@ -330,23 +356,45 @@ const FarmBoundaryDrawer = ({
 
       {/* Drawing Tools */}
       <div className="drawing-tools">
-        <button
-          className={`tool-btn ${isDrawing ? 'active' : ''}`}
-          onClick={startDrawing}
-          title={mapLoaded ? "Draw Farm Boundary" : "Map loading..."}
-          disabled={!mapLoaded}
-        >
-          <FaDrawPolygon />
-        </button>
-        
-        <button
-          className="tool-btn"
-          onClick={clearAll}
-          title="Clear All"
-          disabled={parcels.length === 0}
-        >
-          <FaTrash />
-        </button>
+        {!isDrawing ? (
+          <>
+            <button
+              className="tool-btn"
+              onClick={startDrawing}
+              title={mapLoaded ? "Draw Farm Boundary" : "Map loading..."}
+              disabled={!mapLoaded}
+            >
+              <FaDrawPolygon />
+            </button>
+            
+            <button
+              className="tool-btn"
+              onClick={clearAll}
+              title="Clear Boundary"
+              disabled={currentArea === 0}
+            >
+              <FaTrash />
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              className="tool-btn complete-btn"
+              onClick={completeDrawing}
+              title="Complete Boundary"
+            >
+              <FaCheck />
+            </button>
+            
+            <button
+              className="tool-btn cancel-btn"
+              onClick={cancelDrawing}
+              title="Cancel Drawing"
+            >
+              <FaTimes />
+            </button>
+          </>
+        )}
 
         <button
           className="tool-btn"
@@ -395,6 +443,23 @@ const FarmBoundaryDrawer = ({
           </span>
         )}
       </div>
+
+      {/* Drawing Mode Indicator */}
+      {isDrawing && (
+        <div className="drawing-mode-indicator">
+          <div className="drawing-mode-content">
+            <span className="drawing-mode-text">
+              Click on the map to draw your farm boundary
+            </span>
+            <button 
+              className="btn-complete-drawing"
+              onClick={completeDrawing}
+            >
+              <FaCheck /> Complete Boundary
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Instructions */}
       <AnimatePresence>

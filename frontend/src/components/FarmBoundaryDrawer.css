@@ -65,6 +65,33 @@
   cursor: not-allowed;
 }
 
+/* Complete and Cancel buttons during drawing */
+.tool-btn.complete-btn {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.tool-btn.complete-btn:hover:not(:disabled) {
+  background: rgba(76, 175, 80, 0.3);
+  border-color: #4caf50;
+  color: #4caf50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.tool-btn.cancel-btn {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: #f44336;
+  color: #f44336;
+}
+
+.tool-btn.cancel-btn:hover:not(:disabled) {
+  background: rgba(244, 67, 54, 0.3);
+  border-color: #f44336;
+  color: #f44336;
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+}
+
 /* Area Display */
 .area-display {
   position: absolute;
@@ -99,6 +126,71 @@
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
   margin-left: 5px;
+}
+
+/* Drawing Mode Indicator */
+.drawing-mode-indicator {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.95) 0%, rgba(255, 165, 0, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 16px 24px;
+  box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+  z-index: 100;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.drawing-mode-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.drawing-mode-text {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-complete-drawing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #ff6b35;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-complete-drawing:hover {
+  background: #ffffff;
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn-complete-drawing svg {
+  font-size: 18px;
 }
 
 /* Drawing Instructions */
