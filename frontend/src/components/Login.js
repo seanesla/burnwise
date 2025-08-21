@@ -7,10 +7,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaFire, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaRocket, FaDatabase, FaRobot, FaArrowRight } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaRocket, FaDatabase, FaRobot, FaArrowRight, FaFire } from 'react-icons/fa';
+import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
-// DemoEntryCard removed - integrated into main auth card
+// Demo section separated for better desktop layout
 import './Auth.css';
 
 const Login = () => {
@@ -186,7 +187,7 @@ const Login = () => {
       >
         {/* Logo */}
         <div className="auth-logo">
-          <FaFire className="auth-logo-icon" />
+          <AnimatedFlameLogo size={40} animated={true} />
           <h1 className="auth-logo-text">BURNWISE</h1>
         </div>
         
@@ -300,58 +301,76 @@ const Login = () => {
             </Link>
           </p>
         </div>
-        
-        {/* Integrated Demo Section */}
-        {!demoStatusLoading && demoModeEnabled && (
-          <div className="auth-integrated-demo">
-            <div className="demo-divider">
-              <span>or</span>
-            </div>
-            
-            <div className="demo-compact-header">
-              <h3>Try Demo Mode</h3>
-              <p>Experience full features • No registration</p>
-            </div>
-            
-            <div className="demo-features-row">
-              <div className="demo-feature-compact">
-                <FaRobot />
-                <span>5 AI Agents</span>
-              </div>
-              <div className="demo-feature-compact">
-                <FaDatabase />
-                <span>Real TiDB</span>
-              </div>
-              <div className="demo-feature-compact">
-                <FaRocket />
-                <span>3D Interface</span>
-              </div>
-            </div>
-            
-            {demoStats && (
-              <div className="demo-stats-row">
-                <span className="demo-stat-compact">
-                  <strong>{demoStats.active_sessions || 0}</strong> active sessions
-                </span>
-                <span className="demo-stat-compact">
-                  <strong>{demoStats.demo_farms || 0}</strong> demo farms
-                </span>
-              </div>
-            )}
-            
-            <motion.button
-              className="auth-demo-primary-button"
-              onClick={() => navigate('/demo/initialize')}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <FaRocket />
-              <span>Start Demo Session</span>
-              <FaArrowRight />
-            </motion.button>
-          </div>
-        )}
       </motion.div>
+
+      {/* Demo Card - Separate for desktop */}
+      {!demoStatusLoading && demoModeEnabled && (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="auth-card auth-demo-card"
+        >
+          <div className="demo-badge-corner">
+            <span>LIVE DEMO</span>
+          </div>
+          
+          <div className="demo-header">
+            <FaRocket className="demo-header-icon" />
+            <h2 className="demo-title">Try Demo Mode</h2>
+            <p className="demo-subtitle">Experience full features without registration</p>
+          </div>
+          
+          <div className="demo-features-grid">
+            <div className="demo-feature-item">
+              <FaRobot className="demo-feature-icon" />
+              <span>5 AI Agents</span>
+            </div>
+            <div className="demo-feature-item">
+              <FaDatabase className="demo-feature-icon" />
+              <span>Real TiDB</span>
+            </div>
+            <div className="demo-feature-item">
+              <FaRocket className="demo-feature-icon" />
+              <span>3D Interface</span>
+            </div>
+            <div className="demo-feature-item">
+              <FaFire className="demo-feature-icon" />
+              <span>Full Features</span>
+            </div>
+          </div>
+          
+          {demoStats && (
+            <div className="demo-stats-container">
+              <div className="demo-stat">
+                <div className="demo-stat-value">{demoStats.active_sessions || 0}</div>
+                <div className="demo-stat-label">Active Sessions</div>
+              </div>
+              <div className="demo-stat-divider" />
+              <div className="demo-stat">
+                <div className="demo-stat-value">{demoStats.demo_farms || 0}</div>
+                <div className="demo-stat-label">Demo Farms</div>
+              </div>
+            </div>
+          )}
+          
+          <motion.button
+            className="auth-submit-button demo-primary-btn"
+            onClick={() => navigate('/demo/initialize')}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span>Start Demo Session</span>
+            <FaArrowRight />
+          </motion.button>
+          
+          <div className="demo-benefits">
+            <div className="demo-benefit">✓ No registration</div>
+            <div className="demo-benefit">✓ 24-hour session</div>
+            <div className="demo-benefit">✓ Real AI interactions</div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };

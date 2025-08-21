@@ -10,9 +10,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 2rem;
   padding: 2rem;
   position: relative;
-  overflow: hidden; /* Remove scrolling from container */
+  overflow: hidden;
   width: 100%;
 }
 
@@ -68,10 +69,9 @@
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 107, 53, 0.2);
   border-radius: 1.5rem;
-  padding: 2.5rem 2rem;
+  padding: 2rem 2.5rem;
   width: 100%;
-  max-width: 450px;
-  margin: 0 auto;
+  max-width: 420px;
   position: relative;
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.5),
@@ -84,7 +84,7 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .auth-logo-icon {
@@ -114,18 +114,18 @@
 
 /* Title */
 .auth-title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #ffffff;
   text-align: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .auth-subtitle {
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: #999999;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Error Message */
@@ -156,7 +156,7 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 /* Field */
@@ -335,7 +335,7 @@
 
 /* Footer */
 .auth-footer {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
   text-align: center;
 }
 
@@ -394,11 +394,155 @@
   margin-top: 0.5rem;
 }
 
-/* Integrated Demo Section */
+/* Demo Card - Desktop Layout */
+.auth-demo-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-badge-corner {
+  position: absolute;
+  top: 20px;
+  right: -30px;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
+  color: white;
+  padding: 5px 40px;
+  transform: rotate(45deg);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 10px rgba(255, 107, 53, 0.3);
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.demo-header-icon {
+  font-size: 2.5rem;
+  color: #ff6b35;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.5));
+}
+
+.demo-title {
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.demo-subtitle {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.demo-features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.demo-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 107, 53, 0.05);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.demo-feature-item:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.4);
+}
+
+.demo-feature-icon {
+  color: #ff6b35;
+  font-size: 1.25rem;
+}
+
+.demo-feature-item span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.demo-stats-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.demo-stat {
+  text-align: center;
+}
+
+.demo-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ff6b35;
+  line-height: 1;
+}
+
+.demo-stat-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
+.demo-stat-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 107, 53, 0.2);
+}
+
+.demo-primary-btn {
+  margin-bottom: 1rem;
+}
+
+.demo-benefits {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.demo-benefit {
+  color: rgba(34, 197, 94, 0.9);
+}
+
+/* Hide demo card on mobile */
+@media (max-width: 1024px) {
+  .auth-demo-card {
+    display: none;
+  }
+}
+
+/* Integrated Demo Section (Mobile) */
 .auth-integrated-demo {
   margin-top: 2rem;
   padding-top: 2rem;
   border-top: 1px solid rgba(255, 107, 53, 0.1);
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .auth-integrated-demo {
+    display: block;
+  }
 }
 
 .demo-divider {
