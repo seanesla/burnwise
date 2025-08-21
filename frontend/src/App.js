@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MapProvider } from './contexts/MapContext';
+import { TutorialProvider } from './contexts/TutorialContext';
 import settingsManager from './utils/settingsManager';
 import './styles/App.css';
 
@@ -119,7 +120,9 @@ function App() {
     <Router>
       <AuthProvider>
         <MapProvider>
-          <AppContent />
+          <TutorialProvider>
+            <AppContent />
+          </TutorialProvider>
         </MapProvider>
       </AuthProvider>
     </Router>

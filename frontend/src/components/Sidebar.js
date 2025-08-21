@@ -8,10 +8,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   FaMap, FaFire, FaCloudSun, FaBell, FaCog, 
   FaUser, FaSignOutAlt, FaBars, FaTimes,
-  FaExclamationTriangle, FaCheck
+  FaExclamationTriangle, FaCheck, FaQuestionCircle
 } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { useMap } from '../contexts/MapContext';
+import { useTutorial } from '../contexts/TutorialContext';
 import axios from 'axios';
 import './Sidebar.css';
 
@@ -20,6 +21,7 @@ const Sidebar = ({ onPanelChange }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { getCurrentLocation } = useMap();
+  const { resetTutorial, isCompleted } = useTutorial();
   
   // Sidebar state
   const [isExpanded, setIsExpanded] = useState(() => {
@@ -303,6 +305,18 @@ const Sidebar = ({ onPanelChange }) => {
           );
         })}
       </nav>
+
+      {/* Tutorial Button */}
+      <div className="sidebar-tutorial">
+        <button
+          className="tutorial-button"
+          onClick={resetTutorial}
+          title={isExpanded ? "Restart tutorial" : "Tutorial"}
+        >
+          <FaQuestionCircle />
+          {isExpanded && <span className="tutorial-text">Repeat Tutorial</span>}
+        </button>
+      </div>
 
       {/* User Section */}
       <div className="sidebar-user">

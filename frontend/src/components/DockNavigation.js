@@ -92,6 +92,7 @@ const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
           <motion.div
             key={item.id}
             className={`dock-item ${activePanel === item.id ? 'active' : ''}`}
+            data-dock-item={item.id}
             variants={iconVariants}
             initial="initial"
             whileHover="hover"
