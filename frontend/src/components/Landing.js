@@ -94,15 +94,40 @@ const Landing = ({ isInitialLoad = true }) => {
   // Lock scrolling immediately on mount if initial load
   useEffect(() => {
     if (isInitialLoad) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      
+      // Lock scroll completely
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.documentElement.style.overflow = 'hidden';
-      window.scrollTo(0, 0); // Ensure we're at the top
+      window.scrollTo(0, 0);
+      
+      // Prevent wheel events
+      const preventScroll = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      };
+      
+      window.addEventListener('wheel', preventScroll, { passive: false });
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+      
+      return () => {
+        window.removeEventListener('wheel', preventScroll);
+        window.removeEventListener('touchmove', preventScroll);
+      };
     }
     
     return () => {
       // Cleanup on unmount
       if (isInitialLoad) {
         document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
         document.documentElement.style.overflow = '';
       }
     };
@@ -124,8 +149,14 @@ const Landing = ({ isInitialLoad = true }) => {
       const completeTimer = setTimeout(() => {
         console.log('Animation complete');
         setAnimationPhase('complete');
+        // Restore scroll
+        const scrollY = parseInt(document.body.style.top || '0') * -1;
         document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
         document.documentElement.style.overflow = '';
+        window.scrollTo(0, scrollY);
       }, 5000);
       
       return () => {
