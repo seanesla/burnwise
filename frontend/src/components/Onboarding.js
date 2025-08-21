@@ -20,7 +20,7 @@ import './Onboarding.css';
 const STEPS = [
   {
     id: 'welcome',
-    title: 'Welcome to BURNWISE',
+    title: 'Welcome to Burnwise',
     icon: FaFire,
     description: 'Let\'s set up your farm for optimal burn coordination'
   },
@@ -169,7 +169,7 @@ const Onboarding = () => {
             </div>
             <h2>Welcome, {user?.name || 'Farmer'}!</h2>
             <p className="welcome-text">
-              BURNWISE helps coordinate agricultural burns across multiple farms to minimize smoke conflicts 
+              Burnwise helps coordinate agricultural burns across multiple farms to minimize smoke conflicts 
               and optimize burning conditions.
             </p>
             <div className="welcome-features">

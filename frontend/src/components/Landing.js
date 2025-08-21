@@ -349,7 +349,7 @@ const Landing = ({ isInitialLoad = true }) => {
         <section className="hero-section">
           <div className="hero-title-container" style={{ position: 'relative', display: 'inline-block' }}>
             <h1 className="hero-title title-visible" id="burnwise-title" ref={titleRef}>
-              BURNWISE
+              Burnwise
             </h1>
           </div>
           <p className="hero-subtitle">Multi-Farm Agricultural Burn Coordinator</p>
@@ -429,7 +429,7 @@ const Landing = ({ isInitialLoad = true }) => {
           <div className="section-container">
             <h2 className="section-title">5-Agent AI Coordination System</h2>
             <p className="section-subtitle">
-              BURNWISE deploys five specialized AI agents working in concert to prevent smoke conflicts 
+              Burnwise deploys five specialized AI agents working in concert to prevent smoke conflicts 
               and optimize burning schedules across multiple farms
             </p>
             
@@ -554,7 +554,7 @@ const Landing = ({ isInitialLoad = true }) => {
           <div className="section-container">
             <h2>Ready to Transform Agricultural Burning?</h2>
             <p>
-              Join the future of coordinated agricultural management. BURNWISE is revolutionizing 
+              Join the future of coordinated agricultural management. Burnwise is revolutionizing 
               how farms coordinate burns for safer, cleaner, and more efficient operations.
             </p>
             

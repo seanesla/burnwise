@@ -1,8 +1,8 @@
-# BURNWISE
+# Burnwise
 
 **Multi-Farm Agricultural Burn Coordinator** - TiDB AgentX Hackathon 2025
 
-BURNWISE is an intelligent agricultural burn coordination system that prevents dangerous smoke overlap between neighboring farms using multi-agent AI, real-time weather analysis, and TiDB vector search capabilities.
+Burnwise is an intelligent agricultural burn coordination system that prevents dangerous smoke overlap between neighboring farms using multi-agent AI, real-time weather analysis, and TiDB vector search capabilities.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-green.svg)
@@ -16,7 +16,7 @@ Agricultural burning is essential for crop residue management, but uncoordinated
 - **Health impacts** on nearby communities
 - **Regulatory violations** and potential fines
 
-BURNWISE coordinates burns across multiple farms to ensure safe air quality while maximizing farming efficiency.
+Burnwise coordinates burns across multiple farms to ensure safe air quality while maximizing farming efficiency.
 
 ## Key Features
 
@@ -49,6 +49,14 @@ BURNWISE coordinates burns across multiple farms to ensure safe air quality whil
 - **Context Awareness** - Agents remember your farm details and preferences
 - **One Question at a Time** - No overwhelming 18-field forms
 - **Smart Suggestions** - "Tomorrow has high winds, but Thursday looks perfect"
+
+### Interactive Tutorial System
+- **Guided Onboarding** - Step-by-step walkthrough for new users
+- **Contextual Tooltips** - Highlights key features with explanations
+- **Progress Tracking** - Visual progress dots showing tutorial completion
+- **Glass Morphism Design** - Elegant semi-transparent overlays matching UI theme
+- **Auto-Start for New Users** - Automatically launches on first visit
+- **Restart Anytime** - Tutorial button (?) available for reviewing features
 
 ### Interactive Features
 - **Real-time Map Visualization** - Mapbox integration showing farms and smoke plumes

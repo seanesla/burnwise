@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project: BURNWISE
+## Project: Burnwise
 Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5-agent workflow with TiDB vector search to prevent smoke conflicts. hackathon link: https://tidb-2025-hackathon.devpost.com/ 
 
 ## Commands
@@ -128,6 +128,15 @@ GPT-5-nano is FUNDAMENTALLY INCOMPATIBLE with structured JSON tasks:
 **3D PERSPECTIVE**: 45° pitch, terrain exaggeration, atmospheric fog for immersive experience
 **NO COMMAND PALETTE**: User rejected cmdk - keep it spatial and visual
 **UNCONVENTIONAL**: Like Bloomberg Terminal meets Google Earth - farmers think spatially about land
+
+## Interactive Tutorial System (NEW Aug 21, 2025)
+**IMPLEMENTATION**: Glass morphism tooltips guide users through key features
+**AUTO-START**: Launches automatically for new users after 2-second delay
+**STEPS**: Welcome → Map interaction → AI Assistant → Dock → Timeline → Farm interaction → Complete
+**DESIGN**: Semi-transparent overlays with backdrop blur, orange accent highlights
+**PERSISTENCE**: Stores completion in localStorage, resettable via (?) button
+**COMPONENTS**: `InteractiveTutorial.js` + `InteractiveTutorial.css` in spatial interface
+**NO EMOJIS**: Professional tutorial text without emoji usage
 
 ## Development Standards
 

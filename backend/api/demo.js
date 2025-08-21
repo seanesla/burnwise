@@ -34,6 +34,43 @@ router.post('/initialize', async (req, res) => {
   }
 
   try {
+    // ENFORCE SINGLE ACTIVE SESSION RULE
+    // First, check if this sessionId already has an active session
+    const existingSession = await db.query(
+      'SELECT session_id, farm_id, expires_at FROM demo_sessions WHERE session_id = ? AND is_active = 1 AND expires_at > NOW()',
+      [sessionId]
+    );
+
+    if (existingSession && existingSession.length > 0) {
+      // Reuse existing session
+      console.log(`[DEMO] Reusing existing session ${sessionId} with farm ${existingSession[0].farm_id}`);
+      
+      const result = { farmId: existingSession[0].farm_id, sessionId };
+      
+      // Set session data (only if session exists)
+      if (req.session) {
+        req.session.isDemo = true;
+        req.session.demoFarmId = result.farmId;
+        req.session.demoSessionId = sessionId;
+        req.session.demoMode = mode;
+      }
+      
+      return res.json({
+        success: true,
+        farmId: result.farmId,
+        sessionId: sessionId,
+        mode: mode,
+        message: 'Reusing existing demo session',
+        expiresAt: existingSession[0].expires_at
+      });
+    }
+    
+    // Deactivate ALL other active demo sessions to enforce single session
+    console.log('[DEMO] Deactivating all other active demo sessions to enforce single session rule');
+    await db.query(
+      'UPDATE demo_sessions SET is_active = 0, updated_at = NOW() WHERE is_active = 1'
+    );
+    
     // Create REAL farm and demo data in TiDB without transactions
     
     // Create demo farm in TiDB
@@ -54,7 +91,7 @@ router.post('/initialize', async (req, res) => {
     );
 
     const farmId = farmResult.insertId;
-    console.log(`[DEMO] Created farm ${farmId} for session ${sessionId}`);
+    console.log(`[DEMO] Created farm ${farmId} for session ${sessionId} (single active session enforced)`);
 
     // Create demo session record
     await db.query(

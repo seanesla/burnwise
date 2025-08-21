@@ -199,7 +199,7 @@ const SignUp = () => {
         {/* Logo */}
         <div className="auth-logo">
           <AnimatedFlameLogo size={80} animated={true} />
-          <h1 className="auth-logo-text">BURNWISE</h1>
+          <h1 className="auth-logo-text">Burnwise</h1>
         </div>
         
         {/* Title */}

@@ -16,6 +16,7 @@ import TimelineScrubber from './TimelineScrubber';
 import DemoSessionBanner from './DemoSessionBanner';
 import DashboardView from './DashboardView';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import InteractiveTutorial from './InteractiveTutorial';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './SpatialInterface.css';
 
@@ -1371,6 +1372,9 @@ const SpatialInterface = () => {
           Smoke
         </button>
       </div>
+      
+      {/* Interactive Tutorial System */}
+      <InteractiveTutorial />
     </div>
   );
 };

@@ -142,7 +142,7 @@ const AgentChat = () => {
       addMessage({
         type: 'agent_response',
         agent: 'BurnwiseOrchestrator',
-        content: `Welcome to BURNWISE! I'm your agricultural burn coordinator. I can help you schedule burns, check weather safety, resolve conflicts, and monitor your operations.
+        content: `Welcome to Burnwise! I'm your agricultural burn coordinator. I can help you schedule burns, check weather safety, resolve conflicts, and monitor your operations.
 
 Just tell me what you need in natural language - no forms to fill out! I'll delegate to specialist agents automatically.
 

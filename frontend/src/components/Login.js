@@ -159,13 +159,35 @@ const Login = () => {
   };
 
   // Demo credentials hint
-  const fillDemoCredentials = () => {
+  const fillDemoCredentials = async () => {
     setFormData({
       email: 'robert@goldenfields.com',
       password: 'demo123'
     });
     setErrors({});
     setLoginError('');
+    
+    // Automatically submit the form after filling credentials
+    setLoading(true);
+    try {
+      const result = await login('robert@goldenfields.com', 'demo123');
+      
+      if (result.success) {
+        // Navigation handled by useEffect
+        if (result.needsOnboarding) {
+          navigate('/onboarding');
+        } else {
+          navigate('/spatial');
+        }
+      } else {
+        setLoginError(result.error || 'Demo login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Demo login error:', err);
+      setLoginError('Failed to login with demo account. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle demo mode initialization
@@ -213,7 +235,7 @@ const Login = () => {
         {/* Logo */}
         <div className="auth-logo">
           <AnimatedFlameLogo size={40} animated={true} />
-          <h1 className="auth-logo-text">BURNWISE</h1>
+          <h1 className="auth-logo-text">Burnwise</h1>
         </div>
         
         {/* Title */}
