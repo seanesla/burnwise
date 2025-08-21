@@ -24,17 +24,18 @@
 
 /* Dashboard Cards */
 .dashboard-card {
-  background: rgba(60, 60, 60, 0.98);
+  background: rgba(25, 25, 25, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 2px solid rgba(255, 107, 53, 0.35);
+  border: 2px solid rgba(255, 107, 53, 0.4);
   border-radius: 32px;
   padding: 32px;
   box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 20px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
   min-height: 300px;
+  overflow: hidden;
 }
 
 .dashboard-card:hover {
@@ -53,22 +54,25 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 107, 53, 0.15);
+  margin: -32px -32px 20px -32px;
+  padding: 20px 32px;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.9) 0%, rgba(255, 165, 0, 0.85) 100%);
+  border-radius: 32px 32px 24px 24px;
+  border-bottom: 2px solid rgba(255, 107, 53, 0.3);
 }
 
 .card-header h3 {
   margin: 0;
-  color: #ff8855;
-  font-size: 1.3rem;
-  font-weight: 700;
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 800;
   letter-spacing: 0.03em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
 .card-content {
-  color: rgba(255, 255, 255, 1);
+  color: #ffffff;
+  padding-top: 10px;
 }
 
 /* Burns Card */
@@ -80,16 +84,17 @@
 }
 
 .stat-label {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
-  font-weight: 500;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .stat-value {
-  color: #ffa060;
-  font-weight: 700;
-  font-size: 1.2rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  color: #ffcc88;
+  font-weight: 800;
+  font-size: 1.3rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
 .burns-list-mini {
@@ -128,18 +133,19 @@
 }
 
 .temperature {
-  font-size: 3.5rem;
-  font-weight: 800;
-  color: #ff8855;
+  font-size: 4rem;
+  font-weight: 900;
+  color: #ffcc88;
   line-height: 1;
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
 }
 
 .condition {
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.4rem;
+  color: #ffffff;
   margin-top: 8px;
-  font-weight: 500;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .weather-details {
@@ -162,14 +168,15 @@
 }
 
 .detail-row span:first-child {
-  color: rgba(255, 255, 255, 1);
-  font-weight: 600;
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .detail-row span:last-child {
-  color: #ffa060;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: #ffcc88;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* Alerts Card */
@@ -245,15 +252,17 @@
 }
 
 .alert-title {
-  font-weight: 600;
+  font-weight: 800;
   margin-bottom: 4px;
-  color: rgba(255, 255, 255, 0.95);
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .alert-desc {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 400;
+  font-size: 0.95rem;
+  color: #ffffff;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* Stats Card */
