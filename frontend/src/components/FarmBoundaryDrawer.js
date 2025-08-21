@@ -14,6 +14,7 @@ import {
   FaFileImport, FaFileExport, FaSatellite,
   FaRuler, FaCheck, FaTimes, FaInfoCircle
 } from 'react-icons/fa';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import './FarmBoundaryDrawer.css';
 
@@ -37,6 +38,7 @@ const FarmBoundaryDrawer = ({
   const [showInstructions, setShowInstructions] = useState(true);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Initialize map
   useEffect(() => {
@@ -75,7 +77,7 @@ const FarmBoundaryDrawer = ({
         polygon: true,
         trash: true
       },
-      defaultMode: 'draw_polygon',
+      defaultMode: 'simple_select',
       styles: [
         // Style for polygon fill
         {
@@ -116,19 +118,23 @@ const FarmBoundaryDrawer = ({
       ]
     });
 
-    map.current.addControl(draw.current);
+    // Wait for map to load before adding controls
+    map.current.on('load', () => {
+      map.current.addControl(draw.current);
+      setMapLoaded(true);
 
-    // Load initial boundary if exists
-    if (initialBoundary) {
-      draw.current.add(initialBoundary);
-      calculateArea();
-    }
+      // Load initial boundary if exists
+      if (initialBoundary) {
+        draw.current.add(initialBoundary);
+        calculateArea();
+      }
 
-    // Event handlers
-    map.current.on('draw.create', handleDrawCreate);
-    map.current.on('draw.update', handleDrawUpdate);
-    map.current.on('draw.delete', handleDrawDelete);
-    map.current.on('draw.modechange', handleModeChange);
+      // Event handlers
+      map.current.on('draw.create', handleDrawCreate);
+      map.current.on('draw.update', handleDrawUpdate);
+      map.current.on('draw.delete', handleDrawDelete);
+      map.current.on('draw.modechange', handleModeChange);
+    });
 
     return () => {
       map.current.remove();
@@ -201,8 +207,12 @@ const FarmBoundaryDrawer = ({
 
   // Start drawing
   const startDrawing = () => {
-    if (draw.current) {
-      draw.current.changeMode('draw_polygon');
+    if (draw.current && mapLoaded) {
+      // Check if already in draw mode
+      const currentMode = draw.current.getMode();
+      if (currentMode !== 'draw_polygon') {
+        draw.current.changeMode('draw_polygon');
+      }
       setIsDrawing(true);
       setShowInstructions(false);
     }
@@ -318,7 +328,8 @@ const FarmBoundaryDrawer = ({
         <button
           className={`tool-btn ${isDrawing ? 'active' : ''}`}
           onClick={startDrawing}
-          title="Draw Farm Boundary"
+          title={mapLoaded ? "Draw Farm Boundary" : "Map loading..."}
+          disabled={!mapLoaded}
         >
           <FaDrawPolygon />
         </button>
