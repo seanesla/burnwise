@@ -80,7 +80,8 @@
   border-radius: 14px;
   color: #ffffff;
   font-weight: 600;
-  z-index: 10;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .area-display svg {
@@ -114,7 +115,7 @@
   border: 1px solid rgba(255, 107, 53, 0.3);
   border-radius: 16px;
   color: #ffffff;
-  z-index: 15;
+  z-index: 1;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 

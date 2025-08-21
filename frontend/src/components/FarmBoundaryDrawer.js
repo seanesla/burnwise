@@ -42,7 +42,7 @@ const FarmBoundaryDrawer = ({
 
   // Initialize map
   useEffect(() => {
-    if (map.current) return; // Only initialize once
+    if (!mapContainer.current || map.current) return;
     
     // Determine initial center
     let center = [-121.74, 38.544]; // Default Sacramento
@@ -50,7 +50,6 @@ const FarmBoundaryDrawer = ({
     
     if (initialLocation) {
       // Parse location string to get rough coordinates
-      // This would ideally use a geocoding service
       center = initialLocation.coordinates || center;
       zoom = 14;
     }
@@ -61,7 +60,7 @@ const FarmBoundaryDrawer = ({
       center = turf.center(initialBoundary).geometry.coordinates;
       zoom = 15;
     }
-
+    
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
@@ -137,9 +136,15 @@ const FarmBoundaryDrawer = ({
     });
 
     return () => {
-      map.current.remove();
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+      if (draw.current) {
+        draw.current = null;
+      }
     };
-  }, []);
+  }, [initialBoundary, initialLocation]);
 
   // Handle draw create
   const handleDrawCreate = useCallback((e) => {
