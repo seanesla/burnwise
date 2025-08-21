@@ -268,7 +268,6 @@ class OnboardingAgent {
       }
 
       // The OpenAI Agents SDK uses different API - let's use basic OpenAI completion
-      const client = getOpenAI();
       
       const messages = [
         ...(sessionData.messages || []),
