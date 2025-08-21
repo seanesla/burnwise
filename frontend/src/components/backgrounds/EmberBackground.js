@@ -11,23 +11,23 @@ class Ember {
   constructor(canvas) {
     this.canvas = canvas;
     this.reset();
-    // Start particles at random positions for immediate visibility
-    this.y = Math.random() * canvas.height;
+    // Start particles spread across middle to upper screen for immediate visibility
+    this.y = canvas.height * 0.2 + Math.random() * canvas.height * 0.6;
   }
 
   reset() {
     this.x = Math.random() * this.canvas.width;
-    this.y = this.canvas.height + 20;
+    this.y = this.canvas.height * 0.5 + Math.random() * this.canvas.height * 0.3; // Start from middle to lower-third of screen
     this.size = Math.random() * 6 + 3; // Even bigger particles (3-9px)
-    this.speedY = Math.random() * 3 + 1.5; // Faster movement
-    this.speedX = (Math.random() - 0.5) * 1.5;
+    this.speedY = Math.random() * 0.8 + 0.4; // Much slower upward movement
+    this.speedX = (Math.random() - 0.5) * 0.5; // Slower horizontal drift
     this.opacity = 1; // Full opacity
-    this.fadeRate = Math.random() * 0.002 + 0.001;
+    this.fadeRate = Math.random() * 0.001 + 0.0005; // Slower fade
     this.color = this.getEmberColor();
     this.glow = Math.random() * 20 + 10; // Bigger glow
-    this.flickerSpeed = Math.random() * 0.1 + 0.05;
+    this.flickerSpeed = Math.random() * 0.05 + 0.02; // Slower flicker
     this.flickerPhase = Math.random() * Math.PI * 2;
-    this.lifespan = Math.random() * 400 + 300;
+    this.lifespan = Math.random() * 600 + 500; // Longer life
     this.age = 0;
   }
 
@@ -45,22 +45,22 @@ class Ember {
   update(deltaTime) {
     this.age += deltaTime;
     
-    // Float upward with wavy motion
-    this.y -= this.speedY * deltaTime * 0.08;
-    this.x += this.speedX * deltaTime * 0.08;
-    this.x += Math.sin(this.age * 0.002) * 0.8;
+    // Float upward with gentle wavy motion - MUCH SLOWER
+    this.y -= this.speedY * deltaTime * 0.04; // Slower rise
+    this.x += this.speedX * deltaTime * 0.03; // Slower drift
+    this.x += Math.sin(this.age * 0.0005) * 0.4; // Gentler wave
     
     // Flicker effect
     this.flickerPhase += this.flickerSpeed;
-    const flicker = Math.sin(this.flickerPhase) * 0.2 + 0.8;
+    const flicker = Math.sin(this.flickerPhase) * 0.15 + 0.85;
     
-    // Fade only near top
-    if (this.y < 150) {
-      this.opacity -= this.fadeRate * deltaTime * 0.15;
+    // Fade only at very top
+    if (this.y < 80) {
+      this.opacity -= this.fadeRate * deltaTime * 0.1;
     }
     
     // Reset if out of bounds
-    if (this.y < -20 || this.opacity <= 0 || this.age > this.lifespan) {
+    if (this.y < -50 || this.opacity <= 0 || this.age > this.lifespan) {
       this.reset();
     }
     
@@ -127,8 +127,8 @@ const EmberBackground = ({ intensity = 1, blur = false }) => {
     };
     resizeCanvas();
 
-    // Create many visible particles
-    const particleCount = Math.floor(80 * intensity); // Lots of particles
+    // Create atmospheric particle density
+    const particleCount = Math.floor(60 * intensity); // Balanced for atmosphere
     particlesRef.current = Array.from({ length: particleCount }, () => new Ember(canvas));
 
     const animate = (currentTime) => {
