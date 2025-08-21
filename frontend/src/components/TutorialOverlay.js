@@ -19,7 +19,8 @@ const TutorialOverlay = () => {
     nextStep,
     previousStep,
     skipTutorial,
-    endTutorial
+    endTutorial,
+    appState
   } = useTutorial();
   
   const [targetBounds, setTargetBounds] = useState(null);
@@ -31,6 +32,12 @@ const TutorialOverlay = () => {
   
   // Get current step data
   const step = getCurrentStep();
+  
+  // Check if step requirements are met
+  const isStepActionRequired = step?.nextTrigger === 'action' && step?.requiredState;
+  const areRequirementsMet = isStepActionRequired ? 
+    Object.keys(step.requiredState).every(key => appState[key] === step.requiredState[key]) : 
+    true;
   
   // Calculate spotlight and tooltip positions
   const calculatePositions = useCallback(() => {
@@ -285,6 +292,40 @@ const TutorialOverlay = () => {
           {/* Content */}
           <div className="tutorial-content">
             <p className="tutorial-text">{step.content}</p>
+            
+            {/* Show waiting content if action required but not completed */}
+            {isStepActionRequired && !areRequirementsMet && step.waitingContent && (
+              <motion.div 
+                className="tutorial-waiting"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="waiting-indicator">
+                  <motion.div
+                    className="waiting-pulse"
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      opacity: [0.6, 1, 0.6]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  />
+                </div>
+                <p className="waiting-text">{step.waitingContent}</p>
+              </motion.div>
+            )}
+            
+            {/* Show agent highlight if applicable */}
+            {step.agentHighlight && (
+              <div className="agent-highlight">
+                <span className="agent-badge">{step.agentHighlight}</span>
+                <span className="agent-status">Active</span>
+              </div>
+            )}
           </div>
           
           {/* Progress indicator */}
@@ -326,10 +367,12 @@ const TutorialOverlay = () => {
             
             {currentStep < totalSteps - 1 ? (
               <button
-                className="tutorial-nav-button next primary"
+                className={`tutorial-nav-button next primary ${isStepActionRequired && !areRequirementsMet ? 'disabled' : ''}`}
                 onClick={nextStep}
+                disabled={isStepActionRequired && !areRequirementsMet}
+                title={isStepActionRequired && !areRequirementsMet ? 'Complete the action to continue' : ''}
               >
-                <span>Next</span>
+                <span>{isStepActionRequired && !areRequirementsMet ? 'Complete Action' : 'Next'}</span>
                 <FaArrowRight />
               </button>
             ) : (

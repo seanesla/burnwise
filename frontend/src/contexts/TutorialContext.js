@@ -11,127 +11,188 @@ import axios from 'axios';
 
 const TutorialContext = createContext(null);
 
-// Tutorial steps configuration - dynamic and data-driven
+// Tutorial steps configuration - complete AI agent workflow
 const TUTORIAL_STEPS = [
   {
     id: 'welcome',
     title: 'Welcome to Burnwise',
-    targetSelector: null, // No specific target, shows in center
+    targetSelector: null,
     position: 'center',
-    content: (data) => `Welcome to Burnwise - the revolutionary agricultural burn coordination system. You're managing ${data.farmCount || 'multiple'} farms with real-time AI coordination.`,
+    content: (data) => `Welcome to Burnwise! Let's walk through creating a real burn request using our 5-agent AI system. You're managing ${data.farmCount || 'multiple'} farms with autonomous coordination.`,
     action: null,
-    nextTrigger: 'manual', // User clicks next
-    requiredState: null
+    nextTrigger: 'manual',
+    requiredState: null,
+    canSkipStep: false
   },
   {
     id: 'spatial-interface',
-    title: 'Spatial Interface',
+    title: 'Your Spatial Command Center',
     targetSelector: '.mapboxgl-canvas',
     position: 'center',
-    content: (data) => `This isn't just a map - it's your entire application. Click directly on farms, drag to create burn zones, and interact spatially. ${data.farmsVisible ? `You can see ${data.farmsVisible} farms in your area.` : 'Zoom in to see farm boundaries.'}`,
+    content: (data) => `This map IS your entire application. No menus, no pages - just direct spatial interaction. ${data.farmsVisible ? `You can see ${data.farmsVisible} farms ready for management.` : 'Let\'s explore your farms.'}`,
     action: null,
     nextTrigger: 'manual',
-    requiredState: null
+    requiredState: null,
+    canSkipStep: false
   },
   {
-    id: 'farm-interaction',
-    title: 'Click a Farm',
+    id: 'select-farm',
+    title: 'Step 1: Select Your Farm',
     targetSelector: '.farm-marker',
     position: 'top',
-    content: (data) => `Click on any farm marker to see details. ${data.nearestFarm ? `Try clicking on ${data.nearestFarm}.` : 'Each farm has real boundaries and burn history.'}`,
+    content: (data) => `Click on ${data.nearestFarm || 'any farm marker'} to begin your burn request. This will be the farm we'll schedule a burn for.`,
     action: 'click-farm',
-    nextTrigger: 'action', // Proceeds when user clicks a farm
-    requiredState: { farmPopupOpen: true }
+    nextTrigger: 'action',
+    requiredState: { farmPopupOpen: true },
+    waitingContent: 'Waiting for you to click a farm...',
+    canSkipStep: false
   },
   {
-    id: 'ai-assistant',
-    title: 'AI Assistant',
+    id: 'open-ai-chat',
+    title: 'Step 2: Open AI Assistant',
     targetSelector: '[data-dock-item="ai"]',
     position: 'top',
-    content: () => 'Click the AI Assistant button to open the chat. Our 5-agent system will handle burn requests using natural language.',
+    content: () => 'Now click the AI Assistant button in the dock. This activates our 5-agent system.',
     action: 'open-ai',
     nextTrigger: 'action',
-    requiredState: { aiChatOpen: true }
+    requiredState: { aiChatOpen: true },
+    waitingContent: 'Click the AI Assistant button to continue...',
+    canSkipStep: false
   },
   {
-    id: 'natural-language',
-    title: 'Natural Language Requests',
+    id: 'burn-request-agent',
+    title: 'Step 3: BurnRequestAgent',
     targetSelector: '.floating-ai-input textarea',
     position: 'top',
-    content: (data) => `Try typing: "I need to burn ${data.suggestedAcres || 100} acres ${data.suggestedTime || 'tomorrow morning'}"`,
+    content: (data) => `Type this burn request: "I need to burn ${data.suggestedAcres || 100} acres ${data.suggestedTime || 'tomorrow morning'} on my wheat field"`,
     action: 'send-message',
     nextTrigger: 'action',
-    requiredState: { messagesSent: true }
+    requiredState: { messagesSent: true },
+    waitingContent: 'Type and send your burn request...',
+    canSkipStep: false,
+    agentHighlight: 'BurnRequestAgent'
   },
   {
-    id: 'agent-handoffs',
-    title: 'Agent Coordination',
+    id: 'agent-processing',
+    title: 'AI Agents Processing',
     targetSelector: '.agent-indicator',
     position: 'top',
-    content: () => 'Watch as specialized agents handle your request - Weather Analysis, Conflict Resolution, and Schedule Optimization.',
-    action: null,
-    nextTrigger: 'manual',
-    requiredState: null
+    content: () => 'Watch the agent indicator! BurnRequestAgent is extracting structured data from your natural language request.',
+    action: 'observe-agents',
+    nextTrigger: 'action',
+    requiredState: { agentResponseReceived: true },
+    waitingContent: 'Agents are processing your request...',
+    canSkipStep: false,
+    agentHighlight: 'BurnRequestAgent'
   },
   {
-    id: 'weather-overlay',
-    title: 'Weather Analysis',
+    id: 'weather-analyst',
+    title: 'Step 4: WeatherAnalyst Agent',
     targetSelector: '[data-layer="weather"]',
     position: 'right',
-    content: (data) => `Toggle the weather overlay to see real conditions. Current temperature: ${data.temperature || '75'}°F with ${data.windSpeed || 'light'} winds.`,
+    content: (data) => `Click to toggle the weather overlay. WeatherAnalyst is checking conditions: ${data.temperature || '75'}°F, ${data.windSpeed || 'light'} winds, ${data.humidity || '45'}% humidity.`,
     action: 'toggle-weather',
     nextTrigger: 'action',
-    requiredState: { weatherLayerActive: true }
+    requiredState: { weatherLayerActive: true },
+    waitingContent: 'Toggle the weather layer to see analysis...',
+    canSkipStep: false,
+    agentHighlight: 'WeatherAnalyst'
   },
   {
-    id: 'timeline-scrubber',
-    title: 'Timeline Navigation',
+    id: 'weather-decision',
+    title: 'Weather Safety Decision',
+    targetSelector: '.weather-status',
+    position: 'auto',
+    content: (data) => `WeatherAnalyst has determined conditions are ${data.weatherStatus || 'SAFE'} for burning. This autonomous decision considers wind, humidity, and fire danger.`,
+    action: null,
+    nextTrigger: 'manual',
+    requiredState: null,
+    canSkipStep: false,
+    agentHighlight: 'WeatherAnalyst'
+  },
+  {
+    id: 'conflict-resolver',
+    title: 'Step 5: ConflictResolver Agent',
+    targetSelector: '.conflict-indicator',
+    position: 'auto',
+    content: () => 'ConflictResolver is checking for conflicts with neighboring farms using TiDB vector search on smoke plume predictions.',
+    action: 'check-conflicts',
+    nextTrigger: 'action',
+    requiredState: { conflictsChecked: true },
+    waitingContent: 'Analyzing potential smoke conflicts...',
+    canSkipStep: false,
+    agentHighlight: 'ConflictResolver'
+  },
+  {
+    id: 'timeline-scheduling',
+    title: 'Step 6: View Schedule Timeline',
     targetSelector: '.timeline-scrubber',
     position: 'top',
-    content: (data) => `Scrub through time to see past burns and future schedules. ${data.activeBurns ? `${data.activeBurns} burns are currently active.` : 'View the complete burn history.'}`,
+    content: (data) => `Drag the timeline scrubber to see when your burn fits in. ${data.activeBurns ? `${data.activeBurns} burns are currently scheduled.` : 'Your burn will be optimally scheduled.'}`,
     action: 'use-timeline',
     nextTrigger: 'action',
-    requiredState: { timelineUsed: true }
+    requiredState: { timelineUsed: true },
+    waitingContent: 'Drag the timeline to explore burn schedules...',
+    canSkipStep: false
   },
   {
-    id: 'dock-navigation',
-    title: 'Quick Access Dock',
-    targetSelector: '.dock-navigation',
-    position: 'top',
-    content: () => 'Access key features from the dock - Map Controls, AI Assistant, Active Burns, and Settings.',
+    id: 'schedule-optimizer',
+    title: 'Step 7: ScheduleOptimizer Agent',
+    targetSelector: '.schedule-suggestion',
+    position: 'auto',
+    content: () => 'ScheduleOptimizer is using simulated annealing to find the optimal burn window considering weather, conflicts, and farm priorities.',
     action: null,
     nextTrigger: 'manual',
-    requiredState: null
+    requiredState: null,
+    canSkipStep: false,
+    agentHighlight: 'ScheduleOptimizer'
   },
   {
-    id: 'active-burns',
-    title: 'Active Burns Panel',
+    id: 'human-approval',
+    title: 'Step 8: Human-in-the-Loop',
+    targetSelector: '.approval-modal',
+    position: 'center',
+    content: () => 'Critical burn decisions require your approval. Review the AI recommendations and approve or modify the burn plan.',
+    action: 'approve-burn',
+    nextTrigger: 'action',
+    requiredState: { burnApproved: true },
+    waitingContent: 'Review and approve the burn request...',
+    canSkipStep: false
+  },
+  {
+    id: 'burns-panel',
+    title: 'Step 9: Monitor Active Burns',
     targetSelector: '[data-dock-item="burns"]',
     position: 'top',
-    content: (data) => `View and manage all burn requests. ${data.pendingBurns ? `You have ${data.pendingBurns} burns awaiting approval.` : 'All burns are monitored in real-time.'}`,
+    content: (data) => `Click the Active Burns icon to see your scheduled burn. ${data.pendingBurns ? `You have ${data.pendingBurns} burns in the queue.` : 'Your burn is now scheduled!'}`,
     action: 'open-burns',
     nextTrigger: 'action',
-    requiredState: { burnsPanelOpen: true }
+    requiredState: { burnsPanelOpen: true },
+    waitingContent: 'Open the Active Burns panel...',
+    canSkipStep: false
   },
   {
-    id: 'safety-approval',
-    title: 'Human-in-the-Loop Safety',
-    targetSelector: '.approval-required',
+    id: 'proactive-monitor',
+    title: 'Step 10: ProactiveMonitor Agent',
+    targetSelector: '.monitoring-indicator',
     position: 'auto',
-    content: () => 'Critical decisions require human approval. You maintain control over safety-sensitive operations.',
+    content: () => 'ProactiveMonitor will autonomously watch your burn 24/7, alerting you to weather changes or safety concerns without being asked.',
     action: null,
     nextTrigger: 'manual',
-    requiredState: null
+    requiredState: null,
+    canSkipStep: false,
+    agentHighlight: 'ProactiveMonitor'
   },
   {
-    id: 'complete',
-    title: 'Tutorial Complete!',
+    id: 'complete-workflow',
+    title: 'Workflow Complete!',
     targetSelector: null,
     position: 'center',
-    content: (data) => `You're ready to coordinate agricultural burns with AI precision. ${data.userName ? `Welcome aboard, ${data.userName}!` : 'Let\'s revolutionize farm management together.'}`,
+    content: (data) => `Congratulations ${data.userName || 'Farmer'}! You've successfully created a burn request using all 5 AI agents. Your burn is scheduled and monitored autonomously.`,
     action: null,
     nextTrigger: 'manual',
-    requiredState: null
+    requiredState: null,
+    canSkipStep: false
   }
 ];
 
@@ -151,12 +212,17 @@ export const TutorialProvider = ({ children }) => {
     farmPopupOpen: false,
     aiChatOpen: false,
     messagesSent: false,
+    agentResponseReceived: false,
     weatherLayerActive: false,
+    weatherStatus: 'SAFE',
+    conflictsChecked: false,
     timelineUsed: false,
+    burnApproved: false,
     burnsPanelOpen: false,
     farmsVisible: 0,
     activeBurns: 0,
-    pendingBurns: 0
+    pendingBurns: 0,
+    humidity: 45
   });
   
   // Refs for state detection
@@ -232,39 +298,63 @@ export const TutorialProvider = ({ children }) => {
   
   // Monitor application state
   const monitorAppState = useCallback(() => {
+    // Check if farm popup is open
+    const farmPopupOpen = !!document.querySelector('.mapboxgl-popup');
+    
+    // Check if AI chat is open
+    const aiChatOpen = !!document.querySelector('.floating-ai-container:not(.minimized)');
+    
+    // Check if messages were sent
+    const messageElements = document.querySelectorAll('.message-user');
+    const messagesSent = messageElements.length > 0;
+    
+    // Check if agent response received
+    const agentMessages = document.querySelectorAll('.message-agent');
+    const agentResponseReceived = agentMessages.length > 0;
+    
+    // Check weather layer
+    const weatherLayerActive = !!document.querySelector('[data-layer="weather"].active');
+    
+    // Check timeline usage
+    let timelineUsed = false;
+    const timelineElement = document.querySelector('.timeline-scrubber');
+    if (timelineElement) {
+      const currentValue = timelineElement.getAttribute('data-value');
+      const defaultValue = timelineElement.getAttribute('data-default');
+      timelineUsed = currentValue !== defaultValue;
+    }
+    
+    // Check burns panel
+    const burnsPanelOpen = !!document.querySelector('.burns-panel:not(.hidden)');
+    
+    // Check if conflicts were checked
+    const conflictsChecked = !!document.querySelector('.conflicts-checked') || 
+                              !!document.querySelector('[data-conflicts="checked"]');
+    
+    // Check if burn was approved
+    const burnApproved = !!document.querySelector('.burn-approved') || 
+                          !!document.querySelector('[data-burn="approved"]');
+    
+    // Count visible farms
+    const farmsVisible = document.querySelectorAll('.farm-marker').length;
+    
     setAppState(prevState => {
-      const newState = {};
-      
-      // Check if farm popup is open
-      newState.farmPopupOpen = !!document.querySelector('.mapboxgl-popup');
-      
-      // Check if AI chat is open
-      newState.aiChatOpen = !!document.querySelector('.floating-ai-container:not(.minimized)');
-      
-      // Check if messages were sent
-      const messageElements = document.querySelectorAll('.message-user');
-      newState.messagesSent = messageElements.length > 0;
-      
-      // Check weather layer
-      newState.weatherLayerActive = !!document.querySelector('[data-layer="weather"].active');
-      
-      // Check timeline usage
-      const timelineElement = document.querySelector('.timeline-scrubber');
-      if (timelineElement) {
-        const currentValue = timelineElement.getAttribute('data-value');
-        const defaultValue = timelineElement.getAttribute('data-default');
-        newState.timelineUsed = currentValue !== defaultValue;
-      }
-      
-      // Check burns panel
-      newState.burnsPanelOpen = !!document.querySelector('.burns-panel:not(.hidden)');
-      
-      // Count visible farms
-      newState.farmsVisible = document.querySelectorAll('.farm-marker').length;
-      
-      // Additional state from previous
-      newState.activeBurns = prevState.activeBurns || 0;
-      newState.pendingBurns = prevState.pendingBurns || 0;
+      const newState = {
+        farmPopupOpen,
+        aiChatOpen,
+        messagesSent,
+        agentResponseReceived,
+        weatherLayerActive,
+        timelineUsed,
+        burnsPanelOpen,
+        conflictsChecked,
+        burnApproved,
+        farmsVisible,
+        activeBurns: prevState.activeBurns || 0,
+        pendingBurns: prevState.pendingBurns || 0,
+        weatherStatus: prevState.weatherStatus || 'SAFE',
+        humidity: prevState.humidity || 45
+      };
       
       // Only update if something changed
       const hasChanges = Object.keys(newState).some(key => newState[key] !== prevState[key]);
@@ -354,7 +444,10 @@ export const TutorialProvider = ({ children }) => {
     
     if (currentStep < TUTORIAL_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
-      fetchTutorialData(); // Refresh data for new step
+      // Debounce data fetch to prevent rapid calls
+      setTimeout(() => {
+        fetchTutorialData();
+      }, 100);
     } else {
       endTutorial();
     }
@@ -387,8 +480,11 @@ export const TutorialProvider = ({ children }) => {
       );
       
       if (requirementsMet && !completedSteps.has(currentStep)) {
-        // Auto-advance to next step
-        nextStep();
+        // Delay auto-advance to prevent race conditions
+        const timer = setTimeout(() => {
+          nextStep();
+        }, 500);
+        return () => clearTimeout(timer);
       }
     }
   }, [isActive, currentStep, appState, completedSteps, nextStep]);

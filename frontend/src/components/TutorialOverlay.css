@@ -348,3 +348,95 @@
 .tutorial-spotlight {
   animation: spotlightPulse 3s ease-in-out infinite;
 }
+
+/* Waiting state */
+.tutorial-waiting {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 107, 53, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.waiting-indicator {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.waiting-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #ff6b35;
+  border-radius: 50%;
+}
+
+.waiting-text {
+  margin: 0;
+  color: #ff6b35;
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+}
+
+/* Agent highlight */
+.agent-highlight {
+  margin-top: 15px;
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 107, 53, 0.05));
+  border-radius: 6px;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.agent-badge {
+  background: #ff6b35;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.agent-status {
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.agent-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+/* Disabled button state */
+.tutorial-nav-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(128, 128, 128, 0.1) !important;
+  border-color: rgba(128, 128, 128, 0.3) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.tutorial-nav-button.disabled:hover {
+  transform: none;
+  background: rgba(128, 128, 128, 0.1) !important;
+}
