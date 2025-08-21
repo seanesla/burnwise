@@ -354,13 +354,13 @@ export const TutorialProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
   
-  // Fetch data when tutorial becomes active
-  useEffect(() => {
-    if (isActive) {
-      // Simple fetch without complex monitoring
-      fetchTutorialData();
-    }
-  }, [isActive]);
+  // Fetch data when tutorial becomes active - DISABLED TO FIX LOOP
+  // useEffect(() => {
+  //   if (isActive) {
+  //     // Simple fetch without complex monitoring
+  //     fetchTutorialData();
+  //   }
+  // }, [isActive]);
   
   // Start tutorial
   const startTutorial = useCallback(() => {
