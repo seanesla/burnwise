@@ -38,13 +38,18 @@ const TUTORIAL_STEPS = [
   {
     id: 'select-farm',
     title: 'Step 1: Select Your Farm',
-    targetSelector: '.farm-marker',
-    position: 'top',
-    content: (data) => `Click on ${data.nearestFarm || 'any farm marker'} to begin your burn request. This will be the farm we'll schedule a burn for.`,
+    targetSelector: '.mapboxgl-canvas',
+    position: 'center',
+    content: (data) => {
+      if (data.farmsVisible === 0) {
+        return 'No farms visible on the map. Try zooming in or panning to see farm locations. Look for red circles marking farm boundaries.';
+      }
+      return `Click on any of the ${data.farmsVisible} farm markers (red circles) to begin your burn request. ${data.nearestFarm ? `Try ${data.nearestFarm}.` : ''}`;
+    },
     action: 'click-farm',
     nextTrigger: 'action',
     requiredState: { farmPopupOpen: true },
-    waitingContent: 'Waiting for you to click a farm...',
+    waitingContent: 'Click on any red farm marker on the map to continue...',
     canSkipStep: false
   },
   {
@@ -335,8 +340,8 @@ export const TutorialProvider = ({ children }) => {
     const burnApproved = !!document.querySelector('.burn-approved') || 
                           !!document.querySelector('[data-burn="approved"]');
     
-    // Count visible farms
-    const farmsVisible = document.querySelectorAll('.farm-marker').length;
+    // Count visible farms (check multiple possible selectors)
+    const farmsVisible = document.querySelectorAll('.farm-marker, .mapboxgl-marker, [aria-label*="Map marker"]').length;
     
     setAppState(prevState => {
       const newState = {
@@ -474,20 +479,20 @@ export const TutorialProvider = ({ children }) => {
     if (!isActive) return;
     
     const step = TUTORIAL_STEPS[currentStep];
-    if (step && step.requiredState && step.nextTrigger === 'action') {
-      const requirementsMet = Object.keys(step.requiredState).every(
-        key => appState[key] === step.requiredState[key]
-      );
-      
-      if (requirementsMet && !completedSteps.has(currentStep)) {
-        // Delay auto-advance to prevent race conditions
-        const timer = setTimeout(() => {
-          nextStep();
-        }, 500);
-        return () => clearTimeout(timer);
-      }
+    if (!step || !step.requiredState || step.nextTrigger !== 'action') return;
+    
+    const requirementsMet = Object.keys(step.requiredState).every(
+      key => appState[key] === step.requiredState[key]
+    );
+    
+    if (requirementsMet && !completedSteps.has(currentStep)) {
+      // Delay auto-advance to prevent race conditions
+      const timer = setTimeout(() => {
+        nextStep();
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-  }, [isActive, currentStep, appState, completedSteps, nextStep]);
+  }, [isActive, currentStep, appState]);
   
   // Get current step with dynamic content
   const getCurrentStep = useCallback(() => {
