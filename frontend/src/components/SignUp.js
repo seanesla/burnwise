@@ -12,6 +12,7 @@ import {
   FaPhone, FaBuilding
 } from 'react-icons/fa';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import EmberBackground from './backgrounds/EmberBackground';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 import './Auth.css';
@@ -185,6 +186,7 @@ const SignUp = () => {
 
   return (
     <div className="auth-container">
+      <EmberBackground intensity={1} blur={true} />
       <div className="auth-background" />
       
       <motion.div

@@ -9,6 +9,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaRocket, FaDatabase, FaRobot, FaArrowRight, FaFire } from 'react-icons/fa';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import EmberBackground from './backgrounds/EmberBackground';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 // Demo section separated for better desktop layout
@@ -177,6 +178,7 @@ const Login = () => {
 
   return (
     <div className="auth-container">
+      <EmberBackground intensity={1} blur={true} />
       <div className="auth-background" />
       
       <motion.div

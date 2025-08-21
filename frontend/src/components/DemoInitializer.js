@@ -12,6 +12,7 @@ import {
   FaLightbulb, FaUsers, FaChartLine, FaArrowRight 
 } from 'react-icons/fa';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import EmberBackground from './backgrounds/EmberBackground';
 import './DemoInitializer.css';
 
 const DemoInitializer = () => {
@@ -160,6 +161,7 @@ const DemoInitializer = () => {
   if (isInitializing) {
     return (
       <div className="demo-initializer-container">
+        <EmberBackground intensity={0.8} blur={true} />
         <div className="demo-initializer-loading">
           <AnimatedFlameLogo size={80} animated={true} />
           <h2>Setting up your demo...</h2>
@@ -177,6 +179,7 @@ const DemoInitializer = () => {
 
   return (
     <div className="demo-initializer-container">
+      <EmberBackground intensity={1} blur={true} />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

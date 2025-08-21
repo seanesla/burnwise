@@ -1,0 +1,72 @@
+/**
+ * EmberBackground.css - Styles for animated ember particle background
+ * Provides layering, blur effects, and visual depth
+ */
+
+.ember-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ember-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+  mix-blend-mode: screen;
+}
+
+/* Subtle blur for depth */
+.ember-blur .ember-canvas {
+  filter: blur(0.5px);
+}
+
+/* Gradient overlay for better blending */
+.ember-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center bottom,
+    rgba(255, 107, 53, 0.05) 0%,
+    rgba(255, 87, 34, 0.02) 30%,
+    transparent 70%
+  );
+  pointer-events: none;
+  animation: emberPulse 8s ease-in-out infinite;
+}
+
+@keyframes emberPulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Performance optimization for mobile */
+@media (max-width: 768px) {
+  .ember-canvas {
+    opacity: 0.6;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .ember-background {
+    display: none;
+  }
+}
