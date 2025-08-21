@@ -1409,11 +1409,13 @@ const SpatialInterface = () => {
         activeBurnsCount={burns.filter(b => b.status === 'active' || b.status === 'in_progress').length}
       />
       
-      {/* Timeline Scrubber */}
-      <TimelineScrubber 
-        currentTime={currentTime}
-        onChange={handleTimeChange}
-      />
+      {/* Timeline Scrubber - Only show in map view for spatial-temporal context */}
+      {isMapView && (
+        <TimelineScrubber 
+          currentTime={currentTime}
+          onChange={handleTimeChange}
+        />
+      )}
       
       {/* Weather Overlay Toggle */}
       <div className="overlay-controls">
