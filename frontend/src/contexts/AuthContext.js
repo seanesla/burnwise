@@ -216,6 +216,48 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Demo login - bypasses authentication entirely
+  const loginDemo = async () => {
+    try {
+      setError(null);
+      
+      const response = await axios.post('/api/auth/demo');
+      
+      if (response.data.success) {
+        const userData = response.data.user;
+        
+        // Set demo user data
+        setUser(userData);
+        setIsAuthenticated(true);
+        
+        // Mark as demo session
+        sessionStorage.setItem('isDemo', 'true');
+        
+        // Store token if provided
+        if (response.data.token) {
+          localStorage.setItem('authToken', response.data.token);
+        }
+        
+        // Skip onboarding for demo
+        setOnboardingComplete(true);
+        
+        return { success: true };
+      }
+      
+      return {
+        success: false,
+        error: response.data.message || 'Demo session failed'
+      };
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'Demo session failed';
+      setError(errorMessage);
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  };
+
   // Signup function
   const signup = async (formData) => {
     try {
@@ -275,6 +317,27 @@ export const AuthProvider = ({ children }) => {
     } finally {
       // Clear client state regardless
       clearAuth();
+    }
+  };
+
+  // End demo session function - clears demo data and returns to login
+  const endDemoSession = async () => {
+    try {
+      // If it's a demo session, call special endpoint to clean up demo data
+      if (sessionStorage.getItem('isDemo') === 'true') {
+        await axios.post('/api/auth/demo/end');
+      }
+    } catch (err) {
+      console.error('Error ending demo session:', err);
+    } finally {
+      // Clear all auth and demo data
+      clearAuth();
+      sessionStorage.removeItem('isDemo');
+      sessionStorage.removeItem('burnwise_demo_context');
+      localStorage.removeItem('authToken');
+      
+      // Force redirect to login
+      window.location.href = '/login';
     }
   };
 
@@ -365,8 +428,10 @@ export const AuthProvider = ({ children }) => {
     loading,
     error,
     login,
+    loginDemo,
     signup,
     logout,
+    endDemoSession,
     clearError,
     onboardingComplete,
     needsOnboarding: isAuthenticated && !onboardingComplete,
@@ -375,7 +440,8 @@ export const AuthProvider = ({ children }) => {
     resetOnboarding,
     updateUser,
     refreshAuth,
-    csrfToken
+    csrfToken,
+    isDemo: sessionStorage.getItem('isDemo') === 'true'
   };
 
   return (

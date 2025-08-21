@@ -17,7 +17,7 @@ import './Auth.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated, needsOnboarding, loading: authLoading, clearError } = useAuth();
+  const { login, loginDemo, isAuthenticated, needsOnboarding, loading: authLoading, clearError } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -158,36 +158,24 @@ const Login = () => {
     }
   };
 
-  // Demo credentials hint
+  // Demo session - bypasses authentication entirely
   const fillDemoCredentials = async () => {
-    setFormData({
-      email: 'robert@goldenfields.com',
-      password: 'demo123'
-    });
-    setErrors({});
+    setLoading(true);
     setLoginError('');
     
-    // Mark this as a demo session
-    sessionStorage.setItem('isDemo', 'true');
-    
-    // Automatically submit the form after filling credentials
-    setLoading(true);
     try {
-      const result = await login('robert@goldenfields.com', 'demo123');
+      // Use loginDemo from auth context - NO AUTHENTICATION REQUIRED
+      const result = await loginDemo();
       
       if (result.success) {
-        // Navigation handled by useEffect
-        if (result.needsOnboarding) {
-          navigate('/onboarding');
-        } else {
-          navigate('/spatial');
-        }
+        // Navigate directly to spatial interface
+        navigate('/spatial');
       } else {
-        setLoginError(result.error || 'Demo login failed. Please try again.');
+        setLoginError(result.error || 'Demo session failed. Please try again.');
       }
     } catch (err) {
-      console.error('Demo login error:', err);
-      setLoginError('Failed to login with demo account. Please try again.');
+      console.error('Demo session error:', err);
+      setLoginError('Failed to create demo session. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -220,8 +208,7 @@ const Login = () => {
 
   return (
     <div className="auth-container">
-      <div className="auth-background" />
-      <EmberBackground intensity={1.2} blur={false} />
+      {/* <div className="auth-background" /> */}
       
       {/* Add right side ribbon curve */}
       <div className="ribbon-curve-right" />
@@ -420,6 +407,9 @@ const Login = () => {
           </motion.button>
         </motion.div>
       </div>
+      
+      {/* Ember background - rendered last to be on top */}
+      <EmberBackground intensity={1.0} blur={true} />
     </div>
   );
 };

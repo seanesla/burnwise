@@ -19,7 +19,7 @@ import './Sidebar.css';
 const Sidebar = ({ onPanelChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, endDemoSession, isDemo } = useAuth();
   const { getCurrentLocation } = useMap();
   const { resetTutorial, isCompleted } = useTutorial();
   
@@ -137,8 +137,14 @@ const Sidebar = ({ onPanelChange }) => {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate('/login');
+      // Use different logout for demo sessions
+      if (isDemo) {
+        await endDemoSession();
+        // endDemoSession handles redirect to login
+      } else {
+        await logout();
+        navigate('/login');
+      }
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -333,14 +339,14 @@ const Sidebar = ({ onPanelChange }) => {
           )}
         </div>
         
-        {/* Logout button - always present */}
+        {/* Logout/End Demo button - always present */}
         <button 
-          className="logout-button" 
+          className={`logout-button ${isDemo ? 'demo-end-button' : ''}`}
           onClick={handleLogout}
-          title="Sign out"
+          title={isDemo ? "End demo session" : "Sign out"}
         >
           <FaSignOutAlt />
-          <span className="logout-text">Sign Out</span>
+          <span className="logout-text">{isDemo ? 'End Demo Session' : 'Sign Out'}</span>
         </button>
       </div>
     </div>

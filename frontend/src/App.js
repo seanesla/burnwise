@@ -55,7 +55,7 @@ function AppContent() {
   const shouldShowSidebar = (isAuthenticated && !isAuthPage && !isDemoInitPage) || isDemoSpatialPage;
   
   return (
-    <div className="App">
+    <div className={`App ${isAuthPage ? 'auth-page' : ''}`}>
       {/* Navigation removed - no longer needed */}
       
       {/* Sidebar for authenticated users (excluding auth and demo init pages) */}

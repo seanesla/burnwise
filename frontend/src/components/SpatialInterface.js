@@ -38,6 +38,8 @@ const SpatialInterface = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [weatherOverlay, setWeatherOverlay] = useState(true);
   const [smokeOverlay, setSmokeOverlay] = useState(true);
+  const [farmBoundariesVisible, setFarmBoundariesVisible] = useState(true);
+  const [activeBurnsVisible, setActiveBurnsVisible] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
   const [isMapView, setIsMapView] = useState(true); // Toggle between map and dashboard
   
@@ -244,7 +246,11 @@ const SpatialInterface = () => {
   // Load weather data
   const loadWeatherData = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/weather/current');
+      // Use current map center coordinates
+      const center = map.current ? map.current.getCenter() : { lat: 34.0522, lng: -118.2437 };
+      const lat = center.lat;
+      const lon = center.lng;
+      const response = await fetch(`http://localhost:5001/api/weather/current?lat=${lat}&lon=${lon}`);
       const data = await response.json();
       if (data.success) {
         setWeatherData(data.data);
@@ -822,8 +828,9 @@ const SpatialInterface = () => {
               >
                 <input 
                   type="checkbox" 
-                  checked={true}
+                  checked={farmBoundariesVisible}
                   onChange={(e) => {
+                    setFarmBoundariesVisible(e.target.checked);
                     const visibility = e.target.checked ? 'visible' : 'none';
                     if (map.current.getLayer('farms-3d')) {
                       map.current.setLayoutProperty('farms-3d', 'visibility', visibility);
@@ -856,8 +863,9 @@ const SpatialInterface = () => {
               >
                 <input 
                   type="checkbox" 
-                  checked={true}
+                  checked={activeBurnsVisible}
                   onChange={(e) => {
+                    setActiveBurnsVisible(e.target.checked);
                     // Toggle burn markers visibility
                     const markers = document.querySelectorAll('.burn-marker');
                     markers.forEach(m => m.style.display = e.target.checked ? 'block' : 'none');
@@ -897,6 +905,51 @@ const SpatialInterface = () => {
                 </svg>
                 <span style={{ marginLeft: '8px', color: 'rgba(255, 255, 255, 0.9)' }}>Weather Data</span>
               </label>
+
+              {/* Weather Details Button */}
+              <button
+                onClick={() => {
+                  setActivePanel('weather');
+                  loadWeatherData(); // Reload weather when panel opens
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  marginBottom: '10px',
+                  background: 'rgba(255, 107, 53, 0.1)',
+                  border: '1px solid rgba(255, 107, 53, 0.2)',
+                  borderRadius: '8px',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 107, 53, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.2)';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                View Weather Details
+              </button>
               
               <label 
                 style={{ 
@@ -1063,33 +1116,38 @@ const SpatialInterface = () => {
             }}
           >
             <h3 style={{ margin: '0 0 15px 0', color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>Weather Conditions</h3>
+            {weatherData?.location && (
+              <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '10px' }}>
+                Location: {weatherData.location.lat.toFixed(4)}, {weatherData.location.lng.toFixed(4)}
+              </div>
+            )}
             <div className="weather-content" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
               {weatherData ? (
                 <>
                   <div style={{ marginBottom: '15px', padding: '10px', background: 'rgba(255, 107, 53, 0.1)', borderRadius: '8px' }}>
                     <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px' }}>
-                      {Math.round(weatherData.temperature || 75)}°F
+                      {Math.round(weatherData.temperature || weatherData.weather?.temperature || 75)}°F
                     </div>
                     <div style={{ fontSize: '14px', opacity: 0.8 }}>
-                      {weatherData.condition || 'Clear'}
+                      {weatherData.weather?.condition || weatherData.condition || 'Clear'}
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Wind</div>
-                      <div style={{ fontSize: '14px' }}>{weatherData.windSpeed || '5'} mph</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.wind_speed || weatherData.weather?.windSpeed || '5'} mph</div>
                     </div>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Humidity</div>
-                      <div style={{ fontSize: '14px' }}>{weatherData.humidity || '45'}%</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.humidity || weatherData.weather?.humidity || '45'}%</div>
                     </div>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Visibility</div>
-                      <div style={{ fontSize: '14px' }}>{weatherData.visibility || '10'} mi</div>
+                      <div style={{ fontSize: '14px' }}>{Math.round(weatherData.visibility || weatherData.weather?.visibility || 10)} mi</div>
                     </div>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Pressure</div>
-                      <div style={{ fontSize: '14px' }}>{weatherData.pressure || '30.1'} in</div>
+                      <div style={{ fontSize: '14px' }}>{Math.round(weatherData.pressure * 100) / 100 || '30.1'} in</div>
                     </div>
                   </div>
                   <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(76, 175, 80, 0.2)', borderRadius: '6px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>

@@ -458,3 +458,17 @@
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 107, 53, 0.5);
 }
+/* Demo End Session Button */
+.demo-end-button {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%) !important;
+  border: 1px solid rgba(255, 107, 53, 0.3) !important;
+}
+
+.demo-end-button:hover {
+  background: linear-gradient(135deg, #ff5722 0%, #ff4400 100%) !important;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3) !important;
+}
+
+.demo-end-button .logout-text {
+  font-weight: 600;
+}

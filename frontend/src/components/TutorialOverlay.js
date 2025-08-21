@@ -160,30 +160,35 @@ const TutorialOverlay = () => {
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleResize);
     
-    // Watch for DOM changes that might affect positioning
+    // Watch for DOM changes but with throttling to prevent loops
+    let observerTimeout;
     const observer = new MutationObserver(() => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-      rafRef.current = requestAnimationFrame(calculatePositions);
+      clearTimeout(observerTimeout);
+      observerTimeout = setTimeout(() => {
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+        }
+        rafRef.current = requestAnimationFrame(calculatePositions);
+      }, 100); // Throttle to prevent rapid recalculations
     });
     
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
+      attributes: false, // Disable attribute watching to reduce triggers
+      characterData: false
     });
     
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleResize);
       observer.disconnect();
+      clearTimeout(observerTimeout);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [isActive, currentStep, calculatePositions]);
+  }, [isActive, currentStep]); // Removed calculatePositions to prevent infinite loop
   
   // Handle keyboard navigation
   useEffect(() => {

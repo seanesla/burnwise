@@ -25,7 +25,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-gradient);
+  background: #000; /* Solid black for embers to show against */
   color: var(--white);
   overflow-x: hidden; /* Prevent horizontal scroll */
   width: 100%;
@@ -51,6 +51,11 @@ body {
   overflow-x: hidden; /* Only hide horizontal scroll */
   margin: 0;
   padding: 0;
+}
+
+/* Remove background gradient on auth pages to show embers */
+.App.auth-page {
+  background: transparent;
 }
 
 .app-content {

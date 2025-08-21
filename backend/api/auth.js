@@ -23,6 +23,93 @@ const router = express.Router();
 router.get('/csrf-token', getCSRFToken);
 
 /**
+ * POST /api/auth/demo
+ * Create demo session - NO AUTHENTICATION REQUIRED
+ * Bypasses login entirely for demo mode
+ */
+router.post('/demo', async (req, res) => {
+  try {
+    // Create demo user data without any authentication
+    const demoUserData = {
+      userId: 99999,  // Demo user ID
+      farmId: 99999,
+      email: 'demo@burnwise.com',
+      name: 'Demo User',
+      roles: ['farmer', 'demo'],
+      isDemo: true
+    };
+    
+    // Generate tokens for demo session
+    const accessToken = generateToken(demoUserData);
+    const refreshTokenData = { ...demoUserData, type: 'refresh' };
+    const refreshToken = generateToken(refreshTokenData);
+    
+    // Set tokens in httpOnly cookies
+    setTokenCookie(res, accessToken, false);
+    setTokenCookie(res, refreshToken, true);
+    
+    logger.info('Demo session created', { email: demoUserData.email });
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Demo session created',
+      user: {
+        id: demoUserData.userId,
+        email: demoUserData.email,
+        name: demoUserData.name,
+        roles: demoUserData.roles,
+        isDemo: true
+      },
+      token: accessToken,
+      refreshToken,
+      expiresIn: '24h'
+    });
+  } catch (error) {
+    logger.error('Demo session creation failed', { error: error.message });
+    return res.status(500).json({
+      error: 'Demo session failed',
+      message: 'Could not create demo session'
+    });
+  }
+});
+
+/**
+ * POST /api/auth/demo/end
+ * End demo session and clean up demo data
+ */
+router.post('/demo/end', async (req, res) => {
+  try {
+    // Clear cookies
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    });
+    
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    });
+    
+    logger.info('Demo session ended');
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Demo session ended successfully'
+    });
+  } catch (error) {
+    logger.error('Error ending demo session', { error: error.message });
+    return res.status(500).json({
+      error: 'Failed to end demo session',
+      message: error.message
+    });
+  }
+});
+
+/**
  * POST /api/auth/login
  * Authenticate user and set httpOnly cookie
  */

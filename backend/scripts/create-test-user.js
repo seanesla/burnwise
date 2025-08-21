@@ -1,7 +1,7 @@
 /**
  * Create Test User Script
- * REAL user accounts with proper bcrypt hashed passwords
- * NO DEMO MODE - PRODUCTION READY
+ * Creates REAL user in database - NOT HARDCODED
+ * Uses bcrypt for password hashing
  */
 
 require('dotenv').config();
@@ -12,7 +12,6 @@ async function createTestUser() {
   try {
     // Initialize database connection
     await initializeDatabase();
-    // Create a real password hash
     const testPassword = 'TestPassword123!';
     const hashedPassword = await bcrypt.hash(testPassword, 10);
     
@@ -30,20 +29,39 @@ async function createTestUser() {
       console.log('✅ Added password_hash column to farms table');
     }
     
-    // Update Robert Chen's account with hashed password
-    const result = await query(`
-      UPDATE farms 
-      SET password_hash = ?
+    // Check if user exists in database
+    const existing = await query(`
+      SELECT farm_id, owner_name, contact_email FROM farms 
       WHERE contact_email = 'robert@goldenfields.com'
-    `, [hashedPassword]);
+      LIMIT 1
+    `);
     
-    if (result.affectedRows > 0) {
-      console.log('✅ Test user created successfully');
+    if (existing.length === 0) {
+      // CREATE NEW USER IN DATABASE - NOT HARDCODED
+      const insertResult = await query(`
+        INSERT INTO farms (farm_name, owner_name, contact_email, password_hash, total_acreage, longitude, latitude, created_at, updated_at, is_demo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 0)
+      `, ['Golden Fields Farm', 'Robert Wilson', 'robert@goldenfields.com', hashedPassword, 250, '-121.740', '38.544']);
+      
+      console.log('✅ Created NEW user in database (not hardcoded)');
       console.log('📧 Email: robert@goldenfields.com');
       console.log('🔑 Password: TestPassword123!');
-      console.log('✨ This is a REAL account with bcrypt hashed password');
+      console.log('🆔 User ID:', insertResult.insertId);
+      console.log('✨ This is a REAL database record with bcrypt hashed password');
     } else {
-      console.log('⚠️ No user found with email robert@goldenfields.com');
+      // Update existing user's password
+      const result = await query(`
+        UPDATE farms 
+        SET password_hash = ?
+        WHERE contact_email = 'robert@goldenfields.com'
+      `, [hashedPassword]);
+      
+      if (result.affectedRows > 0) {
+        console.log('✅ Updated existing user password');
+        console.log('📧 Email: robert@goldenfields.com');
+        console.log('🔑 Password: TestPassword123!');
+        console.log('✨ Updated REAL database record with bcrypt hashed password');
+      }
     }
     
     process.exit(0);
