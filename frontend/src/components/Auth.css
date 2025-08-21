@@ -10,11 +10,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2rem;
   padding: 2rem;
   position: relative;
   overflow: hidden;
   width: 100%;
+}
+
+/* Two-card layout container */
+.auth-cards-container {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 900px;
+}
+
+@media (max-width: 768px) {
+  .auth-cards-container {
+    flex-direction: column;
+    max-width: 400px;
+  }
 }
 
 /* Background */
@@ -76,6 +92,28 @@
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.5),
     0 0 100px rgba(255, 107, 53, 0.1);
+}
+
+/* Specific card styles */
+.auth-card-login {
+  flex: 1;
+}
+
+.auth-card-demo {
+  flex: 0.8;
+  background: rgba(255, 107, 53, 0.05);
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+.demo-primary-button {
+  width: 100%;
+  margin-top: 1.5rem;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8951 100%);
+  border: none;
+}
+
+.demo-primary-button:hover {
+  background: linear-gradient(135deg, #ff8951 0%, #ff6b35 100%);
 }
 
 /* Logo */

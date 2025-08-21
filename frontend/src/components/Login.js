@@ -168,6 +168,23 @@ const Login = () => {
     setLoginError('');
   };
 
+  // Handle demo mode initialization
+  const handleDemo = async () => {
+    try {
+      // In a real implementation, this would initialize demo mode
+      // For now, just enable demo mode and show the demo credentials
+      setDemoModeEnabled(true);
+      setDemoStats({
+        farms: 5,
+        burns: 12,
+        agents: 5
+      });
+    } catch (error) {
+      console.error('Failed to initialize demo mode:', error);
+      setLoginError('Failed to initialize demo mode. Please try again.');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="auth-loading">
@@ -181,11 +198,14 @@ const Login = () => {
       <div className="auth-background" />
       <EmberBackground intensity={1.2} blur={false} />
       
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="auth-card"
+      {/* Desktop: Two-card layout */}
+      <div className="auth-cards-container">
+        {/* Login Card */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="auth-card auth-card-login"
       >
         {/* Logo */}
         <div className="auth-logo">
@@ -280,19 +300,6 @@ const Login = () => {
           </motion.button>
         </form>
         
-        {/* Demo Credentials - Quick Demo Account Access */}
-        {demoModeEnabled && !demoStatusLoading && (
-          <div className="auth-demo-section">
-            <button
-              type="button"
-              onClick={fillDemoCredentials}
-              className="auth-demo-button"
-              disabled={loading}
-            >
-              Use Demo Account
-            </button>
-          </div>
-        )}
         
         {/* Footer Links */}
         <div className="auth-footer">
@@ -305,17 +312,16 @@ const Login = () => {
         </div>
       </motion.div>
 
-      {/* Demo Card - Separate for desktop */}
-      {!demoStatusLoading && demoModeEnabled && (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="auth-card auth-demo-card"
-        >
-          <div className="demo-badge-corner">
-            <span>LIVE DEMO</span>
-          </div>
+      {/* Demo Card */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="auth-card auth-card-demo"
+      >
+        <div className="demo-badge-corner">
+          <span>LIVE DEMO</span>
+        </div>
           
           <div className="demo-header">
             <FaRocket className="demo-header-icon" />
@@ -356,23 +362,36 @@ const Login = () => {
             </div>
           )}
           
-          <motion.button
-            className="auth-submit-button demo-primary-btn"
-            onClick={() => navigate('/demo/initialize')}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span>Start Demo Session</span>
-            <FaArrowRight />
-          </motion.button>
-          
           <div className="demo-benefits">
             <div className="demo-benefit">✓ No registration</div>
             <div className="demo-benefit">✓ 24-hour session</div>
             <div className="demo-benefit">✓ Real AI interactions</div>
           </div>
+          
+          {/* Demo Action Button */}
+          <motion.button
+            onClick={demoModeEnabled ? fillDemoCredentials : handleDemo}
+            className="auth-submit-button demo-primary-button"
+            disabled={demoStatusLoading || loading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {demoStatusLoading ? (
+              <LoadingSpinner size="small" />
+            ) : demoModeEnabled ? (
+              <>
+                <FaArrowRight style={{ marginRight: '8px' }} />
+                Use Demo Account
+              </>
+            ) : (
+              <>
+                <FaArrowRight style={{ marginRight: '8px' }} />
+                Launch Demo Mode
+              </>
+            )}
+          </motion.button>
         </motion.div>
-      )}
+      </div>
     </div>
   );
 };
