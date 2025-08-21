@@ -11,18 +11,18 @@ class Ember {
   constructor(canvas) {
     this.canvas = canvas;
     this.reset();
-    // Start particles spread across middle to upper screen for immediate visibility
-    this.y = canvas.height * 0.2 + Math.random() * canvas.height * 0.6;
+    // Start particles spread across entire vertical range for immediate visibility
+    this.y = Math.random() * canvas.height;
   }
 
   reset() {
     this.x = Math.random() * this.canvas.width;
-    this.y = this.canvas.height * 0.5 + Math.random() * this.canvas.height * 0.3; // Start from middle to lower-third of screen
+    this.y = this.canvas.height * 0.8 + Math.random() * this.canvas.height * 0.2; // Start from bottom 20% of screen
     this.size = Math.random() * 6 + 3; // Even bigger particles (3-9px)
     this.speedY = Math.random() * 0.8 + 0.4; // Much slower upward movement
     this.speedX = (Math.random() - 0.5) * 0.5; // Slower horizontal drift
     this.opacity = 1; // Full opacity
-    this.fadeRate = Math.random() * 0.001 + 0.0005; // Slower fade
+    this.fadeRate = Math.random() * 0.002 + 0.001; // Fade rate for middle of screen
     this.color = this.getEmberColor();
     this.glow = Math.random() * 20 + 10; // Bigger glow
     this.flickerSpeed = Math.random() * 0.05 + 0.02; // Slower flicker
@@ -54,13 +54,13 @@ class Ember {
     this.flickerPhase += this.flickerSpeed;
     const flicker = Math.sin(this.flickerPhase) * 0.15 + 0.85;
     
-    // Fade only at very top
-    if (this.y < 80) {
+    // Fade when reaching middle of screen
+    if (this.y < this.canvas.height * 0.5) {
       this.opacity -= this.fadeRate * deltaTime * 0.1;
     }
     
-    // Reset if out of bounds
-    if (this.y < -50 || this.opacity <= 0 || this.age > this.lifespan) {
+    // Reset if reaches middle area with no opacity or out of bounds
+    if (this.y < this.canvas.height * 0.3 || this.opacity <= 0 || this.age > this.lifespan) {
       this.reset();
     }
     

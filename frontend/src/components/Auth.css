@@ -22,42 +22,59 @@
   gap: 2rem;
   align-items: center;
   justify-content: center;
-  width: 100vw;
-  margin-left: -2rem;
-  margin-right: -2rem;
+  width: 100%;
   position: relative;
   z-index: 10; /* Above all backgrounds */
   padding: 4rem 2rem;
 }
 
-/* Curved band effect */
+/* Curved band effect - organic wrapped appearance */
 .auth-cards-container::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.4) 5%,
-    rgba(0, 0, 0, 0.7) 15%,
-    rgba(10, 10, 10, 0.85) 25%,
-    rgba(10, 10, 10, 0.9) 50%,
-    rgba(10, 10, 10, 0.85) 75%,
-    rgba(0, 0, 0, 0.7) 85%,
-    rgba(0, 0, 0, 0.4) 95%,
+  top: -10%;
+  left: -10%;
+  right: -10%;
+  bottom: -10%;
+  background: radial-gradient(
+    ellipse 140% 50% at 50% 50%,
+    rgba(10, 10, 10, 0.95) 0%,
+    rgba(10, 10, 10, 0.92) 25%,
+    rgba(8, 8, 8, 0.85) 40%,
+    rgba(5, 5, 5, 0.7) 55%,
+    rgba(0, 0, 0, 0.5) 70%,
+    rgba(0, 0, 0, 0.2) 85%,
     transparent 100%
   );
-  border-top: 2px solid rgba(255, 107, 53, 0.15);
-  border-bottom: 2px solid rgba(255, 107, 53, 0.15);
+  border-radius: 50% / 30%;
+  transform: perspective(1000px) rotateX(8deg) scaleY(1.2);
   box-shadow: 
-    inset 0 2px 20px rgba(0, 0, 0, 0.5),
-    inset 0 -2px 20px rgba(0, 0, 0, 0.5),
-    0 0 60px rgba(0, 0, 0, 0.8);
+    0 0 100px rgba(0, 0, 0, 0.9),
+    inset 0 0 40px rgba(255, 107, 53, 0.05);
   z-index: -1;
-  /* Curved edges */
-  border-radius: 50% / 20px;
+  filter: blur(8px);
+}
+
+/* Secondary band layer for depth */
+.auth-cards-container::after {
+  content: '';
+  position: absolute;
+  top: -5%;
+  left: 5%;
+  right: 5%;
+  bottom: -5%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 107, 53, 0.03) 20%,
+    rgba(255, 107, 53, 0.05) 50%,
+    rgba(255, 107, 53, 0.03) 80%,
+    transparent 100%
+  );
+  border-radius: 50% / 25%;
+  transform: perspective(800px) rotateX(-5deg);
+  z-index: -2;
+  opacity: 0.5;
 }
 
 @media (max-width: 768px) {
@@ -67,8 +84,10 @@
     padding: 3rem 1rem;
   }
   
-  .auth-cards-container::before {
+  .auth-cards-container::before,
+  .auth-cards-container::after {
     border-radius: 0;
+    transform: none;
   }
 }
 
