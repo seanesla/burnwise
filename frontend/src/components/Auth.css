@@ -27,7 +27,7 @@ html:has(.auth-container) {
   overflow: hidden;
 }
 
-/* Two-card layout container with wrapped band effect */
+/* Two-card layout container */
 .auth-cards-container {
   display: flex;
   gap: 2rem;
@@ -37,54 +37,6 @@ html:has(.auth-container) {
   position: relative;
   z-index: 10; /* Above all backgrounds */
   padding: 2rem;
-  perspective: 1000px;
-}
-
-/* Curved horizontal ribbon behind cards */
-.auth-cards-container::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: -50%;
-  right: -50%;
-  height: 400px;
-  transform: translateY(-50%);
-  background: radial-gradient(
-    ellipse 200% 100% at 50% 50%,
-    rgba(20, 20, 20, 0.98) 0%,
-    rgba(18, 18, 18, 0.95) 40%,
-    rgba(15, 15, 15, 0.85) 60%,
-    rgba(10, 10, 10, 0.5) 80%,
-    transparent 95%
-  );
-  /* Make it curve by using clip-path */
-  clip-path: ellipse(100% 60% at 50% 50%);
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* Additional shadow layer for depth */
-.auth-cards-container::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: -40%;
-  right: -40%;
-  height: 380px;
-  transform: translateY(-50%);
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.3) 20%,
-    rgba(0, 0, 0, 0.5) 50%,
-    rgba(0, 0, 0, 0.3) 80%,
-    transparent 100%
-  );
-  /* Create curved edges */
-  -webkit-mask-image: radial-gradient(ellipse 100% 60% at 50% 50%, black 0%, transparent 100%);
-  mask-image: radial-gradient(ellipse 100% 60% at 50% 50%, black 0%, transparent 100%);
-  z-index: -2;
-  pointer-events: none;
 }
 
 @media (max-width: 768px) {
@@ -92,11 +44,6 @@ html:has(.auth-container) {
     flex-direction: column;
     gap: 1.5rem;
     padding: 1rem;
-  }
-  
-  .auth-cards-container::before,
-  .auth-cards-container::after {
-    display: none;
   }
 }
 
@@ -505,59 +452,77 @@ html:has(.auth-container) {
   overflow: hidden;
 }
 
+/* Corner ribbon container */
 .demo-badge-corner {
   position: absolute;
-  top: 25px;
-  right: -35px;
-  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
-  color: white;
-  padding: 8px 50px;
-  transform: rotate(45deg);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  box-shadow: 
-    0 4px 10px rgba(0, 0, 0, 0.3),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+  top: -8px;
+  right: -8px;
+  width: 150px;
+  height: 150px;
   overflow: hidden;
+  z-index: 10;
 }
 
-/* Ribbon fold effect - left side */
-.demo-badge-corner::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 100%;
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid #d84315;
-  border-bottom: 10px solid transparent;
-  border-top: 10px solid #d84315;
-  transform: translateX(-15px);
-}
-
-/* Ribbon fold effect - right side */
-.demo-badge-corner::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 100%;
-  width: 0;
-  height: 0;
-  border-right: 15px solid transparent;
-  border-left: 15px solid #d84315;
-  border-bottom: 10px solid transparent;
-  border-top: 10px solid #d84315;
-  transform: translateX(15px);
-}
-
-/* Inner shadow for depth */
+/* Main ribbon band */
 .demo-badge-corner span {
-  position: relative;
-  z-index: 1;
+  position: absolute;
   display: block;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  width: 220px;
+  padding: 12px 0;
+  background: linear-gradient(135deg, 
+    #ff6b35 0%, 
+    #ff5722 50%,
+    #e64a19 100%
+  );
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-align: center;
+  text-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.5),
+    0 0 10px rgba(0, 0, 0, 0.3);
+  top: 32px;
+  right: -65px;
+  transform: rotate(45deg);
+  box-shadow: 
+    0 3px 10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Ribbon fold on left side */
+.demo-badge-corner span::before {
+  content: '';
+  position: absolute;
+  left: -25px;
+  top: 0;
+  width: 25px;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.2) 50%,
+    #d84315 100%
+  );
+  transform: skewY(-45deg);
+  transform-origin: right top;
+}
+
+/* Ribbon fold on right side */
+.demo-badge-corner span::after {
+  content: '';
+  position: absolute;
+  right: -25px;
+  top: 0;
+  width: 25px;
+  height: 100%;
+  background: linear-gradient(90deg,
+    #d84315 0%,
+    rgba(0, 0, 0, 0.2) 50%,
+    transparent 100%
+  );
+  transform: skewY(45deg);
+  transform-origin: left top;
 }
 
 .demo-header {
