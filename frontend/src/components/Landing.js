@@ -104,24 +104,19 @@ const Landing = ({ isInitialLoad = true }) => {
         console.log('Moving to transitioning phase');
         setAnimationPhase('transitioning');
       }, 2500);
-      const phase3Timer = setTimeout(() => {
-        console.log('Moving to revealing phase');
-        setAnimationPhase('revealing');
-      }, 4000);
       const disappearTimer = setTimeout(() => {
-        console.log('Moving to disappearing phase');
+        console.log('Moving to disappearing phase - skipping reveal');
         setAnimationPhase('disappearing');
-      }, 5500);
+      }, 4000);
       const completeTimer = setTimeout(() => {
         console.log('Animation complete');
         setAnimationPhase('complete');
         document.body.style.overflow = '';
         document.documentElement.style.overflow = '';
-      }, 6500);
+      }, 5000);
       
       return () => {
         clearTimeout(phase2Timer);
-        clearTimeout(phase3Timer);
         clearTimeout(disappearTimer);
         clearTimeout(completeTimer);
         document.body.style.overflow = '';
@@ -163,10 +158,6 @@ const Landing = ({ isInitialLoad = true }) => {
     },
     transitioning: {
       opacity: 1,
-    },
-    revealing: {
-      opacity: 0,
-      transition: { duration: 1.5, ease: 'easeInOut' }
     },
     disappearing: {
       opacity: 0,
@@ -213,45 +204,15 @@ const Landing = ({ isInitialLoad = true }) => {
         ease: [0.43, 0.13, 0.23, 0.96] // Custom ease for smooth scaling
       }
     },
-    revealing: {
-      x: finalFlameX,
-      y: finalFlameYAbsolute,  // Use page coordinates for absolute positioning
-      scale: 0.361,
-      opacity: 1,
-      transition: { 
-        // Create arc trajectory using keyframes
-        x: { 
-          duration: 2, 
-          ease: [0.43, 0.13, 0.23, 0.96],
-          times: [0, 0.6, 1],
-          // Arc to the right first, then to final position
-          type: "keyframes",
-          values: [viewportCenterX, viewportCenterX + 100, finalFlameX]
-        },
-        y: { 
-          duration: 2, 
-          ease: [0.25, 0.46, 0.45, 0.94],
-          times: [0, 0.4, 1],
-          // Move up first, then settle to final height
-          type: "keyframes",
-          values: [viewportCenterY, viewportCenterY - 150, finalFlameYAbsolute]
-        },
-        scale: { duration: 0.1 }, // Keep scale constant
-        opacity: { duration: 0.1 } // Keep opacity constant
-      }
-    },
     disappearing: {
-      x: finalFlameX,
-      y: finalFlameYAbsolute - 30,  // Float upward slightly
+      x: viewportCenterX,  // Stay at center, no movement
+      y: viewportCenterY,  // Stay at center, no movement
       scale: 0,  // Shrink to nothing
       opacity: 0,  // Fade out
+      rotate: 180,  // Add rotation for visual interest
       transition: { 
         duration: 1,
         ease: [0.43, 0.13, 0.23, 0.96],
-        y: {
-          duration: 1,
-          ease: "easeOut"
-        },
         scale: {
           duration: 0.8,
           ease: "easeInOut"
@@ -259,6 +220,10 @@ const Landing = ({ isInitialLoad = true }) => {
         opacity: {
           duration: 0.6,
           ease: "easeIn"
+        },
+        rotate: {
+          duration: 1,
+          ease: "easeOut"
         }
       }
     },
@@ -273,29 +238,27 @@ const Landing = ({ isInitialLoad = true }) => {
   const contentVariants = {
     startup: { opacity: 0 },
     transitioning: { opacity: 0 },
-    revealing: { 
+    disappearing: { 
       opacity: 1,
-      transition: { duration: 1.5, ease: 'easeOut' }
+      transition: { duration: 0.8, ease: 'easeOut' }
     },
-    disappearing: { opacity: 1 },
     complete: { opacity: 1 }
   };
   
   const videoVariants = {
     startup: { opacity: 0 },
     transitioning: { opacity: 0 },
-    revealing: { 
+    disappearing: { 
       opacity: videoOpacity,
-      transition: { duration: 2, ease: 'easeOut', delay: 0.5 }
+      transition: { duration: 1, ease: 'easeOut' }
     },
-    disappearing: { opacity: videoOpacity },
     complete: { opacity: videoOpacity }
   };
 
   return (
     <div className="landing-container visible">
       {/* Black background overlay */}
-      {(animationPhase === 'startup' || animationPhase === 'transitioning' || animationPhase === 'revealing' || animationPhase === 'disappearing') && (
+      {(animationPhase === 'startup' || animationPhase === 'transitioning' || animationPhase === 'disappearing') && (
         <motion.div
           variants={backgroundVariants}
           initial="startup"
@@ -321,6 +284,7 @@ const Landing = ({ isInitialLoad = true }) => {
           variants={flameVariants}
           initial="startup"
           animate={animationPhase}
+          className="flame-container-animated"
           style={{
             position: 'absolute',  // Use absolute positioning to scroll with page
             top: 0,

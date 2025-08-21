@@ -17,6 +17,58 @@
   }
 }
 
+/* Flame container with shine effect */
+.flame-container-animated {
+  position: relative;
+  overflow: visible;
+}
+
+.flame-container-animated::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 60%
+  );
+  animation: flameShine 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes flameShine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  50%, 100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* Add golden glow pulse during animation */
+.flame-container-animated {
+  animation: flamePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes flamePulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 25px rgba(255, 107, 53, 0.8)) 
+            drop-shadow(0 0 15px rgba(255, 87, 34, 0.6))
+            brightness(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(255, 140, 90, 1)) 
+            drop-shadow(0 0 25px rgba(255, 107, 53, 0.9))
+            drop-shadow(0 0 20px rgba(255, 215, 0, 0.4))
+            brightness(1.2);
+  }
+}
+
 /* Main landing container styling */
 .landing-container {
   position: relative;
