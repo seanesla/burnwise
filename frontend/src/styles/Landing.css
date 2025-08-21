@@ -17,38 +17,46 @@
   }
 }
 
-/* Flame container with filter-based shine */
+/* Flame container with proper shine */
 .flame-container-animated {
   position: relative;
   overflow: visible;
-  /* Animated glow with shine effect */
+  /* Static glow - no animation */
   filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
           drop-shadow(0 0 20px rgba(255, 87, 34, 0.5));
-  animation: glowShine 3s ease-in-out infinite;
 }
 
-@keyframes glowShine {
-  0%, 100% {
-    filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
-            drop-shadow(0 0 20px rgba(255, 87, 34, 0.5))
-            saturate(1);
+/* Real shine effect - narrow band that sweeps across */
+.flame-container-animated::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 45%,
+    rgba(255, 255, 255, 0.3) 49%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.3) 51%,
+    transparent 55%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  animation: shinePass 4s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+@keyframes shinePass {
+  0% {
+    transform: translateX(-200%);
   }
-  25% {
-    filter: drop-shadow(0 0 35px rgba(255, 140, 70, 0.9)) 
-            drop-shadow(0 0 25px rgba(255, 120, 50, 0.7))
-            drop-shadow(0 0 40px rgba(255, 200, 100, 0.3))
-            saturate(1.2);
-  }
-  50% {
-    filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
-            drop-shadow(0 0 20px rgba(255, 87, 34, 0.5))
-            saturate(1);
-  }
-  75% {
-    filter: drop-shadow(0 0 32px rgba(255, 150, 80, 0.8)) 
-            drop-shadow(0 0 22px rgba(255, 100, 40, 0.6))
-            drop-shadow(0 0 35px rgba(255, 220, 120, 0.2))
-            saturate(1.1);
+  100% {
+    transform: translateX(200%);
   }
 }
 
