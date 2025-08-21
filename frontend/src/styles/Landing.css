@@ -17,28 +17,45 @@
   }
 }
 
-/* Flame container with subtle filter shine */
+/* Flame container with real shine sweep */
 .flame-container-animated {
   position: relative;
-  overflow: visible;
+  overflow: hidden; /* Critical: clips shine to flame bounds */
   /* Base glow effect */
   filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
           drop-shadow(0 0 20px rgba(255, 87, 34, 0.5));
-  animation: subtleFilterShine 4s ease-in-out infinite;
 }
 
-@keyframes subtleFilterShine {
-  0%, 100% {
-    filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
-            drop-shadow(0 0 20px rgba(255, 87, 34, 0.5))
-            brightness(1)
-            contrast(1);
+/* Actual glossy shine sweep */
+.flame-container-animated::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -150%;
+  width: 150%;
+  height: 300%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.2) 48%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.2) 52%,
+    transparent 60%,
+    transparent 100%
+  );
+  transform: rotate(20deg);
+  animation: shineSweep 3s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: lighten;
+}
+
+@keyframes shineSweep {
+  0% {
+    transform: translateX(-100%) rotate(20deg);
   }
-  50% {
-    filter: drop-shadow(0 0 32px rgba(255, 130, 70, 0.8)) 
-            drop-shadow(0 0 22px rgba(255, 100, 40, 0.6))
-            brightness(1.1)
-            contrast(1.05);
+  100% {
+    transform: translateX(200%) rotate(20deg);
   }
 }
 
