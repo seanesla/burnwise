@@ -178,8 +178,8 @@ const Login = () => {
 
   return (
     <div className="auth-container">
-      <EmberBackground intensity={1} blur={true} />
       <div className="auth-background" />
+      <EmberBackground intensity={1.2} blur={false} />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}

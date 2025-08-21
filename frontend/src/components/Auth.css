@@ -24,8 +24,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #000000 0%, #1a0f0f 50%, #2a1111 100%);
-  z-index: -2;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(26, 15, 15, 0.7) 50%, rgba(42, 17, 17, 0.7) 100%);
+  z-index: -1;
 }
 
 .auth-background::before {
