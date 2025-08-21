@@ -5,8 +5,8 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaArrowRight, FaArrowLeft, FaCheck } from 'react-icons/fa';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { FaTimes, FaArrowRight, FaArrowLeft, FaCheck, FaGripHorizontal } from 'react-icons/fa';
 import { useTutorial } from '../contexts/TutorialContext';
 import './TutorialOverlay.css';
 
@@ -24,8 +24,10 @@ const TutorialOverlay = () => {
   
   const [targetBounds, setTargetBounds] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const overlayRef = useRef(null);
   const rafRef = useRef(null);
+  const dragControls = useDragControls();
   
   // Get current step data
   const step = getCurrentStep();
@@ -70,44 +72,65 @@ const TutorialOverlay = () => {
     // Calculate tooltip position based on step position preference
     let tooltipX = bounds.centerX;
     let tooltipY = bounds.centerY;
+    const tooltipWidth = 400;
+    const tooltipHeight = 350; // Estimated height
     
     switch (step.position) {
       case 'top':
-        tooltipY = bounds.y - 20;
+        tooltipY = bounds.y - tooltipHeight - 30;
+        tooltipX = bounds.centerX - tooltipWidth / 2;
         break;
       case 'bottom':
-        tooltipY = bounds.y + bounds.height + 20;
+        tooltipY = bounds.y + bounds.height + 30;
+        tooltipX = bounds.centerX - tooltipWidth / 2;
         break;
       case 'left':
-        tooltipX = bounds.x - 20;
+        tooltipX = bounds.x - tooltipWidth - 30;
+        tooltipY = bounds.centerY - tooltipHeight / 2;
         break;
       case 'right':
-        tooltipX = bounds.x + bounds.width + 20;
+        tooltipX = bounds.x + bounds.width + 30;
+        tooltipY = bounds.centerY - tooltipHeight / 2;
         break;
       case 'center':
-        // Keep centered
+        tooltipX = bounds.centerX - tooltipWidth / 2;
+        tooltipY = bounds.centerY - tooltipHeight / 2;
         break;
       case 'auto':
       default:
         // Smart positioning to avoid edges
-        if (bounds.centerY < window.innerHeight / 2) {
-          tooltipY = bounds.y + bounds.height + 20;
-        } else {
-          tooltipY = bounds.y - 20;
-        }
+        const spaceTop = bounds.y;
+        const spaceBottom = window.innerHeight - (bounds.y + bounds.height);
+        const spaceLeft = bounds.x;
+        const spaceRight = window.innerWidth - (bounds.x + bounds.width);
         
-        if (bounds.centerX < window.innerWidth / 2) {
-          tooltipX = bounds.x + bounds.width + 20;
+        // Find the side with most space
+        const maxSpace = Math.max(spaceTop, spaceBottom, spaceLeft, spaceRight);
+        
+        if (maxSpace === spaceTop && spaceTop > tooltipHeight + 30) {
+          tooltipY = bounds.y - tooltipHeight - 30;
+          tooltipX = bounds.centerX - tooltipWidth / 2;
+        } else if (maxSpace === spaceBottom && spaceBottom > tooltipHeight + 30) {
+          tooltipY = bounds.y + bounds.height + 30;
+          tooltipX = bounds.centerX - tooltipWidth / 2;
+        } else if (maxSpace === spaceLeft && spaceLeft > tooltipWidth + 30) {
+          tooltipX = bounds.x - tooltipWidth - 30;
+          tooltipY = bounds.centerY - tooltipHeight / 2;
+        } else if (maxSpace === spaceRight && spaceRight > tooltipWidth + 30) {
+          tooltipX = bounds.x + bounds.width + 30;
+          tooltipY = bounds.centerY - tooltipHeight / 2;
         } else {
-          tooltipX = bounds.x - 20;
+          // Default to top if no good space
+          tooltipY = Math.max(20, bounds.y - tooltipHeight - 30);
+          tooltipX = bounds.centerX - tooltipWidth / 2;
         }
         break;
     }
     
-    // Ensure tooltip stays within viewport
+    // Ensure tooltip stays within viewport with proper padding
     const padding = 20;
-    tooltipX = Math.max(padding, Math.min(window.innerWidth - 400 - padding, tooltipX));
-    tooltipY = Math.max(padding, Math.min(window.innerHeight - 200 - padding, tooltipY));
+    tooltipX = Math.max(padding, Math.min(window.innerWidth - tooltipWidth - padding, tooltipX));
+    tooltipY = Math.max(padding, Math.min(window.innerHeight - tooltipHeight - padding, tooltipY));
     
     setTooltipPosition({ x: tooltipX, y: tooltipY });
   }, [step]);
@@ -219,22 +242,41 @@ const TutorialOverlay = () => {
         {/* Tutorial tooltip */}
         <motion.div
           className="tutorial-tooltip"
-          initial={{ opacity: 0, scale: 0.9, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
+          drag
+          dragControls={dragControls}
+          dragMomentum={false}
+          dragElastic={0.1}
+          dragConstraints={{
+            left: 20,
+            right: window.innerWidth - 420,
+            top: 20,
+            bottom: window.innerHeight - 400
+          }}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={() => setIsDragging(false)}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
           style={{
             left: tooltipPosition.x,
-            top: tooltipPosition.y,
-            transform: step.position === 'center' ? 'translate(-50%, -50%)' : 'none'
+            top: tooltipPosition.y
           }}
         >
           {/* Header */}
-          <div className="tutorial-header">
-            <h3 className="tutorial-title">{step.title}</h3>
+          <div 
+            className="tutorial-header"
+            onPointerDown={(e) => dragControls.start(e)}
+            style={{ cursor: 'move' }}
+          >
+            <div className="tutorial-header-left">
+              <FaGripHorizontal className="tutorial-drag-handle" />
+              <h3 className="tutorial-title">{step.title}</h3>
+            </div>
             <button
               className="tutorial-close"
               onClick={skipTutorial}
               aria-label="Skip tutorial"
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <FaTimes />
             </button>

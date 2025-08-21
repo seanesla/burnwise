@@ -37,7 +37,7 @@ const TUTORIAL_STEPS = [
     id: 'farm-interaction',
     title: 'Click a Farm',
     targetSelector: '.farm-marker',
-    position: 'auto',
+    position: 'top',
     content: (data) => `Click on any farm marker to see details. ${data.nearestFarm ? `Try clicking on ${data.nearestFarm}.` : 'Each farm has real boundaries and burn history.'}`,
     action: 'click-farm',
     nextTrigger: 'action', // Proceeds when user clicks a farm
