@@ -13,7 +13,7 @@ import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './DockNavigation.css';
 import { springPresets, animationVariants } from '../styles/animations';
 
-const DockNavigation = ({ onAction, activePanel }) => {
+const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const navigate = useNavigate();
   
@@ -35,7 +35,7 @@ const DockNavigation = ({ onAction, activePanel }) => {
       label: 'Active Burns',
       icon: <AnimatedFlameLogo size={24} animated={hoveredIcon === 'burns'} />,
       action: () => onAction('burns'),
-      badge: 3 // Number of active burns
+      badge: activeBurnsCount > 0 ? activeBurnsCount : null // Real active burns count
     },
     {
       id: 'ai',
