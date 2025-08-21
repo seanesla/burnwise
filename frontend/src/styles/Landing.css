@@ -17,47 +17,12 @@
   }
 }
 
-/* Flame container with proper shine */
+/* Flame container - clean and simple */
 .flame-container-animated {
   position: relative;
   overflow: visible;
-  /* Static glow - no animation */
   filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
           drop-shadow(0 0 20px rgba(255, 87, 34, 0.5));
-}
-
-/* Real shine effect - narrow band that sweeps across */
-.flame-container-animated::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    transparent 45%,
-    rgba(255, 255, 255, 0.3) 49%,
-    rgba(255, 255, 255, 0.5) 50%,
-    rgba(255, 255, 255, 0.3) 51%,
-    transparent 55%,
-    transparent 100%
-  );
-  mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-  animation: shinePass 4s ease-in-out infinite;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-@keyframes shinePass {
-  0% {
-    transform: translateX(-200%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
 }
 
 /* Main landing container styling */
