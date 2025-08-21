@@ -91,14 +91,27 @@ const Landing = ({ isInitialLoad = true }) => {
     };
   }, [animationPhase]); // Recalculate when animation phase changes
 
+  // Lock scrolling immediately on mount if initial load
+  useEffect(() => {
+    if (isInitialLoad) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      window.scrollTo(0, 0); // Ensure we're at the top
+    }
+    
+    return () => {
+      // Cleanup on unmount
+      if (isInitialLoad) {
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+      }
+    };
+  }, []); // Run immediately on mount, only once
+  
   // Animation timeline for unified experience
   useEffect(() => {
     console.log('Setting up animation timeline, isInitialLoad:', isInitialLoad);
     if (isInitialLoad) {
-      // Lock scrolling
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      
       // Phase transitions
       const phase2Timer = setTimeout(() => {
         console.log('Moving to transitioning phase');
@@ -119,8 +132,6 @@ const Landing = ({ isInitialLoad = true }) => {
         clearTimeout(phase2Timer);
         clearTimeout(disappearTimer);
         clearTimeout(completeTimer);
-        document.body.style.overflow = '';
-        document.documentElement.style.overflow = '';
       };
     }
   }, [isInitialLoad]); // Only depend on isInitialLoad, not animationPhase
