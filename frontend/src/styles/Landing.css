@@ -17,49 +17,52 @@
   }
 }
 
-/* Flame container with glossy shine */
+/* Flame container with masked shine */
 .flame-container-animated {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   /* Static glow effect without pulsing */
   filter: drop-shadow(0 0 30px rgba(255, 107, 53, 0.7)) 
           drop-shadow(0 0 20px rgba(255, 87, 34, 0.5));
 }
 
-/* Professional glossy shine effect */
-.flame-container-animated::before {
+/* Shine effect that only shows on flame via mix-blend-mode */
+.flame-container-animated::after {
   content: '';
   position: absolute;
   top: -50%;
   left: -60%;
-  width: 30%;
+  width: 40%;
   height: 200%;
   background: linear-gradient(
-    90deg,
+    105deg,
     transparent,
-    rgba(255, 255, 255, 0) 10%,
-    rgba(255, 255, 255, 0.8) 20%,
-    rgba(255, 255, 255, 1) 50%,
-    rgba(255, 255, 255, 0.8) 80%,
-    rgba(255, 255, 255, 0) 90%,
+    rgba(255, 255, 255, 0.4) 45%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.4) 55%,
     transparent
   );
-  transform: rotate(30deg);
-  animation: glossyShine 3s ease-in-out infinite;
+  transform: rotate(20deg);
+  animation: maskedShine 3s ease-in-out infinite;
   animation-delay: 1s;
   pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0;
 }
 
-@keyframes glossyShine {
+@keyframes maskedShine {
   0% {
     left: -60%;
     opacity: 0;
   }
-  50% {
+  5% {
+    opacity: 1;
+  }
+  95% {
     opacity: 1;
   }
   100% {
-    left: 140%;
+    left: 120%;
     opacity: 0;
   }
 }
