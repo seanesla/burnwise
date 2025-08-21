@@ -16,22 +16,59 @@
   width: 100%;
 }
 
-/* Two-card layout container */
+/* Two-card layout container with wrapped band effect */
 .auth-cards-container {
   display: flex;
   gap: 2rem;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  max-width: 900px;
+  width: 100vw;
+  margin-left: -2rem;
+  margin-right: -2rem;
   position: relative;
   z-index: 10; /* Above all backgrounds */
+  padding: 4rem 2rem;
+}
+
+/* Curved band effect */
+.auth-cards-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 5%,
+    rgba(0, 0, 0, 0.7) 15%,
+    rgba(10, 10, 10, 0.85) 25%,
+    rgba(10, 10, 10, 0.9) 50%,
+    rgba(10, 10, 10, 0.85) 75%,
+    rgba(0, 0, 0, 0.7) 85%,
+    rgba(0, 0, 0, 0.4) 95%,
+    transparent 100%
+  );
+  border-top: 2px solid rgba(255, 107, 53, 0.15);
+  border-bottom: 2px solid rgba(255, 107, 53, 0.15);
+  box-shadow: 
+    inset 0 2px 20px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 20px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(0, 0, 0, 0.8);
+  z-index: -1;
+  /* Curved edges */
+  border-radius: 50% / 20px;
 }
 
 @media (max-width: 768px) {
   .auth-cards-container {
     flex-direction: column;
-    max-width: 400px;
+    gap: 1.5rem;
+    padding: 3rem 1rem;
+  }
+  
+  .auth-cards-container::before {
+    border-radius: 0;
   }
 }
 
@@ -83,17 +120,18 @@
 
 /* Card */
 .auth-card {
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 107, 53, 0.2);
-  border-radius: 1.5rem;
-  padding: 2rem 2.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  border-radius: 2rem;
+  padding: 2.5rem 2.5rem;
   width: 100%;
   max-width: 420px;
   position: relative;
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.5),
-    0 0 100px rgba(255, 107, 53, 0.1);
+    0 10px 40px rgba(0, 0, 0, 0.8),
+    0 0 60px rgba(255, 107, 53, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Specific card styles */
