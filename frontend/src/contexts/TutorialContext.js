@@ -287,6 +287,8 @@ export const TutorialProvider = ({ children }) => {
   
   // Monitor application state
   const monitorAppState = useCallback(() => {
+    if (!isActive) return; // Only monitor when tutorial is active
+    
     // Check if farm popup is open
     const farmPopupOpen = !!document.querySelector('.mapboxgl-popup');
     
@@ -349,7 +351,8 @@ export const TutorialProvider = ({ children }) => {
       const hasChanges = Object.keys(newState).some(key => newState[key] !== prevState[key]);
       return hasChanges ? newState : prevState;
     });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
   
   // Start monitoring when tutorial is active
   useEffect(() => {
@@ -444,20 +447,27 @@ export const TutorialProvider = ({ children }) => {
   
   // Load tutorial completion status
   useEffect(() => {
+    if (!user) return;
+    
     const completed = localStorage.getItem('burnwise_tutorial_completed');
     const skipTutorial = localStorage.getItem('burnwise_tutorial_skip');
     
     // Auto-start for new users unless they've completed or skipped
-    if (!completed && !skipTutorial && user && !isActive) {
+    if (!completed && !skipTutorial && !isActive) {
       // Wait 3 seconds after login before showing
       const timer = setTimeout(() => {
         if (!localStorage.getItem('burnwise_tutorial_skip')) {
-          startTutorial();
+          setIsActive(true);
+          setCurrentStep(0);
+          setCompletedSteps(new Set());
+          fetchTutorialData();
+          window.dispatchEvent(new CustomEvent('tutorialStarted'));
         }
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [user, isActive, startTutorial]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // Only depend on user to avoid circular dependencies
   
   // Check step requirements and auto-advance
   const prevStepRef = useRef(currentStep);
