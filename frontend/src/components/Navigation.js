@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaUser, FaSignOutAlt, FaRedo } from 'react-icons/fa';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import '../styles/Navigation.css';
 
 const Navigation = () => {
@@ -10,23 +11,46 @@ const Navigation = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout, resetOnboarding } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [farmData, setFarmData] = useState(null);
   
-  // Don't show nav on auth pages or landing
-  const hideNavPaths = ['/', '/login', '/signup', '/onboarding'];
-  if (hideNavPaths.includes(location.pathname)) {
-    return null;
-  }
+  // Load real farm data when user changes
+  useEffect(() => {
+    if (user && user.farmId) {
+      loadFarmData();
+    }
+  }, [user]);
 
-  const navItems = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/agent-chat', label: 'AI Assistant' },
-    { path: '/request', label: 'Burn Request' },
-    { path: '/map', label: 'Map' },
-    { path: '/schedule', label: 'Schedule' },
-    { path: '/alerts', label: 'Alerts' },
-    { path: '/analytics', label: 'Analytics' },
-    { path: '/settings', label: 'Settings' }
-  ];
+  const loadFarmData = async () => {
+    try {
+      const response = await axios.get('/api/farms');
+      const userFarm = response.data.farms.find(farm => farm.id === user.farmId);
+      setFarmData(userFarm);
+    } catch (error) {
+      console.error('Failed to load farm data:', error);
+      // Fallback to basic info
+      setFarmData({ name: 'Your Farm' });
+    }
+  };
+
+  // Navigation visibility is now controlled by App.js
+  // No internal visibility logic needed
+
+  // Get current page context for breadcrumb with real farm data
+  const getPageContext = () => {
+    const path = location.pathname;
+    const farmName = farmData?.name || 'Your Farm';
+    
+    if (path.startsWith('/demo')) {
+      return { title: 'Demo Mode', subtitle: `${farmName} Experience` };
+    }
+    if (path === '/spatial' || path === '/demo/spatial') {
+      return { title: 'Spatial Interface', subtitle: `${farmName} Coordination` };
+    }
+    if (path === '/settings') {
+      return { title: 'Settings', subtitle: 'Configuration' };
+    }
+    return { title: 'BURNWISE', subtitle: farmName };
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -38,74 +62,71 @@ const Navigation = () => {
     navigate('/onboarding');
   };
 
-  return (
-    <nav className="main-navigation">
-      <div className="nav-container">
-        <div className="nav-brand">
-          <Link to="/" className="brand-link" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <AnimatedFlameLogo size={40} animated={false} />
-            <span className="brand-text" style={{ color: '#FF6B35', fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '1px' }}>BURNWISE</span>
-          </Link>
-        </div>
-        
-        <div className="nav-links">
-          {navItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
+  const pageContext = getPageContext();
 
-        <div className="nav-info">
-          <span className="nav-status">
-            <span className="status-dot"></span>
-            5-Agent System Active
-          </span>
+  return (
+    <>
+      <nav className="minimal-navigation">
+        <div className="nav-container">
+          {/* Left: Minimal Brand */}
+          <div className="nav-brand-minimal">
+            <Link to="/" className="brand-link-minimal">
+              <AnimatedFlameLogo size={32} animated={false} />
+            </Link>
+          </div>
           
-          {isAuthenticated && (
-            <div className="nav-user">
-              <button
-                className="nav-user-button"
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                onBlur={() => setTimeout(() => setShowUserMenu(false), 200)}
-              >
-                <FaUser />
-                <span>{user?.name || 'User'}</span>
-              </button>
-              
-              {showUserMenu && (
-                <div className="nav-user-menu">
-                  <div className="user-menu-header">
-                    <div className="user-menu-name">{user?.name}</div>
-                    <div className="user-menu-email">{user?.email}</div>
-                    <div className="user-menu-farm">Farm #{user?.farmId}</div>
+          {/* Center: Current Context */}
+          <div className="nav-context">
+            <span className="context-title">{pageContext.title}</span>
+            <span className="context-subtitle">{pageContext.subtitle}</span>
+          </div>
+
+          {/* Right: User Menu */}
+          <div className="nav-controls">
+            
+            {isAuthenticated && (
+              <div className="nav-user-minimal">
+                <button
+                  className="user-avatar"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  onBlur={() => setTimeout(() => setShowUserMenu(false), 200)}
+                >
+                  <div className="avatar-circle">
+                    {user?.name?.charAt(0) || 'U'}
                   </div>
-                  <div className="user-menu-divider" />
-                  <button
-                    className="user-menu-item"
-                    onClick={handleResetOnboarding}
-                  >
-                    <FaRedo />
-                    <span>Reset Onboarding</span>
-                  </button>
-                  <button
-                    className="user-menu-item logout"
-                    onClick={handleLogout}
-                  >
-                    <FaSignOutAlt />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+                </button>
+                
+                {showUserMenu && (
+                  <div className="user-menu-minimal">
+                    <div className="user-menu-header-minimal">
+                      <div className="user-name">{user?.name}</div>
+                      <div className="user-email">{user?.email}</div>
+                      <div className="user-farm">Farm #{user?.farmId}</div>
+                      {user?.isDemo && <div className="demo-badge">Demo Mode</div>}
+                    </div>
+                    <div className="menu-divider" />
+                    <button
+                      className="menu-item"
+                      onClick={handleResetOnboarding}
+                    >
+                      <FaRedo />
+                      <span>Reset Setup</span>
+                    </button>
+                    <button
+                      className="menu-item logout"
+                      onClick={handleLogout}
+                    >
+                      <FaSignOutAlt />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 };
 

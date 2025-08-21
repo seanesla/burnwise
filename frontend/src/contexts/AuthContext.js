@@ -47,10 +47,33 @@ export const AuthProvider = ({ children }) => {
     fetchCSRFToken();
   }, []);
 
-  // Initialize auth state (verify cookie-based session)
+  // Initialize auth state (verify cookie-based session or demo mode)
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Check for demo mode first
+        const demoContext = sessionStorage.getItem('burnwise_demo_context');
+        if (demoContext && window.location.pathname.startsWith('/demo')) {
+          const demoData = JSON.parse(demoContext);
+          
+          // Set demo user data
+          const demoUser = {
+            id: `demo_${demoData.farmId}`,
+            email: 'demo@burnwise.local',
+            name: 'Demo User',
+            farmId: demoData.farmId,
+            isDemo: true,
+            demoMode: demoData.mode,
+            expiresAt: demoData.expiresAt
+          };
+          
+          setUser(demoUser);
+          setIsAuthenticated(true);
+          setOnboardingComplete(true); // Skip onboarding for demo
+          setLoading(false);
+          return;
+        }
+        
         // Try to verify existing session (cookie will be sent automatically)
         const response = await axios.get('/api/auth/verify');
         

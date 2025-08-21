@@ -1,0 +1,327 @@
+/**
+ * DemoEntryCard.css - Demo Entry Card Styles
+ * Glass morphism design with professional appearance
+ * Consistent with BURNWISE design system
+ */
+
+.demo-entry-card {
+  position: relative;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  max-width: 400px;
+  width: 100%;
+}
+
+.demo-entry-card:hover {
+  border-color: rgba(255, 107, 53, 0.4);
+  box-shadow: 0 12px 40px rgba(255, 107, 53, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Header */
+.demo-entry-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.demo-entry-logo {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.demo-entry-title {
+  color: #ff6b35;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: 0.5px;
+}
+
+.demo-entry-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Features */
+.demo-entry-features {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.demo-feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 80px;
+}
+
+.demo-feature-icon {
+  color: #ff6b35;
+  font-size: 1.2rem;
+}
+
+.demo-feature span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Statistics */
+.demo-entry-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  background: rgba(255, 107, 53, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 107, 53, 0.1);
+}
+
+.demo-stat {
+  text-align: center;
+}
+
+.demo-stat-value {
+  color: #ff6b35;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.demo-stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
+/* Call to Action Button */
+.demo-entry-button {
+  width: 100%;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.demo-entry-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.demo-entry-button:not(:disabled):hover {
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+.demo-entry-arrow {
+  transition: transform 0.3s ease;
+}
+
+.demo-entry-button:hover .demo-entry-arrow {
+  transform: translateX(3px);
+}
+
+.demo-entry-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Benefits */
+.demo-entry-benefits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.demo-benefit {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.demo-benefit:before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: #22c55e;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Badge */
+.demo-entry-badge {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0 20px 0 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .demo-entry-card {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  
+  .demo-entry-title {
+    font-size: 1.3rem;
+  }
+  
+  .demo-entry-features {
+    gap: 0.5rem;
+  }
+  
+  .demo-feature span {
+    font-size: 0.7rem;
+  }
+  
+  .demo-entry-benefits {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  
+  .demo-benefit {
+    font-size: 0.75rem;
+  }
+}
+
+/* Animation enhancements */
+.demo-entry-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus states for accessibility */
+.demo-entry-button:focus {
+  outline: 2px solid #ff6b35;
+  outline-offset: 2px;
+}
+
+/* Session Info */
+.demo-session-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 107, 53, 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.demo-time-icon {
+  color: #ff6b35;
+  font-size: 0.9rem;
+}
+
+.demo-time-remaining {
+  color: #ff6b35;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Actions Container */
+.demo-entry-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Reset Button */
+.demo-entry-reset {
+  width: 100%;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.demo-entry-reset:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.demo-reset-icon {
+  font-size: 0.9rem;
+}
+
+/* Dark theme optimizations */
+@media (prefers-color-scheme: dark) {
+  .demo-entry-card {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 107, 53, 0.25);
+  }
+  
+  .demo-entry-stats {
+    background: rgba(255, 107, 53, 0.08);
+    border-color: rgba(255, 107, 53, 0.15);
+  }
+}

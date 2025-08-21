@@ -364,15 +364,99 @@ router.post('/logout', authenticateFromCookie, (req, res) => {
 
 /**
  * GET /api/auth/demo-status
- * Check if demo mode is enabled
+ * Check if demo mode is available - REAL TiDB CHECK
+ * Validates demo infrastructure and database setup
  */
-router.get('/demo-status', (req, res) => {
-  const isDemoMode = process.env.DEMO_MODE === 'true';
-  
-  res.json({
-    demoMode: isDemoMode,
-    message: isDemoMode ? 'Demo mode is enabled' : 'Production mode - demo disabled'
-  });
+router.get('/demo-status', async (req, res) => {
+  try {
+    // Check if demo tables exist in TiDB
+    const demoTableCheck = await query(`
+      SELECT COUNT(*) as table_count
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name IN ('demo_sessions', 'agent_interactions')
+    `);
+
+    const tablesExist = demoTableCheck[0].table_count >= 2;
+
+    // Check if demo columns exist on core tables
+    const demoColumnCheck = await query(`
+      SELECT 
+        SUM(CASE WHEN table_name = 'farms' AND column_name = 'is_demo' THEN 1 ELSE 0 END) as farms_demo,
+        SUM(CASE WHEN table_name = 'burn_requests' AND column_name = 'is_demo' THEN 1 ELSE 0 END) as burns_demo,
+        SUM(CASE WHEN table_name = 'users' AND column_name = 'is_demo' THEN 1 ELSE 0 END) as users_demo
+      FROM information_schema.columns 
+      WHERE table_schema = DATABASE()
+    `);
+
+    const columnsExist = demoColumnCheck[0].farms_demo > 0 && 
+                        demoColumnCheck[0].burns_demo > 0 && 
+                        demoColumnCheck[0].users_demo > 0;
+
+    // Check current demo session count
+    const activeSessionsResult = await query(`
+      SELECT COUNT(*) as active_sessions
+      FROM demo_sessions 
+      WHERE is_active = true AND expires_at > NOW()
+    `);
+
+    const activeSessions = activeSessionsResult[0].active_sessions;
+
+    // Check demo data isolation
+    const demoDataResult = await query(`
+      SELECT 
+        (SELECT COUNT(*) FROM farms WHERE is_demo = true) as demo_farms,
+        (SELECT COUNT(*) FROM burn_requests WHERE is_demo = true) as demo_burns
+    `);
+
+    const hasDemoData = demoDataResult[0].demo_farms > 0;
+
+    // Determine if demo is fully available
+    const isDemoAvailable = tablesExist && columnsExist;
+    const isDemoReady = isDemoAvailable; // Could add additional checks here
+
+    logger.info('Demo status check', {
+      tablesExist,
+      columnsExist, 
+      activeSessions,
+      hasDemoData,
+      isDemoReady
+    });
+
+    res.json({
+      demoMode: isDemoReady,
+      available: isDemoReady,
+      infrastructure: {
+        tables_ready: tablesExist,
+        columns_ready: columnsExist,
+        database_schema: 'valid'
+      },
+      statistics: {
+        active_sessions: activeSessions,
+        demo_farms: demoDataResult[0].demo_farms,
+        demo_burns: demoDataResult[0].demo_burns
+      },
+      message: isDemoReady 
+        ? 'Demo mode is available with full TiDB integration' 
+        : 'Demo mode infrastructure not ready',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Demo status check error', { error: error.message });
+    
+    // Fallback to environment variable check
+    const envDemoMode = process.env.DEMO_MODE === 'true';
+    
+    res.json({
+      demoMode: false,
+      available: false,
+      error: 'Demo infrastructure check failed',
+      fallback_mode: envDemoMode,
+      message: 'Demo temporarily unavailable - database infrastructure issue',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 module.exports = router;

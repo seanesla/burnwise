@@ -22,12 +22,36 @@ const weatherAnalysisSchema = Joi.object({
 
 /**
  * GET /api/weather/current
- * Get current weather for default location (California agricultural region)
+ * Get current weather for specified location
+ * Query params: lat (required), lon (required)
  */
 router.get('/current', asyncHandler(async (req, res) => {
   try {
-    // Default to Davis, California agricultural region if no location specified
-    const location = { lat: 38.544, lng: -121.740 };
+    // Extract coordinates from query parameters
+    const { lat, lon } = req.query;
+    
+    // Require both coordinates
+    if (!lat || !lon) {
+      // If no coordinates provided, use the map center as fallback
+      // This should be sent from the frontend
+      return res.status(400).json({
+        success: false,
+        error: 'Location coordinates are required. Please provide lat and lon query parameters.'
+      });
+    }
+    
+    // Parse and validate coordinates
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lon);
+    
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid coordinates. Latitude and longitude must be valid numbers.'
+      });
+    }
+    
+    const location = { lat: latitude, lng: longitude };
     const currentWeather = await weatherAgent.fetchCurrentWeather(location);
     
     res.json({

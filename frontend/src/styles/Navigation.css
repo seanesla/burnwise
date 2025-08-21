@@ -1,186 +1,142 @@
-.main-navigation {
+.minimal-navigation {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 107, 53, 0.3);
-  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.1);
+  background: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 107, 53, 0.12);
+  box-shadow: 0 1px 24px rgba(0, 0, 0, 0.2);
 }
 
 .nav-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
-  height: 70px;
+  padding: 0 1.5rem;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.nav-brand {
+/* Minimal Brand */
+.nav-brand-minimal {
   display: flex;
   align-items: center;
 }
 
-.brand-link {
+.brand-link-minimal {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   text-decoration: none;
   color: white;
-  transition: opacity 0.3s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
-}
-
-.brand-link:hover {
-  opacity: 0.9;
-  /* Removed transform to prevent layout shift */
-}
-
-.brand-icon {
-  font-size: 2rem;
-  animation: flicker 3s infinite;
-}
-
-@keyframes flicker {
-  0%, 100% {
-    opacity: 1;
-    text-shadow: 0 0 20px rgba(255, 107, 53, 0.8);
-  }
-  50% {
-    opacity: 0.9;
-    text-shadow: 0 0 30px rgba(255, 107, 53, 1);
-  }
-}
-
-.brand-text {
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: 2px;
-  background: linear-gradient(135deg, #ff6b35 0%, #FFB000 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.nav-links {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.nav-link {
-  padding: 0.75rem 1.25rem;
-  color: rgba(255, 255, 255, 0.8);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 1rem;
+  padding: 0.5rem;
   border-radius: 8px;
-  transition: color 0.3s ease, background-color 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  will-change: color;
 }
 
-.nav-link::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0) 0%, rgba(255, 107, 53, 0.2) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none; /* Fix cursor flickering */
-  z-index: -1;
+.brand-link-minimal:hover {
+  background: rgba(255, 107, 53, 0.08);
+  transform: scale(1.05);
 }
 
-.nav-link:hover {
-  color: white;
-  /* Removed transform to prevent layout shift */
+/* Navigation Context */
+.nav-context {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
 }
 
-.nav-link:hover::before {
-  opacity: 1;
+.context-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.5px;
 }
 
-.nav-link.active {
-  color: white;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.2) 0%, rgba(255, 87, 34, 0.2) 100%);
-  border: 1px solid rgba(255, 107, 53, 0.4);
-  box-shadow: 0 0 20px rgba(255, 107, 53, 0.2);
+.context-subtitle {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255, 107, 53, 0.8);
+  letter-spacing: 0.25px;
 }
 
-.nav-info {
+/* Navigation Controls */
+.nav-controls {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-.nav-status {
+/* Command Palette Trigger */
+.command-trigger {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 176, 0, 0.3);
-  color: #FFB000;
-  font-size: 0.9rem;
-  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background: #4CAF50;
+.command-trigger:hover {
+  background: rgba(255, 107, 53, 0.08);
+  border-color: rgba(255, 107, 53, 0.4);
+  color: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
+.command-shortcut {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Minimal User Menu */
+.nav-user-minimal {
+  position: relative;
+}
+
+.user-avatar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  animation: pulse-dot 2s infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
-  }
-  50% {
-    opacity: 0.6;
-    box-shadow: 0 0 20px rgba(76, 175, 80, 1);
-  }
-}
-
-/* User Menu Styles */
-.nav-user {
-  position: relative;
-}
-
-.nav-user-button {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.8) 0%, rgba(255, 87, 34, 0.8) 100%);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 107, 53, 0.1);
-  border: 1px solid rgba(255, 107, 53, 0.3);
-  border-radius: 20px;
-  color: #ff6b35;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  letter-spacing: 0.5px;
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  transition: all 0.2s ease;
 }
 
-.nav-user-button:hover {
-  background: rgba(255, 107, 53, 0.2);
-  border-color: rgba(255, 107, 53, 0.5);
-}
-
-.nav-user-button svg {
-  font-size: 1rem;
+.user-avatar:hover .avatar-circle {
+  border-color: rgba(255, 107, 53, 0.6);
+  box-shadow: 0 0 16px rgba(255, 107, 53, 0.3);
 }
 
 .nav-user-menu {
@@ -273,7 +229,7 @@
 }
 
 /* Add padding to main content to account for fixed nav */
-.App > div:not(.main-navigation) {
+.App > div:not(.main-navigation):not(.sidebar) {
   padding-top: 70px;
 }
 

@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
@@ -95,6 +96,19 @@ app.use(compression());
 
 // Cookie parser - MUST come before auth middleware
 app.use(cookieParser());
+
+// Session configuration - MUST come before routes that need sessions
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'burnwise-demo-session-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  },
+  name: 'burnwise-session'
+}));
 
 // CORS configuration with strict origin validation
 const allowedOrigins = [

@@ -475,3 +475,35 @@ body {
 .startup-morphing .startup-logo-container {
   transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
+/* Layout adjustments for sidebar */
+.app-content {
+  transition: margin-left 0.3s ease;
+}
+
+.app-content.with-sidebar {
+  margin-left: 250px; /* Default expanded sidebar width */
+}
+
+/* Responsive sidebar adjustments */
+@media (max-width: 768px) {
+  .app-content.with-sidebar {
+    margin-left: 0; /* No margin on mobile - sidebar will be overlay */
+  }
+}
+
+/* Adjust for collapsed sidebar - we'll use JavaScript to toggle this class */
+.app-content.with-sidebar.sidebar-collapsed {
+  margin-left: 70px;
+}
+
+@media (max-width: 768px) {
+  .app-content.with-sidebar.sidebar-collapsed {
+    margin-left: 0;
+  }
+}
+
+/* Add padding to main content to account for fixed nav (auth pages only) */
+.app-content:not(.with-sidebar) {
+  padding-top: 70px;
+}

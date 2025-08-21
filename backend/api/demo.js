@@ -34,58 +34,56 @@ router.post('/initialize', async (req, res) => {
   }
 
   try {
-    // Create REAL farm and demo data in TiDB using transaction
-    const result = await db.transaction(async (trx) => {
-      // Create demo farm in TiDB
-      const farmData = {
-        name: mode === 'blank' ? 'Your Demo Farm' : 'Golden Valley Demo Farm',
-        owner_name: 'Demo User',
-        email: `demo_${sessionId}@burnwise.demo`,
-        location_lat: 32.7157, // San Diego area for demo
-        location_lon: -117.1611,
-        total_acres: mode === 'blank' ? 500 : 750,
-        crop_types: mode === 'blank' ? 'wheat,corn' : 'wheat,corn,rice,soybeans',
-        phone: null, // Will be added if user provides
-        is_demo: true,
-        created_at: new Date()
-      };
+    // Create REAL farm and demo data in TiDB without transactions
+    
+    // Create demo farm in TiDB
+    const farmData = {
+      farm_name: mode === 'blank' ? 'Your Demo Farm' : 'Golden Valley Demo Farm',
+      owner_name: 'Demo User',
+      contact_email: `demo_${sessionId}@burnwise.demo`,
+      latitude: 32.7157, // San Diego area for demo
+      longitude: -117.1611,
+      total_acreage: mode === 'blank' ? 500 : 750,
+      is_demo: true
+    };
 
-      const [farmResult] = await trx('farms').insert(farmData).returning('id');
-      const farmId = farmResult.id || farmResult;
+    // Insert farm and get the ID
+    const farmResult = await db.query(
+      'INSERT INTO farms (farm_name, owner_name, contact_email, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [farmData.farm_name, farmData.owner_name, farmData.contact_email, farmData.latitude, farmData.longitude, farmData.total_acreage, farmData.is_demo]
+    );
 
-      console.log(`[DEMO] Created farm ${farmId} for session ${sessionId}`);
+    const farmId = farmResult.insertId;
+    console.log(`[DEMO] Created farm ${farmId} for session ${sessionId}`);
 
-      // Create demo session record
-      const sessionData = {
-        session_id: sessionId,
-        farm_id: farmId,
-        demo_type: mode,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-        tutorial_progress: JSON.stringify({ 
-          step: 0, 
-          completed: false,
-          skipped: false 
-        }),
-        total_cost: 0.0000,
-        is_active: true,
-        created_at: new Date()
-      };
+    // Create demo session record
+    await db.query(
+      'INSERT INTO demo_sessions (session_id, farm_id, demo_type, expires_at, tutorial_progress, total_cost, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [
+        sessionId,
+        farmId,
+        mode,
+        new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+        JSON.stringify({ step: 0, completed: false, skipped: false }),
+        0.0000,
+        true
+      ]
+    );
 
-      await trx('demo_sessions').insert(sessionData);
+    // If preloaded mode, add sample data
+    if (mode === 'preloaded') {
+      await createSampleData(farmId, sessionId);
+    }
 
-      // If preloaded mode, add sample data
-      if (mode === 'preloaded') {
-        await createSampleData(trx, farmId, sessionId);
-      }
+    const result = { farmId, sessionId };
 
-      return { farmId, sessionId };
-    });
-
-    // Set session data
-    req.session.isDemo = true;
-    req.session.demoFarmId = result.farmId;
-    req.session.demoSessionId = sessionId;
-    req.session.demoMode = mode;
+    // Set session data (only if session exists)
+    if (req.session) {
+      req.session.isDemo = true;
+      req.session.demoFarmId = result.farmId;
+      req.session.demoSessionId = sessionId;
+      req.session.demoMode = mode;
+    }
 
     console.log(`[DEMO] Demo ${mode} initialized successfully - Farm: ${result.farmId}, Session: ${sessionId}`);
 
@@ -111,7 +109,7 @@ router.post('/initialize', async (req, res) => {
  * Create sample data for preloaded demo mode
  * All data stored in real TiDB with is_demo=true
  */
-async function createSampleData(trx, farmId, sessionId) {
+async function createSampleData(farmId, sessionId) {
   console.log(`[DEMO] Creating sample data for farm ${farmId}`);
 
   // Create nearby demo farms for realistic scenarios
@@ -141,126 +139,140 @@ async function createSampleData(trx, farmId, sessionId) {
 
   const nearbyFarmIds = [];
   for (const farm of nearbyFarms) {
-    const [farmResult] = await trx('farms').insert({
-      name: farm.name,
-      owner_name: farm.owner,
-      email: `${farm.name.toLowerCase().replace(/\s+/g, '')}@demo.burnwise.local`,
-      total_acres: farm.acres,
-      location_lat: farm.lat,
-      location_lon: farm.lon,
-      crop_types: 'wheat,corn,rice',
-      is_demo: true,
-      created_at: new Date()
-    }).returning('id');
+    const farmResult = await db.query(
+      'INSERT INTO farms (farm_name, owner_name, contact_email, total_acreage, latitude, longitude, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [
+        farm.name,
+        farm.owner,
+        `${farm.name.toLowerCase().replace(/\s+/g, '')}@demo.burnwise.local`,
+        farm.acres,
+        farm.lat,
+        farm.lon,
+        true
+      ]
+    );
     
-    nearbyFarmIds.push(farmResult.id || farmResult);
+    nearbyFarmIds.push(farmResult.insertId);
   }
 
   // Create historical burn requests with various statuses
   const burnRequests = [
     {
       farm_id: farmId,
-      acres_to_burn: 75,
+      acreage: 75,
       crop_type: 'wheat stubble',
-      burn_reason: 'Pest management and soil preparation',
-      requested_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      purpose: 'Pest management and soil preparation',
+      requested_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days ago
       status: 'completed',
-      priority: 'medium',
-      weather_conditions: 'Clear skies, low wind',
-      is_demo: true,
-      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      priority_score: 7.5,
+      estimated_duration_hours: 4.0,
+      is_demo: true
     },
     {
       farm_id: farmId,
-      acres_to_burn: 50,
+      acreage: 50,
       crop_type: 'rice straw',
-      burn_reason: 'Disease prevention and nutrient cycling',
-      requested_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // Tomorrow
+      purpose: 'Disease prevention and nutrient cycling',
+      requested_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Tomorrow
       status: 'approved',
-      priority: 'high',
-      weather_conditions: 'Favorable conditions expected',
-      is_demo: true,
-      created_at: new Date()
+      priority_score: 8.0,
+      estimated_duration_hours: 3.5,
+      is_demo: true
     },
     {
       farm_id: farmId,
-      acres_to_burn: 30,
+      acreage: 30,
       crop_type: 'corn stubble',
-      burn_reason: 'Field preparation for next season',
-      requested_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      purpose: 'Field preparation for next season',
+      requested_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 days from now
       status: 'pending',
-      priority: 'low',
-      weather_conditions: 'Pending weather analysis',
-      is_demo: true,
-      created_at: new Date()
+      priority_score: 5.0,
+      estimated_duration_hours: 2.5,
+      is_demo: true
     }
   ];
 
   const burnRequestIds = [];
   for (const burn of burnRequests) {
-    const [burnResult] = await trx('burn_requests').insert(burn).returning('id');
-    burnRequestIds.push(burnResult.id || burnResult);
+    const burnResult = await db.query(
+      'INSERT INTO burn_requests (farm_id, acreage, crop_type, purpose, requested_date, status, priority_score, estimated_duration_hours, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+      [burn.farm_id, burn.acreage, burn.crop_type, burn.purpose, burn.requested_date, burn.status, burn.priority_score, burn.estimated_duration_hours, burn.is_demo]
+    );
+    burnRequestIds.push(burnResult.insertId);
   }
 
   // Create schedule entries for approved burns
-  await trx('schedules').insert({
-    farm_id: farmId,
-    burn_request_id: burnRequestIds[1], // The approved one
-    burn_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-    time_slot: '08:00-10:00',
-    status: 'scheduled',
-    wind_direction: 'SW',
-    wind_speed: 8,
-    temperature: 72,
-    humidity: 45,
-    is_demo: true,
-    created_at: new Date()
-  });
+  const scheduleDate = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  
+  // First create the schedule
+  const scheduleResult = await db.query(
+    'INSERT INTO schedules (date, optimization_score, total_conflicts, is_demo, created_at) VALUES (?, ?, ?, ?, NOW())',
+    [scheduleDate, 8.5, 0, true]
+  );
+  
+  const scheduleId = scheduleResult.insertId;
+  
+  // Then create schedule items for approved burn requests
+  await db.query(
+    'INSERT INTO schedule_items (schedule_id, burn_request_id, scheduled_start, scheduled_end, status, priority_order, conflict_score, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+    [
+      scheduleId,
+      burnRequestIds[1], // The approved one
+      new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19),
+      new Date(Date.now() + 1 * 24 * 60 * 60 * 1000 + 3.5 * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19), // 3.5 hours later
+      'scheduled',
+      1,
+      0.0
+    ]
+  );
 
   // Create some sample alerts
   const alerts = [
     {
       farm_id: farmId,
-      alert_type: 'weather_change',
-      severity: 'medium',
-      title: 'Wind Speed Increasing',
+      request_id: burnRequestIds[1], // Link to approved burn request
+      alert_type: 'weather_alert',
+      severity: 'warning',
       message: 'Wind speeds are expected to increase to 15mph tomorrow. Consider rescheduling outdoor activities.',
-      is_active: true,
-      is_demo: true,
-      created_at: new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
+      delivery_method: 'in_app',
+      delivery_status: 'delivered',
+      is_demo: true
     },
     {
       farm_id: farmId,
-      alert_type: 'burn_approved',
-      severity: 'low',
-      title: 'Burn Request Approved',
+      request_id: burnRequestIds[1],
+      alert_type: 'burn_scheduled',
+      severity: 'info',
       message: 'Your rice straw burn request has been approved for tomorrow 8:00-10:00 AM.',
-      is_active: true,
-      is_demo: true,
-      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
+      delivery_method: 'in_app',
+      delivery_status: 'delivered',
+      is_demo: true
     }
   ];
 
   for (const alert of alerts) {
-    await trx('alerts').insert(alert);
+    await db.query(
+      'INSERT INTO alerts (farm_id, request_id, alert_type, severity, message, delivery_method, delivery_status, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+      [alert.farm_id, alert.request_id, alert.alert_type, alert.severity, alert.message, alert.delivery_method, alert.delivery_status, alert.is_demo]
+    );
   }
 
   // Create sample weather data
-  const weatherData = {
-    location_lat: 32.7157,
-    location_lon: -117.1611,
-    temperature: 75,
-    humidity: 50,
-    wind_speed: 8,
-    wind_direction: 'SW',
-    pressure: 1013.25,
-    visibility: 10,
-    conditions: 'clear',
-    timestamp: new Date(),
-    is_demo: true
-  };
-
-  await trx('weather_data').insert(weatherData);
+  await db.query(
+    'INSERT INTO weather_data (location_lat, location_lon, temperature, humidity, wind_speed, wind_direction, pressure, visibility, weather_condition, timestamp, is_demo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)',
+    [
+      32.7157,
+      -117.1611,
+      75,
+      50,
+      8,
+      225, // SW in degrees (225 degrees)
+      1013.25,
+      10,
+      'clear',
+      true
+    ]
+  );
 
   // Add sample agent interactions to show AI conversation history
   const agentInteractions = [
@@ -301,7 +313,10 @@ async function createSampleData(trx, farmId, sessionId) {
   ];
 
   for (const interaction of agentInteractions) {
-    await trx('agent_interactions').insert(interaction);
+    await db.query(
+      'INSERT INTO agent_interactions (farm_id, agent_type, request, response, tokens_used, cost, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [interaction.farm_id, interaction.agent_type, interaction.request, interaction.response, interaction.tokens_used, interaction.cost, interaction.is_demo]
+    );
   }
 
   console.log(`[DEMO] Sample data created: ${nearbyFarms.length} nearby farms, ${burnRequests.length} burn requests, ${alerts.length} alerts`);
@@ -563,46 +578,46 @@ router.post('/reset', async (req, res) => {
   try {
     if (isDemo) {
       // Delete all demo data from TiDB
-      await db.transaction(async (trx) => {
-        const session = await trx('demo_sessions')
-          .where('session_id', sessionId)
-          .first();
+      const session = await db.query('SELECT * FROM demo_sessions WHERE session_id = ?', [sessionId]);
+      
+      if (session.length > 0) {
+        const farmId = session[0].farm_id;
 
-        if (session) {
-          const farmId = session.farm_id;
+        // Delete all related demo data
+        await db.query('DELETE FROM burn_requests WHERE farm_id = ? AND is_demo = true', [farmId]);
+        await db.query('DELETE FROM schedules WHERE farm_id = ? AND is_demo = true', [farmId]);
+        await db.query('DELETE FROM alerts WHERE farm_id = ? AND is_demo = true', [farmId]);
+        await db.query('DELETE FROM agent_interactions WHERE farm_id = ? AND is_demo = true', [farmId]);
+        await db.query('DELETE FROM weather_data WHERE is_demo = true');
 
-          // Delete all related demo data
-          await trx('burn_requests').where({ farm_id: farmId, is_demo: true }).del();
-          await trx('schedules').where({ farm_id: farmId, is_demo: true }).del();
-          await trx('alerts').where({ farm_id: farmId, is_demo: true }).del();
-          await trx('agent_interactions').where({ farm_id: farmId, is_demo: true }).del();
-          await trx('weather_data').where({ is_demo: true }).del();
-
-          // Delete embeddings
-          await trx('weather_embeddings').where({ farm_id: farmId, is_demo: true }).del();
-          await trx('smoke_embeddings').where({ is_demo: true }).del();
-          await trx('burn_embeddings').where({ farm_id: farmId, is_demo: true }).del();
-
-          // Find and delete nearby demo farms created with this session
-          const nearbyDemoFarms = await trx('farms')
-            .where({ is_demo: true })
-            .whereNot('id', farmId)
-            .where('created_at', '>', session.created_at)
-            .select('id');
-
-          for (const farm of nearbyDemoFarms) {
-            await trx('farms').where({ id: farm.id, is_demo: true }).del();
-          }
-
-          // Delete main demo farm
-          await trx('farms').where({ id: farmId, is_demo: true }).del();
-
-          // Delete session
-          await trx('demo_sessions').where('session_id', sessionId).del();
-
-          console.log(`[DEMO] Reset completed for session ${sessionId}, farm ${farmId}`);
+        // Delete vector embeddings if tables exist
+        try {
+          await db.query('DELETE FROM weather_embeddings WHERE farm_id = ? AND is_demo = true', [farmId]);
+          await db.query('DELETE FROM smoke_embeddings WHERE is_demo = true');
+          await db.query('DELETE FROM burn_embeddings WHERE farm_id = ? AND is_demo = true', [farmId]);
+        } catch (error) {
+          // Ignore if embedding tables don't exist
+          console.log('[DEMO] Embedding tables may not exist, skipping cleanup');
         }
-      });
+
+        // Find and delete nearby demo farms created with this session
+        const nearbyDemoFarms = await db.query(
+          'SELECT farm_id as id FROM farms WHERE is_demo = true AND farm_id != ? AND created_at > ?',
+          [farmId, session[0].created_at]
+        );
+
+        for (const farm of nearbyDemoFarms) {
+          await db.query('DELETE FROM farms WHERE farm_id = ? AND is_demo = true', [farm.id]);
+        }
+
+        // Delete main demo farm
+        await db.query('DELETE FROM farms WHERE farm_id = ? AND is_demo = true', [farmId]);
+
+        // Delete session
+        await db.query('DELETE FROM demo_sessions WHERE session_id = ?', [sessionId]);
+
+        console.log(`[DEMO] Reset completed for session ${sessionId}, farm ${farmId}`);
+      }
 
       // Clear session data
       req.session.isDemo = false;

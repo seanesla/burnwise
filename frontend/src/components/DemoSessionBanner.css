@@ -1,0 +1,277 @@
+/**
+ * DemoSessionBanner.css - Demo Session Banner Styles
+ * Glass morphism banner with real-time countdown
+ */
+
+/* Main Banner */
+.demo-session-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Reduced from 9999 to avoid overlapping critical UI */
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 2px solid rgba(255, 107, 53, 0.3);
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+.demo-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Info Section */
+.demo-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.demo-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ff6b35;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.demo-banner-icon {
+  font-size: 1.1rem;
+}
+
+.demo-banner-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.demo-session-id {
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 12px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+
+/* Timer Section */
+.demo-banner-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.demo-timer-icon {
+  color: #ff6b35;
+  font-size: 1rem;
+}
+
+.demo-time-display {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+/* Actions Section */
+.demo-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.demo-minimize-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.demo-minimize-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.demo-exit-btn {
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: 1px solid rgba(255, 107, 53, 0.5);
+  border-radius: 8px;
+  color: #ff6b35;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-exit-btn:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: #ff6b35;
+}
+
+/* Minimized State */
+.demo-banner-minimized {
+  position: fixed;
+  top: 1rem; /* Positioned near top */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000; /* Reduced from 9999 */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 20px;
+  color: #ff6b35;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+.demo-banner-minimized:hover {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 107, 53, 0.5);
+  transform: translateX(-50%) scale(1.05);
+}
+
+/* Exit Confirmation Modal */
+.demo-exit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 2000; /* Reduced from 10000 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demo-exit-modal {
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+}
+
+.demo-exit-modal h3 {
+  color: #ff6b35;
+  font-size: 1.3rem;
+  margin: 0 0 1rem 0;
+}
+
+.demo-exit-modal p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.demo-exit-modal-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.demo-exit-confirm,
+.demo-exit-cancel {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.demo-exit-confirm {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff5722 100%);
+  color: white;
+}
+
+.demo-exit-confirm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}
+
+.demo-exit-cancel {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.demo-exit-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .demo-banner-content {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .demo-banner-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .demo-banner-timer {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .demo-banner-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .demo-session-banner {
+    padding: 0.5rem 1rem;
+  }
+
+  .demo-banner-title {
+    font-size: 0.9rem;
+  }
+
+  .demo-time-display {
+    font-size: 1rem;
+  }
+
+  .demo-banner-minimized {
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+}

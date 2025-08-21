@@ -24,20 +24,29 @@ const demoIsolation = async (req, res, next) => {
       req.demoFilter = { is_demo: true };
       req.isDemoMode = true;
 
-      // Ensure demo session exists
-      if (!req.session.demoSessionId) {
-        req.session.demoSessionId = uuidv4();
+      // Ensure demo session exists (only if session is available)
+      if (req.session) {
+        if (!req.session.demoSessionId) {
+          req.session.demoSessionId = uuidv4();
+        }
         
         // Create or find demo farm for this session
         if (!req.session.demoFarmId) {
-          const existingSession = await db('demo_sessions')
-            .where('session_id', req.session.demoSessionId)
-            .first();
+          try {
+            // Try to find existing session using raw query instead of knex
+            const existingSessions = await db.query(
+              'SELECT farm_id FROM demo_sessions WHERE session_id = ?',
+              [req.session.demoSessionId]
+            );
 
-          if (existingSession) {
-            req.session.demoFarmId = existingSession.farm_id;
-          } else {
-            // Will be created in demo initialization API
+            if (existingSessions && existingSessions.length > 0) {
+              req.session.demoFarmId = existingSessions[0].farm_id;
+            } else {
+              // Will be created in demo initialization API
+              req.session.needsDemoSetup = true;
+            }
+          } catch (error) {
+            console.error('[DEMO] Error finding existing session:', error);
             req.session.needsDemoSetup = true;
           }
         }
@@ -45,12 +54,12 @@ const demoIsolation = async (req, res, next) => {
 
       // Add demo context to request
       req.demoContext = {
-        sessionId: req.session.demoSessionId,
-        farmId: req.session.demoFarmId,
+        sessionId: req.session?.demoSessionId,
+        farmId: req.session?.demoFarmId,
         isDemo: true
       };
 
-      console.log(`[DEMO] Demo user session: ${req.session.demoSessionId}, farm: ${req.session.demoFarmId}`);
+      console.log(`[DEMO] Demo user session: ${req.session?.demoSessionId}, farm: ${req.session?.demoFarmId}`);
     } else {
       // Production mode setup
       req.demoFilter = { is_demo: false };
@@ -68,27 +77,6 @@ const demoIsolation = async (req, res, next) => {
       return req.demoFilter;
     };
 
-    // Enhanced query builder with automatic demo filtering
-    req.queryWithDemo = (tableName) => {
-      const baseQuery = db(tableName);
-      
-      // Automatically add demo filter
-      return baseQuery.where(req.demoFilter);
-    };
-
-    // Transaction helper with demo context
-    req.demoTransaction = async (callback) => {
-      return await db.transaction(async (trx) => {
-        // Add demo filtering to transaction
-        const enhancedTrx = {
-          ...trx,
-          queryWithDemo: (tableName) => trx(tableName).where(req.demoFilter)
-        };
-        
-        return await callback(enhancedTrx);
-      });
-    };
-
     next();
   } catch (error) {
     console.error('[DEMO] Demo isolation middleware error:', error);
@@ -100,14 +88,16 @@ const demoIsolation = async (req, res, next) => {
  * Demo session validator - ensures demo sessions haven't expired
  */
 const validateDemoSession = async (req, res, next) => {
-  if (!req.isDemoMode) {
+  if (!req.isDemoMode || !req.session) {
     return next();
   }
 
   try {
-    const session = await db('demo_sessions')
-      .where('session_id', req.session.demoSessionId)
-      .first();
+    const sessionResults = await db.query(
+      'SELECT * FROM demo_sessions WHERE session_id = ?',
+      [req.session.demoSessionId]
+    );
+    const session = sessionResults.length > 0 ? sessionResults[0] : null;
 
     if (!session) {
       // Session doesn't exist, needs setup
@@ -133,11 +123,10 @@ const validateDemoSession = async (req, res, next) => {
     }
 
     // Session is valid, update last activity
-    await db('demo_sessions')
-      .where('session_id', req.session.demoSessionId)
-      .update({
-        last_activity: new Date()
-      });
+    await db.query(
+      'UPDATE demo_sessions SET last_activity = NOW() WHERE session_id = ?',
+      [req.session.demoSessionId]
+    );
 
     next();
   } catch (error) {
@@ -151,35 +140,30 @@ const validateDemoSession = async (req, res, next) => {
  */
 const cleanupExpiredSession = async (sessionId) => {
   try {
-    await db.transaction(async (trx) => {
-      // Get session details
-      const session = await trx('demo_sessions')
-        .where('session_id', sessionId)
-        .first();
+    // Get session details
+    const sessionResults = await db.query(
+      'SELECT * FROM demo_sessions WHERE session_id = ?',
+      [sessionId]
+    );
+    
+    if (sessionResults.length === 0) return;
+    
+    const session = sessionResults[0];
+    const farmId = session.farm_id;
 
-      if (!session) return;
+    // Delete all demo data related to this session
+    await db.query('DELETE FROM burn_requests WHERE farm_id = ? AND is_demo = true', [farmId]);
+    await db.query('DELETE FROM schedules WHERE farm_id = ? AND is_demo = true', [farmId]);
+    await db.query('DELETE FROM alerts WHERE farm_id = ? AND is_demo = true', [farmId]);
+    await db.query('DELETE FROM agent_interactions WHERE farm_id = ? AND is_demo = true', [farmId]);
+    
+    // Delete demo farm
+    await db.query('DELETE FROM farms WHERE id = ? AND is_demo = true', [farmId]);
+    
+    // Delete session
+    await db.query('DELETE FROM demo_sessions WHERE session_id = ?', [sessionId]);
 
-      const farmId = session.farm_id;
-
-      // Delete all demo data related to this session
-      await trx('burn_requests').where({ farm_id: farmId, is_demo: true }).del();
-      await trx('schedules').where({ farm_id: farmId, is_demo: true }).del();
-      await trx('alerts').where({ farm_id: farmId, is_demo: true }).del();
-      await trx('agent_interactions').where({ farm_id: farmId, is_demo: true }).del();
-      
-      // Delete vector embeddings
-      await trx('weather_embeddings').where({ farm_id: farmId, is_demo: true }).del();
-      await trx('smoke_embeddings').where({ is_demo: true }).del();
-      await trx('burn_embeddings').where({ farm_id: farmId, is_demo: true }).del();
-      
-      // Delete demo farm
-      await trx('farms').where({ id: farmId, is_demo: true }).del();
-      
-      // Delete session
-      await trx('demo_sessions').where('session_id', sessionId).del();
-
-      console.log(`[DEMO] Cleaned up expired session: ${sessionId}, farm: ${farmId}`);
-    });
+    console.log(`[DEMO] Cleaned up expired session: ${sessionId}, farm: ${farmId}`);
   } catch (error) {
     console.error('[DEMO] Error cleaning up expired session:', error);
     throw error;
@@ -190,30 +174,29 @@ const cleanupExpiredSession = async (sessionId) => {
  * Cost tracking middleware for demo sessions
  */
 const trackDemoCost = async (req, usage, agentType) => {
-  if (!req.isDemoMode) return;
+  if (!req.isDemoMode || !req.session) return;
 
   try {
     const cost = calculateTokenCost(usage, agentType);
     
     // Update session cost
-    await db('demo_sessions')
-      .where('session_id', req.session.demoSessionId)
-      .increment('total_cost', cost);
+    await db.query(
+      'UPDATE demo_sessions SET total_cost = total_cost + ? WHERE session_id = ?',
+      [cost, req.session.demoSessionId]
+    );
 
     // Log interaction
-    await db('agent_interactions').insert({
-      farm_id: req.session.demoFarmId,
-      agent_type: agentType,
-      tokens_used: usage.total_tokens,
-      cost: cost,
-      is_demo: true,
-      created_at: new Date()
-    });
+    await db.query(
+      'INSERT INTO agent_interactions (farm_id, agent_type, tokens_used, cost, is_demo, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+      [req.session.demoFarmId, agentType, usage.total_tokens, cost, true]
+    );
 
     // Check cost limits
-    const session = await db('demo_sessions')
-      .where('session_id', req.session.demoSessionId)
-      .first();
+    const sessionResults = await db.query(
+      'SELECT * FROM demo_sessions WHERE session_id = ?',
+      [req.session.demoSessionId]
+    );
+    const session = sessionResults.length > 0 ? sessionResults[0] : null;
 
     const COST_LIMITS = {
       perSession: 1.00, // $1 per demo session

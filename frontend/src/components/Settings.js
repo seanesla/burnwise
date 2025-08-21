@@ -38,7 +38,6 @@ const Settings = () => {
       }
     },
     preferences: {
-      theme: 'dark',
       mapStyle: 'satellite',
       units: 'imperial',
       language: 'en',
@@ -470,21 +469,6 @@ Your farm data will remain safely stored.`;
               <h2 className="section-title">Display Preferences</h2>
               
               <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">
-                    Theme
-                  </label>
-                  <select
-                    value={settings.preferences.theme}
-                    onChange={(e) => handleInputChange('preferences', 'theme', e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="dark">Dark (Fire)</option>
-                    <option value="light">Light</option>
-                    <option value="auto">System</option>
-                  </select>
-                </div>
-                
                 <div className="form-group">
                   <label className="form-label">
                     Map Style

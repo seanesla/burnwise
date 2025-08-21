@@ -7,9 +7,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaFire, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaFire, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaRocket, FaDatabase, FaRobot, FaArrowRight } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
+// DemoEntryCard removed - integrated into main auth card
 import './Auth.css';
 
 const Login = () => {
@@ -26,6 +27,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const [demoStats, setDemoStats] = useState(null);
+  const [demoStatusLoading, setDemoStatusLoading] = useState(true);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -43,16 +46,30 @@ const Login = () => {
     clearError();
   }, [clearError]);
 
-  // Check if demo mode is enabled
+  // Check if demo mode is enabled with TiDB integration
   useEffect(() => {
     const checkDemoMode = async () => {
+      setDemoStatusLoading(true);
       try {
         const response = await fetch('http://localhost:5001/api/auth/demo-status');
         const data = await response.json();
-        setDemoModeEnabled(data.demoMode);
+        
+        console.log('[DEMO] Status check response:', data);
+        
+        setDemoModeEnabled(data.available || false);
+        setDemoStats(data.statistics || null);
+        
+        if (data.available) {
+          console.log('[DEMO] Demo mode available with TiDB integration');
+        } else {
+          console.log('[DEMO] Demo mode not available:', data.message);
+        }
       } catch (error) {
-        console.error('Failed to check demo mode:', error);
-        setDemoModeEnabled(false); // Default to false if can't reach backend
+        console.error('[DEMO] Failed to check demo mode:', error);
+        setDemoModeEnabled(false);
+        setDemoStats(null);
+      } finally {
+        setDemoStatusLoading(false);
       }
     };
     
@@ -260,8 +277,8 @@ const Login = () => {
           </motion.button>
         </form>
         
-        {/* Demo Credentials - ONLY SHOW IN DEMO MODE */}
-        {demoModeEnabled && (
+        {/* Demo Credentials - Quick Demo Account Access */}
+        {demoModeEnabled && !demoStatusLoading && (
           <div className="auth-demo-section">
             <button
               type="button"
@@ -283,6 +300,57 @@ const Login = () => {
             </Link>
           </p>
         </div>
+        
+        {/* Integrated Demo Section */}
+        {!demoStatusLoading && demoModeEnabled && (
+          <div className="auth-integrated-demo">
+            <div className="demo-divider">
+              <span>or</span>
+            </div>
+            
+            <div className="demo-compact-header">
+              <h3>Try Demo Mode</h3>
+              <p>Experience full features • No registration</p>
+            </div>
+            
+            <div className="demo-features-row">
+              <div className="demo-feature-compact">
+                <FaRobot />
+                <span>5 AI Agents</span>
+              </div>
+              <div className="demo-feature-compact">
+                <FaDatabase />
+                <span>Real TiDB</span>
+              </div>
+              <div className="demo-feature-compact">
+                <FaRocket />
+                <span>3D Interface</span>
+              </div>
+            </div>
+            
+            {demoStats && (
+              <div className="demo-stats-row">
+                <span className="demo-stat-compact">
+                  <strong>{demoStats.active_sessions || 0}</strong> active sessions
+                </span>
+                <span className="demo-stat-compact">
+                  <strong>{demoStats.demo_farms || 0}</strong> demo farms
+                </span>
+              </div>
+            )}
+            
+            <motion.button
+              className="auth-demo-primary-button"
+              onClick={() => navigate('/demo/initialize')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <FaRocket />
+              <span>Start Demo Session</span>
+              <FaArrowRight />
+            </motion.button>
+          </div>
+        )}
       </motion.div>
     </div>
   );
