@@ -267,18 +267,49 @@ class OnboardingAgent {
         };
       }
 
-      // Run the agent with the user's message
-      const response = await this.agent.run({
+      // The OpenAI Agents SDK uses different API - let's use basic OpenAI completion
+      const client = getOpenAI();
+      
+      const messages = [
+        ...(sessionData.messages || []),
+        { role: 'user', content: message }
+      ];
+      
+      // Use OpenAI directly since Agents SDK has different API
+      const response = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo', // Use standard model for now
         messages: [
-          ...(sessionData.messages || []),
-          { role: 'user', content: message }
+          { 
+            role: 'system', 
+            content: this.agent ? this.agent.instructions : `You are a friendly farm onboarding assistant for Burnwise.
+            Your job is to help new farmers set up their account by collecting information conversationally.
+            
+            You need to collect:
+            1. Farm name
+            2. Owner's name
+            3. Contact email
+            4. Phone number (optional)
+            5. Farm location (can be descriptive like "near Sacramento")
+            6. Total acreage
+            7. Primary crops (optional)
+            8. How often they plan to burn (weekly/monthly/seasonal/as needed)
+            9. Preferred burn times (morning/afternoon/evening/flexible)
+            10. Notification preferences
+            
+            Ask questions one at a time in a natural, conversational way.
+            If someone provides multiple pieces of information at once, acknowledge all of it.
+            Be helpful and encouraging. Keep responses concise.
+            
+            Once you have all required information, tell them their farm has been registered.`
+          },
+          ...messages
         ],
-        stream: false,
-        max_turns: 1
+        max_tokens: 500,
+        temperature: 0.7
       });
-
-      // Extract the agent's response
-      const agentMessage = response.messages[response.messages.length - 1];
+      
+      const agentMessage = response.choices[0].message;
+      const updatedMessages = [...messages, agentMessage];
       
       // Check if registration was completed
       const completed = agentMessage.content.includes('successfully registered') || 
@@ -297,11 +328,11 @@ class OnboardingAgent {
       return {
         success: true,
         message: agentMessage.content,
-        messages: response.messages,
+        messages: updatedMessages,
         completed,
         email,
         sessionData: {
-          messages: response.messages,
+          messages: updatedMessages,
           state: this.conversationState,
           email
         }

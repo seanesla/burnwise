@@ -390,10 +390,10 @@ const Landing = ({ isInitialLoad = true }) => {
           </p>
           
           <div className="cta-buttons">
-            <button className="cta-primary" onClick={() => navigate('/dashboard')}>
+            <button className="cta-primary" onClick={() => navigate('/onboarding')}>
               Get Started
             </button>
-            <button className="cta-secondary" onClick={() => navigate('/map')}>
+            <button className="cta-secondary" onClick={() => navigate('/spatial')}>
               View Live Map
             </button>
           </div>
@@ -590,10 +590,10 @@ const Landing = ({ isInitialLoad = true }) => {
             </p>
             
             <div className="cta-buttons-bottom">
-              <button className="cta-primary-large" onClick={() => navigate('/dashboard')}>
+              <button className="cta-primary-large" onClick={() => navigate('/onboarding')}>
                 Start Coordinating
               </button>
-              <button className="cta-secondary-large" onClick={() => navigate('/request-burn')}>
+              <button className="cta-secondary-large" onClick={() => navigate('/spatial')}>
                 Request a Burn
               </button>
             </div>
