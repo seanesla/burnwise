@@ -354,30 +354,20 @@ export const TutorialProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
   
-  // Start monitoring when tutorial is active - DISABLED TO FIX INFINITE LOOP
-  // useEffect(() => {
-  //   if (!isActive) return;
-    
-  //   // Fetch fresh data
-  //   fetchTutorialData();
-    
-  //   // Start monitoring interval
-  //   const interval = setInterval(() => {
-  //     monitorAppState();
-  //   }, 1000);
-    
-  //   return () => {
-  //     clearInterval(interval);
-  //   };
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [isActive]); // Don't include monitorAppState in deps to avoid infinite loop
+  // Fetch data when tutorial becomes active
+  useEffect(() => {
+    if (isActive) {
+      // Simple fetch without complex monitoring
+      fetchTutorialData();
+    }
+  }, [isActive]);
   
   // Start tutorial
   const startTutorial = useCallback(() => {
     setIsActive(true);
     setCurrentStep(0);
     setCompletedSteps(new Set());
-    fetchTutorialData();
+    // Don't call fetchTutorialData here to avoid potential issues
     
     // Emit event for components to listen
     window.dispatchEvent(new CustomEvent('tutorialStarted'));
@@ -407,8 +397,10 @@ export const TutorialProvider = ({ children }) => {
     localStorage.removeItem('burnwise_tutorial_skip');
     setCurrentStep(0);
     setCompletedSteps(new Set());
-    startTutorial();
-  }, [startTutorial]);
+    setIsActive(true);
+    // fetchTutorialData(); // Don't fetch immediately
+    window.dispatchEvent(new CustomEvent('tutorialStarted'));
+  }, []);
   
   // Navigate to next step
   const nextStep = useCallback(() => {
