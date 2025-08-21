@@ -131,7 +131,8 @@ const onboardingTools = [
           success: true,
           farmId,
           tempPassword,
-          message: 'Farm successfully registered!'
+          email: validData.contact_email,
+          message: `Farm successfully registered! Your temporary password is: ${tempPassword}. Please save this password to log in.`
         };
       } catch (error) {
         logger.error('Failed to save farm data', { error: error.message });
@@ -279,14 +280,30 @@ class OnboardingAgent {
       // Extract the agent's response
       const agentMessage = response.messages[response.messages.length - 1];
       
+      // Check if registration was completed
+      const completed = agentMessage.content.includes('successfully registered') || 
+                       agentMessage.content.includes('Your temporary password is:');
+      
+      // Extract email from the message if present
+      let email = null;
+      if (completed) {
+        // Try to extract email from the agent's context
+        const emailMatch = agentMessage.content.match(/email:\s*(\S+@\S+)/i);
+        if (emailMatch) {
+          email = emailMatch[1];
+        }
+      }
+      
       return {
         success: true,
         message: agentMessage.content,
         messages: response.messages,
-        completed: agentMessage.content.includes('successfully registered'),
+        completed,
+        email,
         sessionData: {
           messages: response.messages,
-          state: this.conversationState
+          state: this.conversationState,
+          email
         }
       };
 

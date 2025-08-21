@@ -13,7 +13,6 @@ import './styles/App.css';
 // Lazy load route components
 const Landing = lazy(() => import('./components/Landing'));
 const Login = lazy(() => import('./components/Login'));
-const SignUp = lazy(() => import('./components/SignUp'));
 const OnboardingChat = lazy(() => import('./components/OnboardingChat'));
 const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -68,19 +67,14 @@ function AppContent() {
               {/* Public Routes */}
               <Route path="/" element={<Landing isInitialLoad={location.pathname === '/' && isInitialLoad} />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
+              
+              {/* Onboarding Route - Public Access for New Users */}
+              <Route path="/onboarding" element={<OnboardingChat />} />
               
               {/* Demo Routes - Public Access */}
               <Route path="/demo/initialize" element={<DemoInitializer />} />
               <Route path="/demo/try" element={<DemoInitializer />} />
               <Route path="/demo/spatial" element={<SpatialInterface />} />
-              
-              {/* Onboarding Route - Pure AI Conversational Only */}
-              <Route path="/onboarding" element={
-                <ProtectedRoute requireOnboarding={true}>
-                  <OnboardingChat />
-                </ProtectedRoute>
-              } />
               
               {/* Main Spatial Interface - Replaces all dashboard/map/schedule routes */}
               <Route path="/spatial" element={

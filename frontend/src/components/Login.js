@@ -320,8 +320,8 @@ const Login = () => {
         <div className="auth-footer">
           <p className="auth-footer-text">
             Don't have an account?{' '}
-            <Link to="/signup" className="auth-link">
-              Sign Up
+            <Link to="/onboarding" className="auth-link">
+              Get Started with AI Setup
             </Link>
           </p>
         </div>

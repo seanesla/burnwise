@@ -11,7 +11,7 @@ import './OnboardingChat.css';
 
 const OnboardingChat = () => {
   const navigate = useNavigate();
-  const { user, completeOnboarding } = useAuth();
+  const { login } = useAuth();
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -98,7 +98,14 @@ const OnboardingChat = () => {
         // Check if onboarding is completed
         if (response.data.completed) {
           setIsCompleted(true);
-          handleCompletion();
+          
+          // Extract credentials from the message if available
+          const passwordMatch = response.data.message.match(/Your temporary password is: (\S+)/);
+          if (passwordMatch) {
+            handleCompletion(response.data.email || null, passwordMatch[1]);
+          } else {
+            handleCompletion();
+          }
         }
       } else {
         throw new Error(response.data.error || 'Failed to process message');
@@ -117,24 +124,63 @@ const OnboardingChat = () => {
     }
   };
 
-  const handleCompletion = () => {
-    // Mark onboarding as complete
-    completeOnboarding({
-      method: 'conversational',
-      completedAt: new Date()
-    });
+  const handleCompletion = async (email, password) => {
+    if (email && password) {
+      // Auto-login with the credentials
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: 'Logging you in automatically...',
+        timestamp: new Date()
+      }]);
 
-    // Show success message
-    setMessages(prev => [...prev, {
-      role: 'system',
-      content: 'Great! Your farm is all set up. Redirecting to your dashboard...',
-      timestamp: new Date()
-    }]);
-
-    // Redirect to spatial interface after delay
-    setTimeout(() => {
-      navigate('/spatial');
-    }, 2000);
+      try {
+        const loginResult = await login({ email, password });
+        if (loginResult.success) {
+          setMessages(prev => [...prev, {
+            role: 'system',
+            content: 'Login successful! Redirecting to your dashboard...',
+            timestamp: new Date()
+          }]);
+          
+          setTimeout(() => {
+            navigate('/spatial');
+          }, 1500);
+        } else {
+          // If auto-login fails, show the credentials for manual login
+          setMessages(prev => [...prev, {
+            role: 'system',
+            content: `Account created! Please log in with email: ${email} and the password provided above.`,
+            timestamp: new Date()
+          }]);
+          
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Auto-login failed:', error);
+        setMessages(prev => [...prev, {
+          role: 'system',
+          content: `Account created! Please log in with email: ${email} and the password provided above.`,
+          timestamp: new Date()
+        }]);
+        
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }
+    } else {
+      // Fallback if no credentials
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: 'Please save your credentials and log in.',
+        timestamp: new Date()
+      }]);
+      
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    }
   };
 
   return (

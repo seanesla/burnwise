@@ -108,6 +108,7 @@ router.post('/message', async (req, res) => {
       success: response.success,
       message: response.message,
       completed: response.completed || false,
+      email: response.email || null,
       sessionId
     });
 
