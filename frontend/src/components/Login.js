@@ -167,6 +167,9 @@ const Login = () => {
     setErrors({});
     setLoginError('');
     
+    // Mark this as a demo session
+    sessionStorage.setItem('isDemo', 'true');
+    
     // Automatically submit the form after filling credentials
     setLoading(true);
     try {

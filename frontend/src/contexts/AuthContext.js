@@ -122,6 +122,9 @@ export const AuthProvider = ({ children }) => {
     setOnboardingComplete(false);
     setOnboardingData(null);
     
+    // Clear demo flag
+    sessionStorage.removeItem('isDemo');
+    
     // Clear non-sensitive localStorage (keep CSRF token)
     Object.values(STORAGE_KEYS).forEach(key => {
       localStorage.removeItem(key);

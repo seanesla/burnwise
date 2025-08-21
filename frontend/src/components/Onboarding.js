@@ -167,7 +167,7 @@ const Onboarding = () => {
             <div className="welcome-icon">
               <AnimatedFlameLogo size={100} animated={true} />
             </div>
-            <h2>Welcome, {user?.name || 'Farmer'}!</h2>
+            <h2>Welcome, {sessionStorage.getItem('isDemo') === 'true' ? 'Demo User' : (user?.name || 'Farmer')}!</h2>
             <p className="welcome-text">
               Burnwise helps coordinate agricultural burns across multiple farms to minimize smoke conflicts 
               and optimize burning conditions.

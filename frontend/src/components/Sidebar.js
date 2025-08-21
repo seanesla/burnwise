@@ -310,8 +310,8 @@ const Sidebar = ({ onPanelChange }) => {
         <div className="user-info">
           {user && (
             <>
-              <div className="user-name">{user.name}</div>
-              <div className="user-email">{user.email}</div>
+              <div className="user-name">{sessionStorage.getItem('isDemo') === 'true' ? 'Demo User' : user.name}</div>
+              <div className="user-email">{sessionStorage.getItem('isDemo') === 'true' ? 'demo@burnwise.com' : user.email}</div>
               {user.isDemo && (
                 <div className="demo-badge">Demo Mode</div>
               )}
