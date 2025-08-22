@@ -105,10 +105,14 @@ export const AuthProvider = ({ children }) => {
             setUser({ ...userData, ...parsedUser });
           }
           
-          // Check onboarding status (per user)
-          const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${userData.farmId}`;
-          const hasOnboarded = localStorage.getItem(userOnboardingKey) === 'true';
+          // Check onboarding status from backend (JWT payload)
+          const hasOnboarded = userData.onboardingCompleted === true;
           setOnboardingComplete(hasOnboarded);
+          
+          // If not onboarded and not already on onboarding page, redirect
+          if (!hasOnboarded && !window.location.pathname.includes('/onboarding')) {
+            window.location.href = '/onboarding';
+          }
           
           // Restore onboarding data
           const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${userData.farmId}`;
@@ -177,9 +181,8 @@ export const AuthProvider = ({ children }) => {
         // Store non-sensitive user data
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
         
-        // Check onboarding status for this user
-        const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${userData.farmId}`;
-        const hasOnboarded = localStorage.getItem(userOnboardingKey) === 'true';
+        // Check onboarding status from backend response
+        const hasOnboarded = userData.onboardingCompleted === true;
         setOnboardingComplete(hasOnboarded);
         
         // Load saved onboarding data if exists

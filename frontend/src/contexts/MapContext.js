@@ -51,23 +51,43 @@ export const MapProvider = ({ children }) => {
     };
   };
   
-  // Try to get user's browser location on mount
+  // Load farm location from database instead of browser geolocation
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Update to user's location if available
-          updateMapCenter(
-            position.coords.latitude,
-            position.coords.longitude
-          );
-        },
-        (error) => {
-          // Keep default location if geolocation fails
-          console.log('Geolocation not available, using default location');
+    const loadFarmLocation = async () => {
+      try {
+        // Get current user's farm data
+        const response = await fetch('http://localhost:5001/api/farms/current', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.farm) {
+            // Use farm's actual location from database
+            if (data.farm.latitude && data.farm.longitude) {
+              updateMapCenter(
+                data.farm.latitude,
+                data.farm.longitude
+              );
+              // Also set as selected farm
+              setSelectedFarm(data.farm);
+            } else if (data.farm.location) {
+              // Parse location if stored differently
+              const [lat, lng] = data.farm.location.split(',').map(Number);
+              if (lat && lng) {
+                updateMapCenter(lat, lng);
+                setSelectedFarm(data.farm);
+              }
+            }
+          }
         }
-      );
-    }
+      } catch (error) {
+        console.error('Failed to load farm location:', error);
+        // Keep default Sacramento location as fallback
+      }
+    };
+    
+    loadFarmLocation();
   }, []);
   
   const value = {

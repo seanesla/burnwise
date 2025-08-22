@@ -137,14 +137,18 @@ router.post('/login', loginRateLimiter, async (req, res) => {
       });
     }
     
-    // Find user by email (include password_hash for production auth)
+    // Find user by email (include password_hash for production auth and onboarding status)
     const users = await query(`
       SELECT 
         f.farm_id,
         f.owner_name,
         f.contact_email,
         f.contact_phone,
-        f.password_hash
+        f.password_hash,
+        f.onboarding_completed,
+        f.boundary,
+        f.location,
+        f.farm_size_acres
       FROM farms f
       WHERE f.contact_email = ?
       LIMIT 1
@@ -222,13 +226,21 @@ router.post('/login', loginRateLimiter, async (req, res) => {
     // Clear failed attempts on successful login
     clearFailedAttempts(req);
     
+    // Check if onboarding is completed (has boundary or complete location data)
+    const onboardingCompleted = !!(
+      user.onboarding_completed || 
+      user.boundary || 
+      (user.location && user.farm_size_acres)
+    );
+    
     // Generate tokens
     const userData = {
       userId: user.farm_id,
       farmId: user.farm_id,
       email: user.contact_email,
       name: user.owner_name,
-      roles: ['farmer']
+      roles: ['farmer'],
+      onboardingCompleted: onboardingCompleted
     };
     
     const accessToken = generateToken(userData);
@@ -253,7 +265,8 @@ router.post('/login', loginRateLimiter, async (req, res) => {
         farmId: user.farm_id,
         name: user.owner_name,
         email: user.contact_email,
-        roles: ['farmer']
+        roles: ['farmer'],
+        onboardingCompleted: onboardingCompleted
       },
       message: 'Login successful'
     });

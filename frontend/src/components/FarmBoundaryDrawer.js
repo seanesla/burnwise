@@ -30,6 +30,7 @@ const FarmBoundaryDrawer = ({
   const map = useRef(null);
   const draw = useRef(null);
   const fileInputRef = useRef(null);
+  const hasInitialized = useRef(false);
   
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentArea, setCurrentArea] = useState(0);
@@ -39,10 +40,13 @@ const FarmBoundaryDrawer = ({
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [currentPoints, setCurrentPoints] = useState(0);
+  const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
 
-  // Initialize map
+  // Initialize map - ONLY ONCE to prevent flickering
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || hasInitialized.current) return;
+    hasInitialized.current = true;
     
     // Determine initial center
     let center = [-121.74, 38.544]; // Default Sacramento
@@ -133,6 +137,13 @@ const FarmBoundaryDrawer = ({
       map.current.on('draw.update', handleDrawUpdate);
       map.current.on('draw.delete', handleDrawDelete);
       map.current.on('draw.modechange', handleModeChange);
+      
+      // Track points being added during drawing
+      map.current.on('click', (e) => {
+        if (draw.current && draw.current.getMode() === 'draw_polygon') {
+          setCurrentPoints(prev => prev + 1);
+        }
+      });
     });
 
     return () => {
@@ -144,33 +155,9 @@ const FarmBoundaryDrawer = ({
         draw.current = null;
       }
     };
-  }, [initialBoundary, initialLocation]);
+  }, []); // Empty dependency array - initialize only once
 
-  // Handle draw create
-  const handleDrawCreate = useCallback((e) => {
-    const feature = e.features[0];
-    if (feature && feature.geometry.type === 'Polygon') {
-      calculateArea();
-      setIsDrawing(false);
-    }
-  }, []);
-
-  // Handle draw update
-  const handleDrawUpdate = useCallback((e) => {
-    calculateArea();
-  }, []);
-
-  // Handle draw delete
-  const handleDrawDelete = useCallback((e) => {
-    calculateArea();
-  }, []);
-
-  // Handle mode change
-  const handleModeChange = useCallback((e) => {
-    setIsDrawing(e.mode === 'draw_polygon');
-  }, []);
-
-  // Calculate area from drawn features
+  // Calculate area from drawn features - MUST BE DEFINED BEFORE USE
   const calculateArea = useCallback(() => {
     if (!draw.current) return;
     
@@ -210,24 +197,98 @@ const FarmBoundaryDrawer = ({
     }
   }, [onBoundaryComplete]);
 
+  // Handle boundary updates after initial load
+  useEffect(() => {
+    if (!mapLoaded || !draw.current || !initialBoundary) return;
+    
+    // Only update if the boundary actually changed
+    const currentFeatures = draw.current.getAll();
+    if (currentFeatures.features.length === 0) {
+      draw.current.add(initialBoundary);
+      calculateArea();
+    }
+  }, [initialBoundary, mapLoaded, calculateArea]);
+
+  // Handle draw create
+  const handleDrawCreate = useCallback((e) => {
+    const feature = e.features[0];
+    if (feature && feature.geometry.type === 'Polygon') {
+      // Validate the polygon has at least 3 points
+      if (feature.geometry.coordinates[0] && feature.geometry.coordinates[0].length >= 4) {
+        calculateArea();
+        // Don't automatically exit drawing mode - let user decide
+        // setIsDrawing(false);
+      }
+    }
+  }, [calculateArea]);
+
+  // Handle draw update
+  const handleDrawUpdate = useCallback((e) => {
+    // Debounce area calculation to prevent rapid updates
+    if (e.features.length > 0) {
+      calculateArea();
+    }
+  }, [calculateArea]);
+
+  // Handle draw delete
+  const handleDrawDelete = useCallback((e) => {
+    calculateArea();
+  }, [calculateArea]);
+
+  // Handle mode change
+  const handleModeChange = useCallback((e) => {
+    // Only update state if it actually changed to prevent flicker
+    const newIsDrawing = e.mode === 'draw_polygon';
+    setIsDrawing(prev => prev !== newIsDrawing ? newIsDrawing : prev);
+  }, []);
+
   // Start drawing
   const startDrawing = () => {
-    if (draw.current && mapLoaded) {
-      // Check if already in draw mode
+    if (draw.current && mapLoaded && !isDrawing) {
+      // Prevent multiple rapid calls
       const currentMode = draw.current.getMode();
-      if (currentMode !== 'draw_polygon') {
-        draw.current.changeMode('draw_polygon');
+      if (currentMode === 'draw_polygon') {
+        return; // Already in draw mode, don't switch again
       }
+      
+      // Small delay to prevent flicker
       setIsDrawing(true);
       setShowInstructions(false);
+      
+      setTimeout(() => {
+        if (draw.current) {
+          draw.current.changeMode('draw_polygon');
+        }
+      }, 50);
     }
   };
 
   // Complete drawing
   const completeDrawing = () => {
     if (draw.current) {
+      // Get the current drawing to validate it
+      const data = draw.current.getAll();
+      let hasValidPolygon = false;
+      
+      // Check if there's a polygon with at least 3 points (4 including closing point)
+      data.features.forEach(feature => {
+        if (feature.geometry.type === 'Polygon' && 
+            feature.geometry.coordinates[0] && 
+            feature.geometry.coordinates[0].length >= 4) {
+          hasValidPolygon = true;
+        }
+      });
+      
+      if (!hasValidPolygon) {
+        // Show warning instead of alert
+        setShowIncompleteWarning(true);
+        setTimeout(() => setShowIncompleteWarning(false), 3000);
+        return;
+      }
+      
       draw.current.changeMode('simple_select');
       setIsDrawing(false);
+      setCurrentPoints(0);
       calculateArea();
     }
   };
@@ -246,6 +307,8 @@ const FarmBoundaryDrawer = ({
       }
       draw.current.changeMode('simple_select');
       setIsDrawing(false);
+      setCurrentPoints(0);
+      setShowIncompleteWarning(false);
     }
   };
 
@@ -448,9 +511,22 @@ const FarmBoundaryDrawer = ({
       {isDrawing && (
         <div className="drawing-mode-indicator">
           <div className="drawing-mode-content">
-            <span className="drawing-mode-text">
-              Click on the map to draw your farm boundary
-            </span>
+            <div className="drawing-mode-info">
+              <span className="drawing-mode-text">
+                Click on the map to draw your farm boundary
+              </span>
+              <span className="points-count">
+                {currentPoints < 3 ? (
+                  <span style={{ color: '#ffa500' }}>
+                    {currentPoints}/3 points minimum
+                  </span>
+                ) : (
+                  <span style={{ color: '#4ade80' }}>
+                    {currentPoints} points placed
+                  </span>
+                )}
+              </span>
+            </div>
             <button 
               className="btn-complete-drawing"
               onClick={completeDrawing}
@@ -458,6 +534,11 @@ const FarmBoundaryDrawer = ({
               <FaCheck /> Complete Boundary
             </button>
           </div>
+          {showIncompleteWarning && (
+            <div className="incomplete-warning">
+              <FaInfoCircle /> Need at least 3 points to form a closed shape
+            </div>
+          )}
         </div>
       )}
 

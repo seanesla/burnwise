@@ -46,6 +46,69 @@ const farmUpdateSchema = Joi.object({
 });
 
 /**
+ * GET /api/farms/current
+ * Get current user's farm data
+ */
+router.get('/current', asyncHandler(async (req, res) => {
+  // Get farmId from authenticated user (from JWT)
+  const farmId = req.user?.farmId;
+  
+  if (!farmId) {
+    return res.status(401).json({
+      success: false,
+      error: 'No farm associated with user'
+    });
+  }
+  
+  const farms = await query(`
+    SELECT 
+      f.farm_id,
+      f.farm_name,
+      f.owner_name,
+      f.contact_email,
+      f.contact_phone,
+      f.address,
+      f.latitude,
+      f.longitude,
+      f.farm_size_acres,
+      f.primary_crops,
+      f.boundary,
+      f.calculated_acreage,
+      f.onboarding_completed
+    FROM farms f
+    WHERE f.farm_id = ?
+    LIMIT 1
+  `, [farmId]);
+  
+  if (farms.length === 0) {
+    return res.status(404).json({
+      success: false,
+      error: 'Farm not found'
+    });
+  }
+  
+  const farm = farms[0];
+  
+  res.json({
+    success: true,
+    farm: {
+      id: farm.farm_id,
+      name: farm.farm_name,
+      ownerName: farm.owner_name,
+      email: farm.contact_email,
+      phone: farm.contact_phone,
+      address: farm.address,
+      latitude: farm.latitude,
+      longitude: farm.longitude,
+      acreage: farm.calculated_acreage || farm.farm_size_acres,
+      crops: farm.primary_crops,
+      boundary: farm.boundary,
+      onboardingCompleted: farm.onboarding_completed
+    }
+  });
+}));
+
+/**
  * GET /api/farms
  * Get farms with filtering, searching, and pagination
  */

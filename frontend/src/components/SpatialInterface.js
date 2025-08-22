@@ -1453,7 +1453,7 @@ const SpatialInterface = () => {
       </div>
       
       {/* Tutorial Overlay - Dynamic walkthrough */}
-      <TutorialOverlay />
+      {/* <TutorialOverlay /> */}
     </div>
   );
 };
