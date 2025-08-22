@@ -18,8 +18,13 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import './FarmBoundaryDrawer.css';
 
-// Mapbox token from env
-mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
+// Set Mapbox token - must check if mapboxgl is loaded
+if (typeof mapboxgl !== 'undefined' && mapboxgl) {
+  mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
+  console.log('Mapbox token set successfully');
+} else {
+  console.error('Mapbox GL JS not loaded yet');
+}
 
 const FarmBoundaryDrawer = ({ 
   onBoundaryComplete, 
@@ -48,6 +53,23 @@ const FarmBoundaryDrawer = ({
     if (!mapContainer.current || hasInitialized.current) return;
     hasInitialized.current = true;
     
+    // Ensure Mapbox GL JS is loaded and token is set
+    if (!mapboxgl || typeof mapboxgl === 'undefined') {
+      console.error('Mapbox GL JS is not loaded');
+      return;
+    }
+    
+    // Set the access token here as well to ensure it's set
+    if (!mapboxgl.accessToken) {
+      mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
+      console.log('Setting Mapbox token in useEffect');
+    }
+    
+    if (!mapboxgl.accessToken) {
+      console.error('Mapbox access token is not set');
+      return;
+    }
+    
     // Determine initial center
     let center = [-121.74, 38.544]; // Default Sacramento
     let zoom = 10;
@@ -65,13 +87,19 @@ const FarmBoundaryDrawer = ({
       zoom = 15;
     }
     
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: center,
-      zoom: zoom,
-      pitch: 0
-    });
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        center: center,
+        zoom: zoom,
+        pitch: 0
+      });
+      console.log('Map created successfully');
+    } catch (error) {
+      console.error('Error creating map:', error);
+      return;
+    }
 
     // Initialize draw controls
     draw.current = new MapboxDraw({
@@ -123,6 +151,7 @@ const FarmBoundaryDrawer = ({
 
     // Wait for map to load before adding controls
     map.current.on('load', () => {
+      console.log('Map load event fired');
       map.current.addControl(draw.current);
       setMapLoaded(true);
 
@@ -144,6 +173,26 @@ const FarmBoundaryDrawer = ({
           setCurrentPoints(prev => prev + 1);
         }
       });
+    });
+    
+    // Add error handling for map
+    map.current.on('error', (e) => {
+      console.error('Map error:', e.error);
+    });
+    
+    // Log style load
+    map.current.on('styledata', () => {
+      console.log('Map style loaded');
+    });
+    
+    // Log when tiles start loading
+    map.current.on('dataloading', () => {
+      console.log('Map data loading...');
+    });
+    
+    // Log when tiles finish loading
+    map.current.on('data', () => {
+      console.log('Map data loaded');
     });
 
     return () => {
