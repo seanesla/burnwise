@@ -102,26 +102,55 @@ const FarmBoundaryDrawer = ({
     
     try {
       console.log('Creating map with container:', mapContainer.current);
+      console.log('Token before map creation:', mapboxgl.accessToken);
+      
+      // Create the map - ensure container ID is unique
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        style: 'mapbox://styles/mapbox/satellite-v9', // Using satellite-v9 which is more stable
         center: center,
         zoom: zoom,
-        pitch: 0
+        pitch: 0,
+        attributionControl: false,
+        preserveDrawingBuffer: true, // Helps with rendering issues
+        fadeDuration: 0, // Disable fade animation
+        trackResize: true // Track container resize
       });
-      console.log('Map created successfully');
-      console.log('Map object:', map.current);
-      console.log('Container after map creation:', mapContainer.current);
-      console.log('Container children:', mapContainer.current.children.length);
       
-      // Check if map actually initialized
+      console.log('Map instance created');
+      
+      // Force immediate render
+      map.current.once('style.load', () => {
+        console.log('Style loaded successfully');
+        map.current.resize();
+      });
+      
+      // Check canvas and force render after a delay
       setTimeout(() => {
-        console.log('After timeout - Container children:', mapContainer.current?.children.length);
-        console.log('After timeout - Has canvas:', !!mapContainer.current?.querySelector('.mapboxgl-canvas'));
+        if (!map.current || !mapContainer.current) return;
+        
+        const canvas = mapContainer.current.querySelector('.mapboxgl-canvas');
+        if (canvas) {
+          console.log('Canvas found with dimensions:', canvas.width, 'x', canvas.height);
+          // Force resize and repaint
+          map.current.resize();
+          map.current.triggerRepaint();
+          
+          // Check if canvas context is valid
+          const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+          if (!ctx) {
+            console.error('WebGL context not available');
+          } else {
+            console.log('WebGL context is valid');
+          }
+        } else {
+          console.error('Canvas not found after timeout');
+        }
       }, 1000);
+      
     } catch (error) {
       console.error('Error creating map:', error);
-      console.error('Error details:', error.message, error.stack);
+      console.error('Full error:', error);
       return;
     }
 
@@ -173,9 +202,33 @@ const FarmBoundaryDrawer = ({
       ]
     });
 
+    // Add debugging for map events
+    map.current.on('error', (e) => {
+      console.error('Map error event:', e);
+      if (e.error) {
+        console.error('Error details:', e.error.message);
+      }
+    });
+    
+    map.current.on('styledata', () => {
+      console.log('Map styledata event - style is loading');
+    });
+    
+    map.current.on('idle', () => {
+      console.log('Map idle - fully rendered');
+      const container = mapContainer.current;
+      if (container) {
+        const canvas = container.querySelector('.mapboxgl-canvas');
+        console.log('Canvas check on idle:', !!canvas);
+        if (canvas) {
+          console.log('Canvas size:', canvas.width, 'x', canvas.height);
+        }
+      }
+    });
+
     // Wait for map to load before adding controls
     map.current.on('load', () => {
-      console.log('Map load event fired');
+      console.log('Map load event fired - map fully loaded');
       map.current.addControl(draw.current);
       setMapLoaded(true);
 
@@ -197,26 +250,6 @@ const FarmBoundaryDrawer = ({
           setCurrentPoints(prev => prev + 1);
         }
       });
-    });
-    
-    // Add error handling for map
-    map.current.on('error', (e) => {
-      console.error('Map error:', e.error);
-    });
-    
-    // Log style load
-    map.current.on('styledata', () => {
-      console.log('Map style loaded');
-    });
-    
-    // Log when tiles start loading
-    map.current.on('dataloading', () => {
-      console.log('Map data loading...');
-    });
-    
-    // Log when tiles finish loading
-    map.current.on('data', () => {
-      console.log('Map data loaded');
     });
 
     // Only cleanup when component truly unmounts
