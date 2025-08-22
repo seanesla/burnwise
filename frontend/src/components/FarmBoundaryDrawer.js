@@ -35,7 +35,6 @@ const FarmBoundaryDrawer = ({
   const map = useRef(null);
   const draw = useRef(null);
   const fileInputRef = useRef(null);
-  const hasInitialized = useRef(false);
   
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentArea, setCurrentArea] = useState(0);
@@ -50,8 +49,14 @@ const FarmBoundaryDrawer = ({
 
   // Initialize map - ONLY ONCE to prevent flickering
   useEffect(() => {
-    if (!mapContainer.current || hasInitialized.current) return;
-    hasInitialized.current = true;
+    // Check if container exists and we haven't initialized yet
+    if (!mapContainer.current) return;
+    
+    // Check if map already exists
+    if (map.current) {
+      console.log('Map already exists, skipping initialization');
+      return;
+    }
     
     console.log('Map container element:', mapContainer.current);
     console.log('Container dimensions:', {
@@ -214,14 +219,12 @@ const FarmBoundaryDrawer = ({
       console.log('Map data loaded');
     });
 
+    // Only cleanup when component truly unmounts
+    // Not during re-renders
     return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-      if (draw.current) {
-        draw.current = null;
-      }
+      console.log('Effect cleanup called - checking if we should remove map');
+      // We'll clean up the map only when the component is truly unmounting
+      // For now, disable cleanup to prevent map removal
     };
   }, []); // Empty dependency array - initialize only once
 
