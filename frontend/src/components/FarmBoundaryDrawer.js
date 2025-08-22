@@ -53,6 +53,12 @@ const FarmBoundaryDrawer = ({
     if (!mapContainer.current || hasInitialized.current) return;
     hasInitialized.current = true;
     
+    console.log('Map container element:', mapContainer.current);
+    console.log('Container dimensions:', {
+      width: mapContainer.current.offsetWidth,
+      height: mapContainer.current.offsetHeight
+    });
+    
     // Ensure Mapbox GL JS is loaded and token is set
     if (!mapboxgl || typeof mapboxgl === 'undefined') {
       console.error('Mapbox GL JS is not loaded');
@@ -69,6 +75,8 @@ const FarmBoundaryDrawer = ({
       console.error('Mapbox access token is not set');
       return;
     }
+    
+    console.log('Mapbox token verified:', mapboxgl.accessToken ? 'Yes' : 'No');
     
     // Determine initial center
     let center = [-121.74, 38.544]; // Default Sacramento
@@ -88,6 +96,7 @@ const FarmBoundaryDrawer = ({
     }
     
     try {
+      console.log('Creating map with container:', mapContainer.current);
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/satellite-streets-v12',
@@ -96,8 +105,18 @@ const FarmBoundaryDrawer = ({
         pitch: 0
       });
       console.log('Map created successfully');
+      console.log('Map object:', map.current);
+      console.log('Container after map creation:', mapContainer.current);
+      console.log('Container children:', mapContainer.current.children.length);
+      
+      // Check if map actually initialized
+      setTimeout(() => {
+        console.log('After timeout - Container children:', mapContainer.current?.children.length);
+        console.log('After timeout - Has canvas:', !!mapContainer.current?.querySelector('.mapboxgl-canvas'));
+      }, 1000);
     } catch (error) {
       console.error('Error creating map:', error);
+      console.error('Error details:', error.message, error.stack);
       return;
     }
 
