@@ -55,6 +55,8 @@
 .onboarding-content {
   display: flex;
   position: relative;
+  width: 100%;
+  overflow: hidden; /* Prevent any child overflow */
 }
 
 /* Form Section */
@@ -65,6 +67,23 @@
   max-width: 100%;
   overflow-x: hidden; /* Prevent horizontal overflow */
   box-sizing: border-box;
+  position: relative; /* Contain absolute children */
+}
+
+/* Map Container - Properly contain the boundary drawer */
+.map-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Ensure FarmBoundaryDrawer doesn't overflow */
+.map-container .farm-boundary-drawer {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .form-group {

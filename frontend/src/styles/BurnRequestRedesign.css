@@ -94,11 +94,12 @@
   box-shadow: 0 0 20px rgba(255, 176, 0, 0.4);
 }
 
+/* DISABLED - Let Mapbox handle its own sizing
 .map-container {
   height: calc(100% - 80px);
   position: relative;
-  min-height: 300px; /* Ensure minimum height for map visibility */
-}
+  min-height: 300px;
+} */
 
 .map-overlay-info {
   position: absolute;
@@ -695,10 +696,11 @@
     display: block; /* Ensure visibility */
   }
   
+  /* DISABLED - Let Mapbox handle its own sizing
   .map-container {
-    height: 320px; /* Fixed height for responsive */
+    height: 320px;
     min-height: 320px;
-  }
+  } */
   
   .form-section {
     height: auto;
