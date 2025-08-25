@@ -50,14 +50,14 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
 - **One Question at a Time** - No overwhelming 18-field forms
 - **Smart Suggestions** - "Tomorrow has high winds, but Thursday looks perfect"
 
-### Conversational Onboarding (PURE AI - NO FALLBACKS)
-- **AI-Only Setup** - OnboardingAgent using OpenAI Agents SDK is the ONLY way to onboard
-- **Natural Language** - Just chat with the agent to set up your farm
-- **Smart Data Extraction** - Agent extracts structured data from conversational input
-- **Location Understanding** - Handles descriptions like "near Sacramento" or "Yolo County"
-- **No Compromises** - If AI unavailable, onboarding waits - no manual forms, no shortcuts
-- **Session Management** - Maintains conversation context for 30-minute sessions
-- **Philosophical Commitment** - Real AI or nothing, aligning with hackathon's genuine AI focus
+### Demo-Only Experience
+- **No Registration** - Auto-creates demo sessions on app load
+- **Instant Access** - Jump straight into the spatial interface
+- **24-Hour Sessions** - Temporary data that expires automatically
+- **Full Features** - Access all 5 agents and spatial UI
+- **Real TiDB Backend** - Actual database operations, not mocked
+- **No Account Management** - Focus on core functionality
+- **Perfect for Testing** - Try everything without commitment
 
 ### Interactive Tutorial System
 - **Guided Walkthrough** - Step-by-step introduction to key features
@@ -72,7 +72,7 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
 - **Conflict Detection** - Automatic identification of overlapping smoke zones
 - **Schedule Optimization** - AI-powered rescheduling to eliminate conflicts
 - **Weather Integration** - Live weather data affecting burn decisions
-- **Alert Management** - Automated notifications via SMS (Twilio)
+- **Alert Management** - Automated notifications via email (SendGrid)
 
 ### TiDB Vector Capabilities
 - **Weather Pattern Vectors** (128-dimensional) - Historical pattern matching
@@ -95,7 +95,7 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
 - **Node.js** with Express.js
 - **TiDB Serverless** with vector columns
 - **OpenWeatherMap API** for weather data
-- **Twilio** for SMS alerts
+- **SendGrid** for email alerts
 - **Socket.io** for real-time updates
 - **Bull** for job queuing
 - **Winston** for logging
@@ -156,10 +156,8 @@ OPENAI_API_KEY=your-openai-api-key
 # Weather API
 OPENWEATHERMAP_API_KEY=your-api-key
 
-# Optional: SMS Alerts
-TWILIO_ACCOUNT_SID=your-account-sid
-TWILIO_AUTH_TOKEN=your-auth-token
-TWILIO_PHONE_NUMBER=+1234567890
+# Optional: Email Alerts
+TWILIO_SENDGRID_API_KEY=your-sendgrid-api-key
 
 # Server
 PORT=5001
@@ -187,12 +185,16 @@ The application will be available at:
 
 ## 📖 Usage
 
+### Getting Started
+1. Open the application - demo session auto-creates
+2. Complete quick onboarding or skip to explore
+3. All features immediately available
+
 ### Submit a Burn Request
-1. Navigate to "Request Burn" in the navigation
-2. Select your farm from the dropdown
-3. Draw the field boundary on the map
-4. Choose date, time, and burn parameters
-5. Submit the request
+1. Click anywhere on the map to start
+2. Draw your field boundary
+3. Choose date, time, and burn parameters
+4. Submit the request
 
 ### View Conflicts
 1. Go to the "Schedule" page

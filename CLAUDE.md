@@ -7,7 +7,7 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 ## Commands
 **Main**: `npm run dev` (ports 5001+3000) | `npm run install:all` | `npm run setup:check` | `npm run seed` | `npm test`
 **Testing**: `test:backend` | `test:frontend` | `test:workflow` | E2E: `cd e2e-tests && npx playwright test [--headed] [file:line]`
-**Utils**: `cd backend && node scripts/create-test-user.js`
+**Utils**: Demo sessions auto-created (no test user needed)
 
 ## Navigation
 `.claude/`: NAVIGATION.md | CODEBASE_MAP.md | TECH_STACK.md | DATABASE_SCHEMA.md | PATTERNS.md | WORKFLOWS/ | QUICK_TASKS/
@@ -29,8 +29,9 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 **API**: `/api/{burn-requests,weather,schedule,alerts,farms,analytics,agents}`
 
 ### Auth & Data
-- Test: `robert@goldenfields.com` / `TestPassword123!`
-- Production-ready (NO demo mode)
+- Demo-only system (NO real accounts)
+- Auto-creates sessions on app load
+- 24-hour temporary data
 - TiDB → Backend → Frontend (no hardcoding)
 - EMAIL ONLY - no phone fields anywhere
 
@@ -48,10 +49,8 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 ## E2E Test Pattern
 ```javascript
 test.beforeEach(async ({ page }) => {
-  await page.goto('http://localhost:3000/login');
-  await page.fill('input[type="email"]', 'robert@goldenfields.com');
-  await page.fill('input[type="password"]', 'TestPassword123!');
-  await page.click('button:has-text("Sign In")');
+  await page.goto('http://localhost:3000');
+  // Auto-redirects to onboarding or spatial
   if ((await page.url()).includes('onboarding'))
     await page.click('button:has-text("Skip Setup")');
   await page.waitForURL('**/spatial');
