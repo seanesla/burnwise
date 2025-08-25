@@ -105,7 +105,7 @@
 .area-display {
   position: absolute;
   top: 20px;
-  right: 20px;
+  right: 60px; /* Moved further left to avoid Mapbox controls */
   display: flex;
   align-items: center;
   gap: 10px;
