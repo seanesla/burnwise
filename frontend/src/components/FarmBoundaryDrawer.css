@@ -244,11 +244,11 @@
   font-size: 18px;
 }
 
-/* Instructions Dropdown - Top Right Corner */
+/* Instructions Dropdown - Bottom Left Corner */
 .instructions-dropdown-container {
   position: absolute;
-  top: 20px;
-  right: 120px; /* Position to left of Mapbox controls */
+  bottom: 20px; /* Bottom left corner to avoid all overlaps */
+  left: 20px;
   z-index: 20;
 }
 
@@ -281,9 +281,9 @@
 
 .instructions-dropdown {
   position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 8px;
+  bottom: 100%; /* Position above the trigger */
+  left: 0; /* Align to left edge of container */
+  margin-bottom: 8px; /* Space between trigger and dropdown */
   width: 320px;
   padding: 20px;
   background: rgba(20, 20, 20, 0.98);
@@ -346,17 +346,17 @@
   line-height: 1.5;
 }
 
-/* Arrow pointing up */
-.instructions-dropdown::before {
+/* Arrow pointing down */
+.instructions-dropdown::after {
   content: '';
   position: absolute;
-  top: -8px;
-  right: 20px;
+  bottom: -8px; /* Position at bottom of dropdown */
+  left: 20px; /* Arrow on left side */
   width: 16px;
   height: 16px;
   background: rgba(20, 20, 20, 0.98);
-  border-top: 1px solid rgba(255, 107, 53, 0.3);
-  border-left: 1px solid rgba(255, 107, 53, 0.3);
+  border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+  border-right: 1px solid rgba(255, 107, 53, 0.3);
   transform: rotate(45deg);
 }
 
