@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, 
   FaTree, FaRobot, FaChevronRight, FaChevronLeft,
-  FaMagic, FaCheck, FaTimes, FaMap
+  FaMagic, FaCheck, FaTimes, FaMap, FaRocket
 } from 'react-icons/fa';
 import axios from 'axios';
 import FarmBoundaryDrawer from './FarmBoundaryDrawer';
@@ -22,17 +22,17 @@ const HybridOnboarding = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { completeOnboarding, user, isDemo } = useAuth();
+  const { completeOnboarding, user } = useAuth();
   
-  // Detect demo mode from query params or location state
-  const demoMode = searchParams.get('demo') || location.state?.demoMode;
-  const isDemoUser = demoMode === 'blank' || location.state?.isDemo;
+  // Mode selection state - User chooses demo or real mode in the UI
+  const [selectedMode, setSelectedMode] = useState(null);
+  const [sessionId] = useState(`demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   
-  // Form state - with demo defaults
+  // Form state - defaults will be set based on mode selection
   const [formData, setFormData] = useState({
     farmName: '',
-    ownerName: isDemoUser ? 'Demo User' : '',
-    email: isDemoUser ? `demo_${location.state?.sessionId || Date.now()}@burnwise.demo` : '',
+    ownerName: '',
+    email: '',
     phone: '',
     location: '',
     acreage: '',
@@ -50,11 +50,31 @@ const HybridOnboarding = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formComplete, setFormComplete] = useState(false);
 
+  // Update form when mode is selected
+  useEffect(() => {
+    if (selectedMode === 'demo') {
+      setFormData(prev => ({
+        ...prev,
+        ownerName: 'Demo User',
+        email: `demo_${sessionId}@burnwise.demo`
+      }));
+    } else if (selectedMode === 'real') {
+      setFormData(prev => ({
+        ...prev,
+        ownerName: '',
+        email: ''
+      }));
+    }
+  }, [selectedMode, sessionId]);
+
   // Check form completion - different requirements for demo vs real users
   useEffect(() => {
     let isComplete = false;
     
-    if (isDemoUser) {
+    // Must select a mode first
+    if (!selectedMode) {
+      isComplete = false;
+    } else if (selectedMode === 'demo') {
       // Demo users only need farm name and boundary
       const hasLocation = formData.farmBoundary !== null;
       isComplete = formData.farmName?.trim() && hasLocation;
@@ -66,7 +86,7 @@ const HybridOnboarding = () => {
     }
     
     setFormComplete(isComplete);
-  }, [formData, isDemoUser]);
+  }, [formData, selectedMode]);
 
   // Handle form field changes
   const handleFieldChange = (field, value) => {
@@ -106,12 +126,16 @@ const HybridOnboarding = () => {
   const validateForm = () => {
     const errors = {};
     
+    if (!selectedMode) {
+      errors.mode = 'Please select Demo or Real mode';
+    }
+    
     if (!formData.farmName.trim()) {
       errors.farmName = 'Farm name is required';
     }
     
     // Only require owner and email for real users
-    if (!isDemoUser) {
+    if (selectedMode === 'real') {
       if (!formData.ownerName.trim()) {
         errors.ownerName = 'Owner name is required';
       }
@@ -136,18 +160,10 @@ const HybridOnboarding = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Fill with demo data
-  const fillDemoData = () => {
-    setFormData({
-      farmName: 'Demo Farm',
-      ownerName: 'Demo User',
-      email: 'demo@burnwise.local',
-      phone: '(555) 123-4567',
-      location: 'Sacramento, CA',
-      acreage: '500',
-      primaryCrops: 'Wheat, Rice, Alfalfa',
-      burnFrequency: 'seasonal'
-    });
+  // Mode selection handler
+  const handleModeSelect = (mode) => {
+    setSelectedMode(mode);
+    setValidationErrors({}); // Clear any errors when mode changes
   };
 
   // Process AI input to extract form data
@@ -230,42 +246,66 @@ const HybridOnboarding = () => {
     setIsSubmitting(true);
     
     try {
-      // Save onboarding data
-      const onboardingData = {
-        ...formData,
-        completedAt: new Date().toISOString(),
-        method: showAI ? 'hybrid_ai' : 'form_only'
-      };
-      
-      // Mark onboarding complete
-      completeOnboarding(onboardingData);
-      
-      // Route based on user type
-      if (isDemoUser) {
-        // Demo users go to demo spatial interface
-        setTimeout(() => {
-          navigate('/demo/spatial', {
-            state: {
-              isDemo: true,
-              demoMode: demoMode,
-              sessionId: location.state?.sessionId,
-              farmId: location.state?.farmId
-            }
-          });
-        }, 1000);
+      // Initialize demo session if demo mode
+      if (selectedMode === 'demo') {
+        const demoResponse = await axios.post('http://localhost:5001/api/demo/initialize', {
+          mode: 'blank',
+          sessionId: sessionId
+        }, {
+          headers: { 'X-Demo-Mode': 'true' },
+          withCredentials: true
+        });
+
+        if (demoResponse.data.success) {
+          // Store demo session info
+          sessionStorage.setItem('burnwise_demo_context', JSON.stringify({
+            sessionId: demoResponse.data.sessionId,
+            farmId: demoResponse.data.farmId,
+            mode: 'blank',
+            expiresAt: demoResponse.data.expiresAt,
+            startedAt: new Date().toISOString()
+          }));
+
+          // Save onboarding data
+          const onboardingData = {
+            ...formData,
+            isDemo: true,
+            completedAt: new Date().toISOString(),
+            method: showAI ? 'hybrid_ai' : 'form_only'
+          };
+          
+          completeOnboarding(onboardingData);
+          
+          // Navigate to demo spatial interface
+          setTimeout(() => {
+            navigate('/demo/spatial', {
+              state: {
+                isDemo: true,
+                demoMode: 'blank',
+                sessionId: demoResponse.data.sessionId,
+                farmId: demoResponse.data.farmId
+              }
+            });
+          }, 1000);
+        }
       } else {
-        // Real users create actual account and go to regular spatial
+        // Real users create actual account
+        const onboardingData = {
+          ...formData,
+          isDemo: false,
+          completedAt: new Date().toISOString(),
+          method: showAI ? 'hybrid_ai' : 'form_only'
+        };
+        
         const response = await axios.post('/api/farms/create', formData);
         if (response.data.success) {
+          completeOnboarding(onboardingData);
           navigate('/spatial');
         }
       }
     } catch (error) {
       console.error('Onboarding submission failed:', error);
-      // Even if backend fails, allow progression for demo
-      if (isDemo) {
-        navigate('/demo/spatial');
-      }
+      setValidationErrors({ submit: 'Failed to complete setup. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -276,18 +316,110 @@ const HybridOnboarding = () => {
       <div className="hybrid-onboarding">
         {/* Header */}
         <div className="onboarding-header">
-          <h1>{isDemoUser ? 'Demo Farm Setup' : 'Farm Setup'}</h1>
-          <p>{isDemoUser 
-            ? 'Set up your demo farm to explore Burnwise features' 
-            : 'Complete your farm profile to get started with Burnwise'}</p>
+          <h1>Welcome to Burnwise</h1>
+          <p>Set up your farm to start coordinating agricultural burns safely</p>
         </div>
 
         <div className="onboarding-content">
           {/* Form Section */}
           <div className="form-section">
             <form onSubmit={handleSubmit}>
-              {/* Farm Information */}
-              <div className="form-group">
+              {/* Mode Selection - First Step */}
+              {!selectedMode && (
+                <div className="mode-selection">
+                  <h3>Choose Your Account Type</h3>
+                  <p className="mode-description">
+                    Select how you'd like to experience Burnwise
+                  </p>
+                  
+                  <div className="mode-cards">
+                    <motion.div
+                      className="mode-card"
+                      onClick={() => handleModeSelect('demo')}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="mode-icon demo-icon">
+                        <FaRocket />
+                      </div>
+                      <h4>Demo Mode</h4>
+                      <p>Try Burnwise instantly</p>
+                      <ul className="mode-features">
+                        <li>No registration required</li>
+                        <li>24-hour session</li>
+                        <li>Full AI features</li>
+                        <li>Real TiDB database</li>
+                      </ul>
+                      <div className="mode-badge">Quick Start</div>
+                    </motion.div>
+
+                    <motion.div
+                      className="mode-card"
+                      onClick={() => handleModeSelect('real')}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="mode-icon real-icon">
+                        <FaUser />
+                      </div>
+                      <h4>Real Account</h4>
+                      <p>Create your farm profile</p>
+                      <ul className="mode-features">
+                        <li>Permanent account</li>
+                        <li>Save burn history</li>
+                        <li>Multi-farm coordination</li>
+                        <li>Full production access</li>
+                      </ul>
+                      <div className="mode-badge">Full Access</div>
+                    </motion.div>
+                  </div>
+
+                  {validationErrors.mode && (
+                    <span className="error-message center">{validationErrors.mode}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Show form fields only after mode selection */}
+              {selectedMode && (
+                <>
+                  {/* Mode indicator */}
+                  <div className="selected-mode-indicator">
+                    <span className={`mode-tag ${selectedMode}`}>
+                      {selectedMode === 'demo' ? (
+                        <>
+                          <FaRocket /> Demo Mode
+                        </>
+                      ) : (
+                        <>
+                          <FaUser /> Real Account
+                        </>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      className="mode-change-btn"
+                      onClick={() => {
+                        setSelectedMode(null);
+                        setFormData({
+                          farmName: '',
+                          ownerName: '',
+                          email: '',
+                          phone: '',
+                          location: '',
+                          acreage: '',
+                          farmBoundary: null,
+                          primaryCrops: '',
+                          burnFrequency: 'seasonal'
+                        });
+                      }}
+                    >
+                      Change Mode
+                    </button>
+                  </div>
+
+                  {/* Farm Information */}
+                  <div className="form-group">
                 <h3>Farm Information</h3>
                 
                 <div className="form-field">
@@ -353,7 +485,7 @@ const HybridOnboarding = () => {
               </div>
 
               {/* Owner Information - Only show for real users */}
-              {!isDemoUser && (
+              {selectedMode === 'real' && (
                 <div className="form-group">
                   <h3>Owner Information</h3>
                   
@@ -433,17 +565,6 @@ const HybridOnboarding = () => {
 
               {/* Action Buttons */}
               <div className="form-actions">
-                {isDemo && (
-                  <button
-                    type="button"
-                    onClick={fillDemoData}
-                    className="btn-secondary"
-                  >
-                    <FaMagic />
-                    Fill Demo Data
-                  </button>
-                )}
-                
                 <button
                   type="submit"
                   disabled={!formComplete || isSubmitting}
@@ -453,10 +574,13 @@ const HybridOnboarding = () => {
                   <FaChevronRight />
                 </button>
               </div>
+                </>
+              )}
             </form>
           </div>
 
-          {/* AI Assistant Section (Optional) */}
+          {/* AI Assistant Section (Optional) - Only show after mode selection */}
+          {selectedMode && (
           <div className={`ai-section ${showAI ? 'active' : ''}`}>
             <button
               className="ai-toggle"
@@ -515,6 +639,7 @@ const HybridOnboarding = () => {
               )}
             </AnimatePresence>
           </div>
+          )}
         </div>
       </div>
       
