@@ -121,7 +121,7 @@ async function cleanupSingleSession(session) {
     // Delete smoke_plume_vectors that belong to burn_requests from this farm
     const smokeVectorsResult = await query(
       `DELETE spv FROM smoke_plume_vectors spv 
-       JOIN burn_requests br ON spv.request_id = br.id 
+       JOIN burn_requests br ON spv.request_id = br.request_id 
        WHERE br.farm_id = ?`,
       [farm_id]
     );
@@ -130,7 +130,7 @@ async function cleanupSingleSession(session) {
     // Delete burn_embeddings linked to burn_requests from this farm  
     const burnEmbeddingsResult = await query(
       `DELETE be FROM burn_embeddings be
-       JOIN burn_requests br ON be.request_id = br.id
+       JOIN burn_requests br ON be.request_id = br.request_id
        WHERE br.farm_id = ?`,
       [farm_id]
     );
@@ -159,21 +159,21 @@ async function cleanupSingleSession(session) {
     // 5. Delete burn requests and related data
     // Delete burn_fields first (foreign key constraint)
     const burnFieldsResult = await query(
-      'DELETE bf FROM burn_fields bf JOIN burn_requests br ON bf.burn_request_id = br.id WHERE br.farm_id = ?',
+      'DELETE bf FROM burn_fields bf JOIN burn_requests br ON bf.burn_request_id = br.request_id WHERE br.farm_id = ?',
       [farm_id]
     );
     totalDeleted += burnFieldsResult.affectedRows || 0;
 
     // Delete burn_smoke_predictions
     const burnSmokePredictionsResult = await query(
-      'DELETE bsp FROM burn_smoke_predictions bsp JOIN burn_requests br ON bsp.request_id = br.id WHERE br.farm_id = ?',
+      'DELETE bsp FROM burn_smoke_predictions bsp JOIN burn_requests br ON bsp.request_id = br.request_id WHERE br.farm_id = ?',
       [farm_id]
     );
     totalDeleted += burnSmokePredictionsResult.affectedRows || 0;
 
     // Delete burn_optimization_results
     const burnOptimizationResult = await query(
-      'DELETE bor FROM burn_optimization_results bor JOIN burn_requests br ON bor.request_id = br.id WHERE br.farm_id = ?',
+      'DELETE bor FROM burn_optimization_results bor JOIN burn_requests br ON bor.request_id = br.request_id WHERE br.farm_id = ?',
       [farm_id]
     );
     totalDeleted += burnOptimizationResult.affectedRows || 0;
