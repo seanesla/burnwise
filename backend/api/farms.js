@@ -617,7 +617,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
         f.farm_id as id,
         f.farm_name as name,
         f.owner_name,
-        COUNT(br.id) as pending_burns
+        COUNT(br.request_id) as pending_burns
       FROM farms f
       LEFT JOIN burn_requests br ON f.farm_id = br.farm_id 
         AND br.status IN ('pending', 'approved')
@@ -944,7 +944,7 @@ router.get('/statistics', asyncHandler(async (req, res) => {
     const burnActivity = await query(`
       SELECT 
         COUNT(DISTINCT f.farm_id) as farms_with_burns,
-        COUNT(br.id) as total_burn_requests,
+        COUNT(br.request_id) as total_burn_requests,
         COUNT(CASE WHEN br.status = 'completed' THEN 1 END) as completed_burns,
         SUM(br.acres) as total_acres_burned,
         AVG(br.priority_score) as avg_priority_score
@@ -976,7 +976,7 @@ router.get('/statistics', asyncHandler(async (req, res) => {
         f.farm_id as id,
         f.farm_name as name,
         f.owner_name,
-        COUNT(br.id) as recent_burns,
+        COUNT(br.request_id) as recent_burns,
         MAX(br.created_at) as last_burn_request,
         SUM(br.acres) as total_acres_requested
       FROM farms f
