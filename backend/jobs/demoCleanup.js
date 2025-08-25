@@ -146,7 +146,7 @@ async function cleanupSingleSession(session) {
     // 4. Delete schedules and schedule_items
     // Delete schedule_items that belong to burn_requests from this farm
     const scheduleItemsResult = await query(
-      'DELETE si FROM schedule_items si JOIN burn_requests br ON si.burn_request_id = br.burn_request_id WHERE br.farm_id = ?',
+      'DELETE si FROM schedule_items si JOIN burn_requests br ON si.burn_request_id = br.request_id WHERE br.farm_id = ?',
       [farm_id]
     );
     totalDeleted += scheduleItemsResult.affectedRows || 0;
