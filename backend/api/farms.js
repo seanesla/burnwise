@@ -335,7 +335,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     if (include_burn_history === 'true') {
       const burnHistory = await query(`
         SELECT 
-          br.id,
+          br.request_id as id,
           br.field_name,
           br.acres,
           br.crop_type,
@@ -348,7 +348,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
             ELSE 'no_prediction'
           END as smoke_analysis
         FROM burn_requests br
-        LEFT JOIN smoke_predictions sp ON br.id = sp.burn_request_id
+        LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id
         WHERE br.farm_id = ?
         ORDER BY br.burn_date DESC
         LIMIT 50
@@ -559,7 +559,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
     await query(`
       UPDATE farms
       SET ${updateFields.join(', ')}
-      WHERE id = ?
+      WHERE farm_id = ?
     `, updateParams);
     
     // Get updated farm data
@@ -652,7 +652,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
         status = 'inactive',
         deactivation_reason = ?,
         updated_at = NOW()
-      WHERE id = ?
+      WHERE farm_id = ?
     `, [reason || 'No reason provided', id]);
     
     logger.info('Farm deactivated', {
@@ -732,7 +732,7 @@ router.get('/:id/burn-requests', asyncHandler(async (req, res) => {
     
     // Main query
     let selectFields = `
-      br.id,
+      br.request_id as id,
       br.field_name,
       br.acres,
       br.crop_type,
@@ -752,7 +752,7 @@ router.get('/:id/burn-requests', asyncHandler(async (req, res) => {
         sp.confidence_score as prediction_confidence,
         sp.created_at as prediction_date
       `;
-      joinClause = 'LEFT JOIN smoke_predictions sp ON br.id = sp.burn_request_id';
+      joinClause = 'LEFT JOIN smoke_predictions sp ON br.request_id = sp.burn_request_id';
     }
     
     const burnRequestsQuery = `
@@ -1080,8 +1080,8 @@ router.get('/:id/neighbors', asyncHandler(async (req, res) => {
           f2.farm_name as neighbor_farm,
           f2.farm_id as neighbor_farm_id
         FROM burn_conflicts bc
-        JOIN burn_requests br1 ON bc.burn_request_1_id = br1.id
-        JOIN burn_requests br2 ON bc.burn_request_2_id = br2.id
+        JOIN burn_requests br1 ON bc.burn_request_1_id = br1.request_id
+        JOIN burn_requests br2 ON bc.burn_request_2_id = br2.request_id
         JOIN farms f2 ON br2.farm_id = f2.farm_id
         WHERE (br1.farm_id = ? AND br2.farm_id IN (${neighborIds.map(() => '?').join(',')}))
            OR (br2.farm_id = ? AND br1.farm_id IN (${neighborIds.map(() => '?').join(',')}))
@@ -1238,7 +1238,7 @@ router.get('/crop-types', asyncHandler(async (req, res) => {
         COUNT(*) as farm_count,
         SUM(f.farm_size_acres) as total_acres,
         AVG(f.farm_size_acres) as avg_farm_size,
-        COUNT(DISTINCT br.id) as burn_requests,
+        COUNT(DISTINCT br.request_id) as burn_requests,
         AVG(br.priority_score) as avg_burn_priority
       FROM farms f
       CROSS JOIN JSON_TABLE(f.primary_crops, '$[*]' COLUMNS (crop VARCHAR(50) PATH '$')) as crops
