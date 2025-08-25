@@ -98,25 +98,10 @@
   margin-left: 4px;
 }
 
-/* Map Container */
-.map-container {
-  position: relative;
-  width: 100%;
-  margin-bottom: 20px;
-  overflow: hidden;
-  max-height: 550px; /* Contain the map height including status */
-  box-sizing: border-box;
-}
+/* REMOVED MAP-CONTAINER STYLES - Let Mapbox handle everything */
 
-/* Override FarmBoundaryDrawer width to prevent overflow */
-.map-container .farm-boundary-drawer {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.map-container .boundary-status {
+/* Keep only essential status styles */
+.boundary-status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -129,7 +114,7 @@
   margin-bottom: 12px;
 }
 
-.map-container .field-hint {
+.field-hint {
   color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
   font-style: italic;

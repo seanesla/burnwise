@@ -22,10 +22,7 @@
   background: transparent; /* Remove background to show map */
 }
 
-/* REMOVED ALL MAPBOX STYLES - Let Mapbox handle sizing naturally */
-/* .boundary-map .mapboxgl-map { } */
-/* .boundary-map .mapboxgl-canvas { } */
-/* .boundary-map .mapboxgl-canvas-container { } */
+/* Let Mapbox handle all sizing naturally - NO forced dimensions */
 
 /* Drawing Tools Panel */
 .drawing-tools {
