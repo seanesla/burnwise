@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'r
 import Sidebar from './components/Sidebar';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
-import ProtectedRoute from './components/ProtectedRoute';
+// ProtectedRoute no longer needed - everything is demo
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MapProvider } from './contexts/MapContext';
 import { TutorialProvider } from './contexts/TutorialContext';
@@ -11,8 +11,6 @@ import settingsManager from './utils/settingsManager';
 import './styles/App.css';
 
 // Lazy load route components
-const Landing = lazy(() => import('./components/Landing'));
-const Login = lazy(() => import('./components/Login'));
 const HybridOnboarding = lazy(() => import('./components/HybridOnboarding'));
 const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -23,7 +21,7 @@ const LOG_PREFIX = '[BURNWISE]:';
 
 function AppContent() {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading, needsOnboarding } = useAuth();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [activePanel, setActivePanel] = useState('spatial');
   
@@ -44,15 +42,13 @@ function AppContent() {
     // You can add more logic here to show different panels in the spatial interface
   };
   
-  // Check if we're on auth pages
-  const isAuthPage = ['/', '/login', '/signup', '/onboarding'].includes(location.pathname);
-  const isDemoSpatialPage = location.pathname === '/demo/spatial';
-  // Show sidebar only when authenticated AND not on auth pages
-  // OR when on demo spatial page (since demo spatial needs sidebar immediately)
-  const shouldShowSidebar = (isAuthenticated && !isAuthPage) || isDemoSpatialPage;
+  // Check if we're on onboarding page
+  const isOnboardingPage = location.pathname === '/onboarding';
+  // Show sidebar when authenticated and not on onboarding
+  const shouldShowSidebar = isAuthenticated && !isOnboardingPage;
   
   return (
-    <div className={`App ${isAuthPage ? 'auth-page' : ''}`}>
+    <div className={`App ${isOnboardingPage ? 'auth-page' : ''}`}>
       {/* Navigation removed - no longer needed */}
       
       {/* Sidebar for authenticated users (excluding auth and demo init pages) */}
@@ -62,22 +58,22 @@ function AppContent() {
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
             <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Landing isInitialLoad={location.pathname === '/' && isInitialLoad} />} />
-              <Route path="/login" element={<Login />} />
+              {/* Root redirects based on onboarding status */}
+              <Route path="/" element={
+                loading ? (
+                  <div className="flex items-center justify-center min-h-screen">
+                    <LoadingSpinner size="large" />
+                  </div>
+                ) : (
+                  <Navigate to={needsOnboarding ? "/onboarding" : "/spatial"} replace />
+                )
+              } />
               
-              {/* Onboarding Route - Public Access for New Users and Demo Mode */}
+              {/* Onboarding Route */}
               <Route path="/onboarding" element={<HybridOnboarding />} />
               
-              {/* Demo Spatial Route - After onboarding */}
-              <Route path="/demo/spatial" element={<SpatialInterface />} />
-              
-              {/* Main Spatial Interface - Replaces all dashboard/map/schedule routes */}
-              <Route path="/spatial" element={
-                <ProtectedRoute>
-                  <SpatialInterface />
-                </ProtectedRoute>
-              } />
+              {/* Main Spatial Interface */}
+              <Route path="/spatial" element={<SpatialInterface />} />
               
               {/* Redirect old routes to spatial interface */}
               <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
@@ -88,15 +84,11 @@ function AppContent() {
               <Route path="/agent-chat" element={<Navigate to="/spatial" replace />} />
               <Route path="/analytics" element={<Navigate to="/spatial" replace />} />
               
-              {/* Settings still accessible separately */}
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
+              {/* Settings still accessible */}
+              <Route path="/settings" element={<Settings />} />
               
-              {/* Catch all - redirect to login */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              {/* Catch all - redirect to root */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>

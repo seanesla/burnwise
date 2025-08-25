@@ -1,22 +1,56 @@
 /**
- * Demo Mode API Endpoints
- * Real TiDB integration with demo data isolation
- * Uses actual GPT-5 agents with cost tracking
+ * Demo-Only Session API Endpoints
+ * All users are demo users with auto-created sessions
+ * Temporary data that expires after 24 hours
  */
 
 const express = require('express');
 const router = express.Router();
 const db = require('../db/connection');
-const { demoIsolation, validateDemoSession, trackDemoCost } = require('../middleware/demoIsolation');
 const { v4: uuidv4 } = require('uuid');
 
-// Apply demo middleware to all routes
-router.use(demoIsolation);
-router.use(validateDemoSession);
+// No authentication needed - everything is demo
 
 /**
- * Initialize demo session with real TiDB data
- * Creates actual farm and optional sample data in database
+ * Auto-create demo session
+ * Called automatically when app loads
+ */
+router.post('/session', async (req, res) => {
+  try {
+    const sessionId = uuidv4();
+    const mode = 'blank'; // Always start with blank mode
+    
+    // Create demo farm in TiDB
+    const farmResult = await db.query(
+      'INSERT INTO farms (farm_name, owner_name, contact_email, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      ['Demo Farm', 'Demo User', `demo_${sessionId}@burnwise.demo`, 32.7157, -117.1611, 500, true]
+    );
+
+    const farmId = farmResult.insertId;
+    
+    // Create demo session record
+    await db.query(
+      'INSERT INTO demo_sessions (session_id, farm_id, demo_type, expires_at, is_active, created_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR), 1, NOW())',
+      [sessionId, farmId, mode]
+    );
+    
+    console.log(`[DEMO] Created auto demo session ${sessionId} with farm ${farmId}`);
+    
+    return res.json({
+      success: true,
+      sessionId,
+      farmId,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
+    });
+  } catch (error) {
+    console.error('[DEMO] Session creation failed:', error);
+    return res.status(500).json({ error: 'Failed to create demo session' });
+  }
+});
+
+/**
+ * Initialize demo session with optional preloaded data
+ * Legacy endpoint for compatibility
  */
 router.post('/initialize', async (req, res) => {
   const { mode, sessionId } = req.body;

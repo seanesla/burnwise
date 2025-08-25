@@ -1,10 +1,10 @@
 /**
- * Authentication Context
- * Secure cookie-based authentication - NO localStorage (XSS vulnerable)
- * 100% REAL IMPLEMENTATION - NO MOCKS
+ * Demo-Only Session Context
+ * Auto-creates demo sessions - NO real accounts
+ * All users are demo users with temporary data
  */
 
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
@@ -28,355 +28,94 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [onboardingData, setOnboardingData] = useState(null);
-  const [csrfToken, setCsrfToken] = useState(null);
 
-  // Fetch CSRF token on mount
+  // Auto-create demo session on mount
   useEffect(() => {
-    const fetchCSRFToken = async () => {
+    const initializeDemoSession = async () => {
       try {
-        const response = await axios.get('/api/auth/csrf-token');
-        setCsrfToken(response.data.csrfToken);
+        // Check for existing demo session
+        const existingDemoId = sessionStorage.getItem('demo_session_id');
+        const existingDemoData = sessionStorage.getItem('demo_session_data');
         
-        // Set CSRF token as default header
-        axios.defaults.headers.common['X-CSRF-Token'] = response.data.csrfToken;
-      } catch (err) {
-        console.error('Failed to fetch CSRF token:', err);
-      }
-    };
-    
-    fetchCSRFToken();
-  }, []);
-
-  // Initialize auth state (verify cookie-based session or demo mode)
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Check for demo mode first
-        const demoContext = sessionStorage.getItem('burnwise_demo_context');
-        if (demoContext && window.location.pathname.startsWith('/demo')) {
-          const demoData = JSON.parse(demoContext);
-          
-          // Set demo user data
-          const demoUser = {
-            id: `demo_${demoData.farmId}`,
-            email: 'demo@burnwise.local',
-            name: 'Demo User',
-            farmId: demoData.farmId,
-            isDemo: true,
-            demoMode: demoData.mode,
-            expiresAt: demoData.expiresAt
-          };
-          
-          setUser(demoUser);
+        if (existingDemoId && existingDemoData) {
+          // Restore existing demo session
+          const demoData = JSON.parse(existingDemoData);
+          setUser(demoData);
           setIsAuthenticated(true);
           
-          // Check if demo user has completed onboarding
-          const demoOnboardingKey = `burnwise_demo_onboarding_${demoData.farmId}`;
-          const hasDemoOnboarded = localStorage.getItem(demoOnboardingKey) === 'true';
-          setOnboardingComplete(hasDemoOnboarded);
-          
-          setLoading(false);
-          return;
-        }
-        
-        // Try to verify existing session (cookie will be sent automatically)
-        const response = await axios.get('/api/auth/verify');
-        
-        if (response.data.valid && response.data.user) {
-          let userData = response.data.user;
-          
-          // Override user data for demo mode
-          if (sessionStorage.getItem('isDemo') === 'true') {
-            userData = {
-              ...userData,
-              name: 'Demo User',
-              email: 'demo@burnwise.com',
-              isDemo: true
-            };
-          }
-          
-          setUser(userData);
-          setIsAuthenticated(true);
-          
-          // Restore non-sensitive data from localStorage
-          const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
-          if (storedUser) {
-            const parsedUser = JSON.parse(storedUser);
-            setUser({ ...userData, ...parsedUser });
-          }
-          
-          // Check onboarding status from backend (JWT payload)
-          const hasOnboarded = userData.onboardingCompleted === true;
+          // Check onboarding status
+          const onboardingKey = `demo_onboarding_${existingDemoId}`;
+          const hasOnboarded = localStorage.getItem(onboardingKey) === 'true';
           setOnboardingComplete(hasOnboarded);
           
-          // Restore onboarding data
-          const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${userData.farmId}`;
-          const savedOnboardingData = localStorage.getItem(userOnboardingDataKey);
-          if (savedOnboardingData) {
-            setOnboardingData(JSON.parse(savedOnboardingData));
+          if (hasOnboarded) {
+            const onboardingDataKey = `demo_onboarding_data_${existingDemoId}`;
+            const savedData = localStorage.getItem(onboardingDataKey);
+            if (savedData) {
+              setOnboardingData(JSON.parse(savedData));
+            }
           }
         } else {
-          clearAuth();
+          // Create new demo session
+          const response = await axios.post('/api/demo/session');
+          
+          if (response.data.success) {
+            const demoUser = {
+              id: response.data.sessionId,
+              farmId: response.data.farmId,
+              email: 'demo@burnwise.local',
+              name: 'Demo User',
+              isDemo: true,
+              expiresAt: response.data.expiresAt
+            };
+            
+            // Store demo session
+            sessionStorage.setItem('demo_session_id', response.data.sessionId);
+            sessionStorage.setItem('demo_session_data', JSON.stringify(demoUser));
+            
+            setUser(demoUser);
+            setIsAuthenticated(true);
+            setOnboardingComplete(false); // New demos need onboarding
+          }
         }
       } catch (err) {
-        // No valid session
-        console.log('No active session');
-        clearAuth();
+        console.error('Failed to initialize demo session:', err);
+        setError('Failed to start demo session. Please refresh the page.');
       } finally {
         setLoading(false);
       }
     };
 
-    initializeAuth();
+    initializeDemoSession();
   }, []);
 
-  // Clear all auth data
-  const clearAuth = useCallback(() => {
-    setUser(null);
-    setIsAuthenticated(false);
-    setOnboardingComplete(false);
-    setOnboardingData(null);
+  // Reset demo session
+  const resetDemoSession = async () => {
+    // Clear current session
+    sessionStorage.removeItem('demo_session_id');
+    sessionStorage.removeItem('demo_session_data');
     
-    // Clear demo flag
-    sessionStorage.removeItem('isDemo');
+    // Clear onboarding data
+    const currentDemoId = user?.id;
+    if (currentDemoId) {
+      localStorage.removeItem(`demo_onboarding_${currentDemoId}`);
+      localStorage.removeItem(`demo_onboarding_data_${currentDemoId}`);
+    }
     
-    // Clear non-sensitive localStorage (keep CSRF token)
-    Object.values(STORAGE_KEYS).forEach(key => {
-      localStorage.removeItem(key);
-    });
-  }, []);
-
-  // Login function
-  const login = async (email, password) => {
-    try {
-      setError(null);
-      
-      const response = await axios.post('/api/auth/login', {
-        email,
-        password
-      });
-      
-      if (response.data.success) {
-        let userData = response.data.user;
-        
-        // Override user data for demo mode
-        if (sessionStorage.getItem('isDemo') === 'true') {
-          userData = {
-            ...userData,
-            name: 'Demo User',
-            email: 'demo@burnwise.com',
-            isDemo: true
-          };
-        }
-        
-        // Cookies are set automatically by backend (httpOnly)
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        // Store non-sensitive user data
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
-        
-        // Check onboarding status from backend response
-        const hasOnboarded = userData.onboardingCompleted === true;
-        setOnboardingComplete(hasOnboarded);
-        
-        // Load saved onboarding data if exists
-        if (hasOnboarded) {
-          const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${userData.farmId}`;
-          const savedOnboardingData = localStorage.getItem(userOnboardingDataKey);
-          if (savedOnboardingData) {
-            setOnboardingData(JSON.parse(savedOnboardingData));
-          }
-        }
-        
-        return {
-          success: true,
-          needsOnboarding: !hasOnboarded
-        };
-      }
-      
-      return {
-        success: false,
-        error: response.data.message || 'Login failed'
-      };
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Login failed';
-      setError(errorMessage);
-      
-      // Handle rate limiting
-      if (err.response?.status === 429) {
-        return {
-          success: false,
-          error: 'Too many login attempts. Please try again later.',
-          rateLimited: true
-        };
-      }
-      
-      return {
-        success: false,
-        error: errorMessage
-      };
-    }
-  };
-
-  // Demo login - bypasses authentication entirely
-  const loginDemo = async () => {
-    try {
-      setError(null);
-      
-      const response = await axios.post('/api/auth/demo');
-      
-      if (response.data.success) {
-        const userData = response.data.user;
-        
-        // Set demo user data
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        // Mark as demo session
-        sessionStorage.setItem('isDemo', 'true');
-        
-        // Store token if provided
-        if (response.data.token) {
-          localStorage.setItem('authToken', response.data.token);
-        }
-        
-        // Check if demo user has completed onboarding
-        const demoOnboardingKey = `burnwise_demo_onboarding_${userData.farmId}`;
-        const hasDemoOnboarded = localStorage.getItem(demoOnboardingKey) === 'true';
-        setOnboardingComplete(hasDemoOnboarded);
-        
-        return { success: true };
-      }
-      
-      return {
-        success: false,
-        error: response.data.message || 'Demo session failed'
-      };
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Demo session failed';
-      setError(errorMessage);
-      return {
-        success: false,
-        error: errorMessage
-      };
-    }
-  };
-
-  // Signup function
-  const signup = async (formData) => {
-    try {
-      setError(null);
-      
-      const response = await axios.post('/api/auth/register', formData);
-      
-      if (response.data.success) {
-        const userData = response.data.user;
-        
-        // Cookies are set automatically by backend
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        // Store non-sensitive user data
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
-        
-        // New users need onboarding
-        setOnboardingComplete(false);
-        
-        return {
-          success: true,
-          needsOnboarding: true
-        };
-      }
-      
-      return {
-        success: false,
-        error: response.data.message || 'Registration failed'
-      };
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Registration failed';
-      setError(errorMessage);
-      
-      // Handle rate limiting
-      if (err.response?.status === 429) {
-        return {
-          success: false,
-          error: 'Too many registration attempts. Please try again later.',
-          rateLimited: true
-        };
-      }
-      
-      return {
-        success: false,
-        error: errorMessage
-      };
-    }
-  };
-
-  // Logout function
-  const logout = async () => {
-    try {
-      await axios.post('/api/auth/logout');
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      // Preserve demo session data before clearing
-      const isDemoSession = sessionStorage.getItem('isDemo') === 'true';
-      const demoContext = sessionStorage.getItem('burnwise_demo_context');
-      
-      // Clear client state
-      clearAuth();
-      
-      // Restore demo markers if this was a demo session
-      // This allows users to log out and log back in to the same demo
-      if (isDemoSession) {
-        sessionStorage.setItem('isDemo', 'true');
-        if (demoContext) {
-          sessionStorage.setItem('burnwise_demo_context', demoContext);
-        }
-      }
-    }
-  };
-
-  // End demo session function - clears demo data and returns to login
-  const endDemoSession = async () => {
-    try {
-      // If it's a demo session, call special endpoint to clean up demo data
-      if (sessionStorage.getItem('isDemo') === 'true') {
-        await axios.post('/api/auth/demo/end');
-      }
-    } catch (err) {
-      console.error('Error ending demo session:', err);
-    } finally {
-      // Clear all auth and demo data
-      clearAuth();
-      sessionStorage.removeItem('isDemo');
-      sessionStorage.removeItem('burnwise_demo_context');
-      localStorage.removeItem('authToken');
-      
-      // Don't redirect here - let the calling component handle navigation
-      // This prevents page refresh and allows for proper cleanup
-    }
+    // Reload page to get new demo session
+    window.location.href = '/';
   };
 
   // Complete onboarding
   const completeOnboarding = (data) => {
     if (!user) return;
     
-    // Handle demo sessions differently
-    if (user.isDemo || sessionStorage.getItem('isDemo') === 'true') {
-      const demoOnboardingKey = `burnwise_demo_onboarding_${user.farmId}`;
-      const demoOnboardingDataKey = `burnwise_demo_onboarding_data_${user.farmId}`;
-      
-      localStorage.setItem(demoOnboardingKey, 'true');
-      localStorage.setItem(demoOnboardingDataKey, JSON.stringify(data));
-    } else {
-      const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${user.farmId}`;
-      const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${user.farmId}`;
-      
-      localStorage.setItem(userOnboardingKey, 'true');
-      localStorage.setItem(userOnboardingDataKey, JSON.stringify(data));
-    }
+    const demoId = user.id;
+    const onboardingKey = `demo_onboarding_${demoId}`;
+    const onboardingDataKey = `demo_onboarding_data_${demoId}`;
+    
+    localStorage.setItem(onboardingKey, 'true');
+    localStorage.setItem(onboardingDataKey, JSON.stringify(data));
     
     setOnboardingComplete(true);
     setOnboardingData(data);
@@ -386,20 +125,12 @@ export const AuthProvider = ({ children }) => {
   const resetOnboarding = () => {
     if (!user) return;
     
-    // Handle demo sessions differently
-    if (user.isDemo || sessionStorage.getItem('isDemo') === 'true') {
-      const demoOnboardingKey = `burnwise_demo_onboarding_${user.farmId}`;
-      const demoOnboardingDataKey = `burnwise_demo_onboarding_data_${user.farmId}`;
-      
-      localStorage.removeItem(demoOnboardingKey);
-      localStorage.removeItem(demoOnboardingDataKey);
-    } else {
-      const userOnboardingKey = `${STORAGE_KEYS.ONBOARDING_COMPLETE}_${user.farmId}`;
-      const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${user.farmId}`;
-      
-      localStorage.removeItem(userOnboardingKey);
-      localStorage.removeItem(userOnboardingDataKey);
-    }
+    const demoId = user.id;
+    const onboardingKey = `demo_onboarding_${demoId}`;
+    const onboardingDataKey = `demo_onboarding_data_${demoId}`;
+    
+    localStorage.removeItem(onboardingKey);
+    localStorage.removeItem(onboardingDataKey);
     
     setOnboardingComplete(false);
     setOnboardingData(null);
@@ -409,65 +140,17 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (updates) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
-  };
-
-  // Refresh authentication (for token refresh)
-  const refreshAuth = async () => {
-    try {
-      const response = await axios.post('/api/auth/refresh');
-      
-      if (response.data.success) {
-        // Cookies are refreshed automatically
-        return true;
-      }
-      
-      return false;
-    } catch (err) {
-      console.error('Token refresh failed:', err);
-      clearAuth();
-      return false;
-    }
+    sessionStorage.setItem('demo_session_data', JSON.stringify(updatedUser));
   };
 
   // Clear error
   const clearError = () => setError(null);
-
-  // Auto-refresh on 401 responses
-  useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
-      response => response,
-      async error => {
-        const originalRequest = error.config;
-        
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-          
-          const refreshed = await refreshAuth();
-          if (refreshed) {
-            return axios(originalRequest);
-          }
-        }
-        
-        return Promise.reject(error);
-      }
-    );
-    
-    return () => {
-      axios.interceptors.response.eject(interceptor);
-    };
-  }, []);
 
   const value = {
     user,
     isAuthenticated,
     loading,
     error,
-    login,
-    loginDemo,
-    signup,
-    logout,
-    endDemoSession,
     clearError,
     onboardingComplete,
     needsOnboarding: isAuthenticated && !onboardingComplete,
@@ -475,9 +158,8 @@ export const AuthProvider = ({ children }) => {
     completeOnboarding,
     resetOnboarding,
     updateUser,
-    refreshAuth,
-    csrfToken,
-    isDemo: sessionStorage.getItem('isDemo') === 'true' || user?.isDemo === true
+    resetDemoSession,
+    isDemo: true // Always demo mode
   };
 
   return (
