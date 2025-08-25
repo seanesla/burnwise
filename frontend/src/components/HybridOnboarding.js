@@ -24,9 +24,9 @@ const HybridOnboarding = () => {
   const [searchParams] = useSearchParams();
   const { completeOnboarding, user } = useAuth();
   
-  // Mode selection state - User chooses demo or real mode in the UI
-  const [selectedMode, setSelectedMode] = useState(null);
-  const [sessionId] = useState(`demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  // Demo mode only - no selection needed
+  const [selectedMode] = useState('demo');
+  const sessionId = user?.id || `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   // Form state - defaults will be set based on mode selection
   const [formData, setFormData] = useState({
@@ -155,11 +155,19 @@ const HybridOnboarding = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Mode selection handler
-  const handleModeSelect = (mode) => {
-    setSelectedMode(mode);
-    setValidationErrors({}); // Clear any errors when mode changes
-  };
+  // Auto-populate demo defaults on mount
+  useEffect(() => {
+    setFormData({
+      farmName: 'Demo Farm',
+      ownerName: 'Demo User',
+      email: 'demo@burnwise.local',
+      location: 'San Diego, CA',
+      acreage: '500',
+      farmBoundary: null,
+      primaryCrops: 'Wheat',
+      burnFrequency: 'seasonal'
+    });
+  }, []);
 
   // Process AI input to extract form data
   const processAIInput = async () => {
@@ -238,8 +246,8 @@ const HybridOnboarding = () => {
     setIsSubmitting(true);
     
     try {
-      // Initialize demo session if demo mode
-      if (selectedMode === 'demo') {
+      // Initialize demo session (always demo mode)
+      {
         const demoResponse = await axios.post('http://localhost:5001/api/demo/initialize', {
           mode: 'blank',
           sessionId: sessionId
@@ -280,38 +288,6 @@ const HybridOnboarding = () => {
             });
           }, 1000);
         }
-      } else {
-        // Real users create actual account
-        const onboardingData = {
-          ...formData,
-          isDemo: false,
-          completedAt: new Date().toISOString(),
-          method: showAI ? 'hybrid_ai' : 'form_only'
-        };
-        
-        // Transform frontend field names to match backend schema
-        const backendData = {
-          name: formData.farmName,
-          owner_name: formData.ownerName,
-          email: formData.email,
-          address: formData.location || 'Map-defined boundary',
-          location: {
-            // Extract center point from boundary or use default
-            lat: formData.farmBoundary?.features?.[0]?.geometry?.coordinates?.[0]?.[0]?.[1] || 39.45,
-            lon: formData.farmBoundary?.features?.[0]?.geometry?.coordinates?.[0]?.[0]?.[0] || -98.45
-          },
-          farm_size_acres: parseFloat(formData.acreage) || 0,
-          primary_crops: formData.primaryCrops ? [formData.primaryCrops] : ['General'],
-          certification_number: '',
-          // Store boundary as JSON string in certification_number field (temporary)
-          boundary_geojson: JSON.stringify(formData.farmBoundary)
-        };
-        
-        const response = await axios.post('/api/farms', backendData);
-        if (response.data.success) {
-          completeOnboarding(onboardingData);
-          navigate('/spatial');
-        }
       }
     } catch (error) {
       console.error('Onboarding submission failed:', error);
@@ -334,98 +310,14 @@ const HybridOnboarding = () => {
           {/* Form Section */}
           <div className="form-section">
             <form onSubmit={handleSubmit}>
-              {/* Mode Selection - First Step */}
-              {!selectedMode && (
-                <div className="mode-selection">
-                  <h3>Choose Your Account Type</h3>
-                  <p className="mode-description">
-                    Select how you'd like to experience Burnwise
-                  </p>
-                  
-                  <div className="mode-cards">
-                    <motion.div
-                      className="mode-card"
-                      onClick={() => handleModeSelect('demo')}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="mode-icon demo-icon">
-                        <FaRocket />
-                      </div>
-                      <h4>Demo Mode</h4>
-                      <p>Try Burnwise instantly</p>
-                      <ul className="mode-features">
-                        <li>No registration required</li>
-                        <li>24-hour session</li>
-                        <li>Full AI features</li>
-                        <li>Real TiDB database</li>
-                      </ul>
-                      <div className="mode-badge">Quick Start</div>
-                    </motion.div>
-
-                    <motion.div
-                      className="mode-card"
-                      onClick={() => handleModeSelect('real')}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="mode-icon real-icon">
-                        <FaUser />
-                      </div>
-                      <h4>Real Account</h4>
-                      <p>Create your farm profile</p>
-                      <ul className="mode-features">
-                        <li>Permanent account</li>
-                        <li>Save burn history</li>
-                        <li>Multi-farm coordination</li>
-                        <li>Full production access</li>
-                      </ul>
-                      <div className="mode-badge">Full Access</div>
-                    </motion.div>
-                  </div>
-
-                  {validationErrors.mode && (
-                    <span className="error-message center">{validationErrors.mode}</span>
-                  )}
-                </div>
-              )}
-
-              {/* Show form fields only after mode selection */}
-              {selectedMode && (
+              {/* Demo mode form - no selection needed */}
+              {
                 <>
-                  {/* Mode indicator */}
+                  {/* Demo mode indicator */}
                   <div className="selected-mode-indicator">
-                    <span className={`mode-tag ${selectedMode}`}>
-                      {selectedMode === 'demo' ? (
-                        <>
-                          <FaRocket /> Demo Mode
-                        </>
-                      ) : (
-                        <>
-                          <FaUser /> Real Account
-                        </>
-                      )}
+                    <span className="mode-tag demo">
+                      <FaRocket /> Demo Mode
                     </span>
-                    <button
-                      type="button"
-                      className="mode-change-btn"
-                      onClick={() => {
-                        setSelectedMode(null);
-                        setFormData({
-                          farmName: '',
-                          ownerName: '',
-                          email: '',
-                          phone: '',
-                          location: '',
-                          acreage: '',
-                          farmBoundary: null,
-                          primaryCrops: '',
-                          burnFrequency: 'seasonal'
-                        });
-                      }}
-                    >
-                      Change Mode
-                    </button>
                   </div>
 
                   {/* Farm Information */}
@@ -568,7 +460,7 @@ const HybridOnboarding = () => {
                 </button>
               </div>
                 </>
-              )}
+              }
             </form>
           </div>
 
