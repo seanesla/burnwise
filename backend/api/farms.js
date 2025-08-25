@@ -10,7 +10,7 @@ const router = express.Router();
 const farmCreationSchema = Joi.object({
   name: Joi.string().min(1).max(200).required(),
   owner_name: Joi.string().min(1).max(100).required(),
-  phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,15}$/).required(),
+  phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,15}$/).optional().allow(''),
   email: Joi.string().email().optional(),
   address: Joi.string().min(1).max(500).required(),
   location: Joi.object({

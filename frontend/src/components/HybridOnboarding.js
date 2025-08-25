@@ -297,7 +297,7 @@ const HybridOnboarding = () => {
           method: showAI ? 'hybrid_ai' : 'form_only'
         };
         
-        const response = await axios.post('/api/farms/create', formData);
+        const response = await axios.post('/api/farms', formData);
         if (response.data.success) {
           completeOnboarding(onboardingData);
           navigate('/spatial');
@@ -525,7 +525,7 @@ const HybridOnboarding = () => {
 
                   <div className="form-field">
                     <label htmlFor="phone">
-                      Phone Number
+                      Phone Number (Optional)
                     </label>
                     <input
                       id="phone"
