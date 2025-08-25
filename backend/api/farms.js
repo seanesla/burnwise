@@ -283,9 +283,17 @@ router.get('/:id', asyncHandler(async (req, res) => {
     // Get farm details
     const farmDetails = await query(`
       SELECT 
-        f.*,
+        f.farm_id as id,
+        f.farm_name as name,
+        f.owner_name,
+        f.contact_email as email,
+        f.address,
         f.longitude as lon,
-        f.latitude as lat
+        f.latitude as lat,
+        f.total_acreage as farm_size_acres,
+        f.created_at,
+        f.updated_at,
+        f.is_demo
       FROM farms f
       WHERE f.farm_id = ?
     `, [id]);
@@ -551,9 +559,17 @@ router.put('/:id', asyncHandler(async (req, res) => {
     // Get updated farm data
     const updatedFarm = await query(`
       SELECT 
-        f.*,
+        f.farm_id as id,
+        f.farm_name as name,
+        f.owner_name,
+        f.contact_email as email,
+        f.address,
         f.longitude as lon,
-        f.latitude as lat
+        f.latitude as lat,
+        f.total_acreage as farm_size_acres,
+        f.created_at,
+        f.updated_at,
+        f.is_demo
       FROM farms f
       WHERE f.farm_id = ?
     `, [id]);

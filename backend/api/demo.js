@@ -20,7 +20,7 @@ router.post('/session', async (req, res) => {
     const sessionId = uuidv4();
     const mode = 'blank'; // Always start with blank mode
     
-    // Create demo farm in TiDB
+    // Create demo farm in TiDB - removed contact_phone column
     const farmResult = await db.query(
       'INSERT INTO farms (farm_name, owner_name, contact_email, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
       ['Demo Farm', 'Demo User', `demo_${sessionId}@burnwise.demo`, 32.7157, -117.1611, 500, true]
@@ -45,6 +45,61 @@ router.post('/session', async (req, res) => {
   } catch (error) {
     console.error('[DEMO] Session creation failed:', error);
     return res.status(500).json({ error: 'Failed to create demo session' });
+  }
+});
+
+/**
+ * Update demo farm data
+ * Called after onboarding to save user-entered data
+ */
+router.post('/update-farm', async (req, res) => {
+  try {
+    const { sessionId, farmData } = req.body;
+    
+    // Get farm ID from session
+    const sessions = await db.query(
+      'SELECT farm_id FROM demo_sessions WHERE session_id = ? AND is_active = 1',
+      [sessionId]
+    );
+    
+    if (sessions.length === 0) {
+      return res.status(404).json({ error: 'Demo session not found' });
+    }
+    
+    const farmId = sessions[0].farm_id;
+    
+    // Update farm with user data
+    await db.query(`
+      UPDATE farms SET
+        farm_name = ?,
+        owner_name = ?,
+        contact_email = ?,
+        address = ?,
+        latitude = ?,
+        longitude = ?,
+        total_acreage = ?,
+        updated_at = NOW()
+      WHERE farm_id = ?
+    `, [
+      farmData.name || 'Demo Farm',
+      farmData.owner_name || 'Demo User',
+      farmData.email || `demo_${sessionId}@burnwise.demo`,
+      farmData.address || 'Demo Location',
+      farmData.location?.lat || 32.7157,
+      farmData.location?.lon || -117.1611,
+      farmData.farm_size_acres || 500,
+      farmId
+    ]);
+    
+    console.log(`[DEMO] Updated farm ${farmId} with onboarding data`);
+    
+    return res.json({
+      success: true,
+      farmId
+    });
+  } catch (error) {
+    console.error('[DEMO] Farm update failed:', error);
+    return res.status(500).json({ error: 'Failed to update demo farm' });
   }
 });
 
