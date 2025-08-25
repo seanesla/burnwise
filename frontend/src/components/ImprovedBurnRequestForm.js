@@ -5,7 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
 import '../styles/BurnRequestRedesign.css';
-import '../styles/mapbox-overrides.css';
+// import '../styles/mapbox-overrides.css'; // DISABLED - Let Mapbox handle sizing
 import '../styles/input-stabilization.css';
 
 const ImprovedBurnRequestForm = () => {

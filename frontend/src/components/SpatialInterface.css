@@ -26,16 +26,9 @@
   overflow: hidden;
 }
 
-/* Force Mapbox canvas to fill container - scoped to SpatialInterface only */
-.spatial-interface .mapboxgl-canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.spatial-interface .mapboxgl-map {
-  width: 100% !important;
-  height: 100% !important;
-}
+/* REMOVED MAPBOX STYLES - Let Mapbox handle sizing naturally */
+/* .spatial-interface .mapboxgl-canvas { width: 100% !important; height: 100% !important; } */
+/* .spatial-interface .mapboxgl-map { width: 100% !important; height: 100% !important; } */
 
 /* Coordinates Display */
 .coordinates-display {
