@@ -161,7 +161,7 @@ async function cleanupSingleSession(session) {
     // 5. Delete burn requests and related data
     // Delete burn_fields first (foreign key constraint)
     const burnFieldsResult = await query(
-      'DELETE bf FROM burn_fields bf JOIN burn_requests br ON bf.request_id = br.request_id WHERE br.farm_id = ?',
+      'DELETE FROM burn_fields WHERE farm_id = ?',
       [farm_id]
     );
     totalDeleted += burnFieldsResult.affectedRows || 0;
