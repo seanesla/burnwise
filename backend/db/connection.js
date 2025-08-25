@@ -127,12 +127,25 @@ class DatabaseConnection {
     }
     
     // Execute query
+    const startTime = Date.now();
     const result = await this.circuitBreaker.execute(async () => {
       return this.executeWithRetry(async () => {
         const [rows] = await this.pool.execute(sql, params);
         return rows;
       });
     });
+    const duration = Date.now() - startTime;
+    
+    // Emit query execution to frontend if io available
+    if (global.io) {
+      const queryType = sql.trim().split(' ')[0].toUpperCase();
+      global.io.emit('backend.query', {
+        type: queryType,
+        duration,
+        cached: false,
+        timestamp: new Date().toISOString()
+      });
+    }
     
     // Cache the result if applicable
     if (shouldCache && result) {

@@ -69,6 +69,9 @@ const io = socketIo(server, {
   }
 });
 
+// Make io globally accessible for logger and queryCache
+global.io = io;
+
 const PORT = process.env.PORT || 5001;
 
 console.log('Express app created');

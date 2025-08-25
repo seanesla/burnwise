@@ -146,6 +146,18 @@ class QueryCache {
       size: this.cache.size,
       maxSize: this.maxSize
     });
+    
+    // Emit to frontend if io available
+    if (global.io) {
+      global.io.emit('backend.cache', {
+        hits: this.hits,
+        misses: this.misses,
+        hitRate: `${hitRate}%`,
+        size: this.cache.size,
+        maxSize: this.maxSize,
+        timestamp: new Date().toISOString()
+      });
+    }
   }
 
   /**

@@ -114,6 +114,16 @@ logger.performance = (operation, duration, meta = {}) => {
     performance: true,
     ...meta
   });
+  
+  // Emit to frontend if io available
+  if (global.io) {
+    global.io.emit('backend.performance', {
+      operation,
+      duration,
+      timestamp: new Date().toISOString(),
+      ...meta
+    });
+  }
 };
 
 logger.security = (event, details = {}) => {
