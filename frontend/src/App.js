@@ -11,6 +11,7 @@ import settingsManager from './utils/settingsManager';
 import './styles/App.css';
 
 // Lazy load route components
+const Landing = lazy(() => import('./components/Landing'));
 const HybridOnboarding = lazy(() => import('./components/HybridOnboarding'));
 const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
@@ -58,16 +59,21 @@ function AppContent() {
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
             <Routes>
-              {/* Root redirects based on onboarding status */}
+              {/* Root route shows Landing if not authenticated, else redirects based on onboarding */}
               <Route path="/" element={
                 loading ? (
                   <div className="flex items-center justify-center min-h-screen">
                     <LoadingSpinner size="large" />
                   </div>
+                ) : !isAuthenticated ? (
+                  <Landing />
                 ) : (
                   <Navigate to={needsOnboarding ? "/onboarding" : "/spatial"} replace />
                 )
               } />
+              
+              {/* Landing page (for direct access) */}
+              <Route path="/landing" element={<Landing />} />
               
               {/* Onboarding Route */}
               <Route path="/onboarding" element={<HybridOnboarding />} />

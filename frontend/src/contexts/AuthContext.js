@@ -29,9 +29,9 @@ export const AuthProvider = ({ children }) => {
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [onboardingData, setOnboardingData] = useState(null);
 
-  // Auto-create demo session on mount
+  // Check for existing session on mount (but don't create new one)
   useEffect(() => {
-    const initializeDemoSession = async () => {
+    const checkExistingSession = async () => {
       try {
         // Check for existing demo session
         const existingDemoId = sessionStorage.getItem('demo_session_id');
@@ -55,39 +55,52 @@ export const AuthProvider = ({ children }) => {
               setOnboardingData(JSON.parse(savedData));
             }
           }
-        } else {
-          // Create new demo session
-          const response = await axios.post('/api/demo/session');
-          
-          if (response.data.success) {
-            const demoUser = {
-              id: response.data.sessionId,
-              farmId: response.data.farmId,
-              email: 'demo@burnwise.local',
-              name: 'Demo User',
-              isDemo: true,
-              expiresAt: response.data.expiresAt
-            };
-            
-            // Store demo session
-            sessionStorage.setItem('demo_session_id', response.data.sessionId);
-            sessionStorage.setItem('demo_session_data', JSON.stringify(demoUser));
-            
-            setUser(demoUser);
-            setIsAuthenticated(true);
-            setOnboardingComplete(false); // New demos need onboarding
-          }
         }
+        // Don't create new session automatically - let Landing page do it
       } catch (err) {
-        console.error('Failed to initialize demo session:', err);
-        setError('Failed to start demo session. Please refresh the page.');
+        console.error('Failed to check existing session:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    initializeDemoSession();
+    checkExistingSession();
   }, []);
+
+  // Create demo session (called from Landing page)
+  const createDemoSession = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/api/demo/session');
+      
+      if (response.data.success) {
+        const demoUser = {
+          id: response.data.sessionId,
+          farmId: response.data.farmId,
+          email: 'demo@burnwise.local',
+          name: 'Demo User',
+          isDemo: true,
+          expiresAt: response.data.expiresAt
+        };
+        
+        // Store demo session
+        sessionStorage.setItem('demo_session_id', response.data.sessionId);
+        sessionStorage.setItem('demo_session_data', JSON.stringify(demoUser));
+        
+        setUser(demoUser);
+        setIsAuthenticated(true);
+        setOnboardingComplete(false); // New demos need onboarding
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to create demo session:', err);
+      setError('Failed to start demo session. Please refresh the page.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Reset demo session
   const resetDemoSession = async () => {
@@ -158,6 +171,7 @@ export const AuthProvider = ({ children }) => {
     completeOnboarding,
     resetOnboarding,
     updateUser,
+    createDemoSession,
     resetDemoSession,
     isDemo: true // Always demo mode
   };

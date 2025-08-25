@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import { FaSmog, FaCar, FaHospital, FaBalanceScale } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 import '../styles/Landing.css';
 
 const Landing = ({ isInitialLoad = true }) => {
   const navigate = useNavigate();
+  const { createDemoSession } = useAuth();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [scrollY, setScrollY] = useState(0);
   const [animationPhase, setAnimationPhase] = useState(isInitialLoad ? 'startup' : 'complete');
@@ -401,7 +403,12 @@ const Landing = ({ isInitialLoad = true }) => {
           </p>
           
           <div className="cta-buttons">
-            <button className="cta-primary" onClick={() => navigate('/onboarding')}>
+            <button className="cta-primary" onClick={async () => {
+              const success = await createDemoSession();
+              if (success) {
+                navigate('/onboarding');
+              }
+            }}>
               Get Started
             </button>
           </div>
