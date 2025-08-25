@@ -9,7 +9,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, 
+  FaUser, FaEnvelope, FaMapMarkerAlt, 
   FaTree, FaRobot, FaChevronRight, FaChevronLeft,
   FaMagic, FaCheck, FaTimes, FaMap, FaRocket
 } from 'react-icons/fa';
@@ -33,7 +33,6 @@ const HybridOnboarding = () => {
     farmName: '',
     ownerName: '',
     email: '',
-    phone: '',
     location: '',
     acreage: '',
     farmBoundary: null, // GeoJSON boundary
@@ -152,10 +151,6 @@ const HybridOnboarding = () => {
       errors.location = 'Please draw the farm boundary on the map';
     }
     
-    if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-      errors.phone = 'Invalid phone format';
-    }
-    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -207,9 +202,6 @@ const HybridOnboarding = () => {
     
     const emailMatch = text.match(/([^\s@]+@[^\s@]+\.[^\s@]+)/);
     if (emailMatch) updates.email = emailMatch[1];
-    
-    const phoneMatch = text.match(/(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/);
-    if (phoneMatch) updates.phone = phoneMatch[1];
     
     // Look for location patterns
     const locationPatterns = [
@@ -302,7 +294,6 @@ const HybridOnboarding = () => {
           name: formData.farmName,
           owner_name: formData.ownerName,
           email: formData.email,
-          phone: formData.phone || '',
           address: formData.location || 'Map-defined boundary',
           location: {
             // Extract center point from boundary or use default
@@ -539,23 +530,6 @@ const HybridOnboarding = () => {
                     />
                     {validationErrors.email && (
                       <span className="error-message">{validationErrors.email}</span>
-                    )}
-                  </div>
-
-                  <div className="form-field">
-                    <label htmlFor="phone">
-                      Phone Number (Optional)
-                    </label>
-                    <input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleFieldChange('phone', e.target.value)}
-                      placeholder="(555) 123-4567"
-                      className={validationErrors.phone ? 'error' : ''}
-                    />
-                    {validationErrors.phone && (
-                      <span className="error-message">{validationErrors.phone}</span>
                     )}
                   </div>
                 </div>

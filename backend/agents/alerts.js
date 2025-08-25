@@ -1,7 +1,7 @@
 const logger = require('../middleware/logger');
 const { query } = require('../db/connection');
 const { AgentError, ExternalServiceError, ValidationError } = require('../middleware/errorHandler');
-const twilio = require('twilio');
+const sgMail = require('@sendgrid/mail');
 const nodeCron = require('node-cron');
 
 /**
@@ -21,31 +21,31 @@ class AlertsAgent {
     this.version = '1.0.0';
     this.initialized = false;
     
-    // Twilio configuration
-    this.twilioClient = null;
-    this.twilioConfig = {
-      accountSid: process.env.TWILIO_ACCOUNT_SID,
-      authToken: process.env.TWILIO_AUTH_TOKEN,
-      phoneNumber: process.env.TWILIO_PHONE_NUMBER
+    // SendGrid configuration
+    this.sendGridClient = null;
+    this.sendGridConfig = {
+      apiKey: process.env.TWILIO_SENDGRID_API_KEY || process.env.SENDGRID_API_KEY,
+      fromEmail: process.env.SENDGRID_FROM_EMAIL || 'alerts@burnwise.com',
+      fromName: process.env.SENDGRID_FROM_NAME || 'Burnwise Alerts'
     };
     
     // Alert types and their configurations (matching database enum)
     this.alertTypes = {
       'burn_scheduled': {
         priority: 'medium',
-        channels: ['sms', 'socket'],
+        channels: ['email', 'socket'],
         template: 'Burn scheduled for {farmName} - {fieldName} on {date} at {time}.',
         advance_notice: 60 // minutes
       },
       'burn_starting': {
         priority: 'high',
-        channels: ['sms', 'socket'],
+        channels: ['email', 'socket'],
         template: 'Burn starting at {farmName} - {fieldName}. Est. duration: {duration}h. Monitor smoke conditions.',
         advance_notice: 30 // minutes
       },
       'smoke_warning': {
         priority: 'critical',
-        channels: ['sms', 'socket'],
+        channels: ['email', 'socket'],
         template: 'SMOKE WARNING: High PM2.5 levels detected near {location}. Take precautions if sensitive to air quality.',
         advance_notice: 0
       },
@@ -98,8 +98,8 @@ class AlertsAgent {
       // Initialize GPT-5-mini for intelligent alert generation
       await this.initializeAI();
       
-      // Initialize Twilio client if credentials available
-      await this.initializeTwilioClient();
+      // Initialize SendGrid client if credentials available
+      await this.initializeSendGridClient();
       
       // Load delivery history and statistics
       await this.loadDeliveryHistory();
@@ -140,36 +140,45 @@ class AlertsAgent {
     }
   }
 
-  async initializeTwilioClient() {
+  async initializeSendGridClient() {
     try {
-      if (this.twilioConfig.accountSid && this.twilioConfig.authToken) {
-        this.twilioClient = twilio(this.twilioConfig.accountSid, this.twilioConfig.authToken);
+      if (this.sendGridConfig.apiKey) {
+        this.sendGridClient = sgMail;
+        this.sendGridClient.setApiKey(this.sendGridConfig.apiKey);
         
-        // Test Twilio connection
-        await this.testTwilioConnection();
+        // Test SendGrid connection
+        await this.testSendGridConnection();
         
-        logger.agent(this.agentName, 'info', 'Twilio client initialized successfully');
+        logger.agent(this.agentName, 'info', 'SendGrid client initialized successfully');
       } else {
-        logger.agent(this.agentName, 'warn', 'Twilio credentials not configured - SMS disabled');
+        logger.agent(this.agentName, 'warn', 'SendGrid API key not configured - Email disabled');
       }
     } catch (error) {
-      logger.agent(this.agentName, 'error', 'Twilio initialization failed', { error: error.message });
-      throw new ExternalServiceError('Twilio', `Initialization failed: ${error.message}`);
+      logger.agent(this.agentName, 'error', 'SendGrid initialization failed', { error: error.message });
+      throw new ExternalServiceError('SendGrid', `Initialization failed: ${error.message}`);
     }
   }
 
-  async testTwilioConnection() {
-    if (!this.twilioClient) return;
+  async testSendGridConnection() {
+    if (!this.sendGridClient) return;
     
     try {
-      // Verify account details
-      const account = await this.twilioClient.api.accounts(this.twilioConfig.accountSid).fetch();
-      logger.agent(this.agentName, 'debug', 'Twilio account verified', {
-        accountStatus: account.status,
-        accountSid: this.twilioConfig.accountSid
+      // Verify SendGrid configuration by preparing a test message
+      const testMsg = {
+        to: this.sendGridConfig.fromEmail,
+        from: {
+          email: this.sendGridConfig.fromEmail,
+          name: this.sendGridConfig.fromName
+        },
+        subject: 'Burnwise Email System Test',
+        text: 'This is a test email to verify SendGrid configuration.'
+      };
+      
+      logger.agent(this.agentName, 'debug', 'SendGrid configuration verified', {
+        fromEmail: this.sendGridConfig.fromEmail
       });
     } catch (error) {
-      throw new Error(`Twilio account verification failed: ${error.message}`);
+      throw new Error(`SendGrid verification failed: ${error.message}`);
     }
   }
 
@@ -685,18 +694,18 @@ For all alerts, prioritize:
       summary: {}
     };
     
-    // Send SMS notifications
-    if (alertData.channels.includes('sms') && this.twilioClient) {
-      const smsResults = await this.sendSMSNotifications(
-        alertMessage.formatted.sms,
-        recipients.filter(r => r.phone && r.channels.includes('sms')),
+    // Send Email notifications
+    if (alertData.channels.includes('email') && this.sendGridClient) {
+      const emailResults = await this.sendEmailNotifications(
+        alertMessage.formatted.email || alertMessage.formatted.sms,
+        recipients.filter(r => r.email && r.channels.includes('email')),
         dbAlertId
       );
       
-      deliveryResults.channels.push('sms');
-      deliveryResults.successful.push(...smsResults.successful);
-      deliveryResults.failed.push(...smsResults.failed);
-      deliveryResults.summary.sms = smsResults.summary;
+      deliveryResults.channels.push('email');
+      deliveryResults.successful.push(...emailResults.successful);
+      deliveryResults.failed.push(...emailResults.failed);
+      deliveryResults.summary.email = emailResults.summary;
     }
     
     // Send Socket.io notifications
@@ -729,58 +738,65 @@ For all alerts, prioritize:
     return deliveryResults;
   }
 
-  async sendSMSNotifications(message, recipients, alertId) {
+  async sendEmailNotifications(message, recipients, alertId) {
     const results = {
       successful: [],
       failed: [],
       summary: { sent: 0, failed: 0 }
     };
     
-    if (!this.twilioClient) {
-      logger.agent(this.agentName, 'warn', 'SMS sending skipped - Twilio not configured');
+    if (!this.sendGridClient) {
+      logger.agent(this.agentName, 'warn', 'Email sending skipped - SendGrid not configured');
       return results;
     }
     
     for (const recipient of recipients) {
       try {
-        if (!recipient.phone) continue;
+        if (!recipient.email) continue;
         
-        const smsResult = await this.twilioClient.messages.create({
-          body: message,
-          from: this.twilioConfig.phoneNumber,
-          to: recipient.phone
-        });
+        const emailMsg = {
+          to: recipient.email,
+          from: {
+            email: this.sendGridConfig.fromEmail,
+            name: this.sendGridConfig.fromName
+          },
+          subject: 'Burnwise Alert',
+          text: message,
+          html: `<p>${message.replace(/\n/g, '<br>')}</p>`
+        };
+        
+        const [emailResult] = await this.sendGridClient.send(emailMsg);
         
         results.successful.push({
           recipient: recipient.name,
-          phone: recipient.phone,
-          messageSid: smsResult.sid,
-          status: smsResult.status
+          email: recipient.email,
+          messageId: emailResult.headers['x-message-id'],
+          status: 'sent'
         });
         
         results.summary.sent++;
         
         // Update alert delivery status
-        await this.updateAlertDeliveryStatus(alertId, 'sms', recipient.phone, 'sent', smsResult.sid);
+        await this.updateAlertDeliveryStatus(alertId, 'email', recipient.email, 'sent', emailResult.headers['x-message-id']);
         
-        logger.agent(this.agentName, 'debug', 'SMS sent successfully', {
+        logger.agent(this.agentName, 'debug', 'Email sent successfully', {
           recipient: recipient.name,
-          messageSid: smsResult.sid
+          messageId: emailResult.headers['x-message-id']
         });
         
       } catch (error) {
         results.failed.push({
           recipient: recipient.name,
-          phone: recipient.phone,
+          email: recipient.email,
           error: error.message
         });
         
         results.summary.failed++;
         
         // Update alert delivery status
-        await this.updateAlertDeliveryStatus(alertId, 'sms', recipient.phone, 'failed', null, error.message);
+        await this.updateAlertDeliveryStatus(alertId, 'email', recipient.email, 'failed', null, error.message);
         
-        logger.agent(this.agentName, 'error', 'SMS sending failed', {
+        logger.agent(this.agentName, 'error', 'Email sending failed', {
           recipient: recipient.name,
           error: error.message
         });
@@ -1139,7 +1155,7 @@ For all alerts, prioritize:
         agent: this.agentName,
         version: this.version,
         initialized: this.initialized,
-        twilioConfigured: !!this.twilioClient,
+        sendGridConfigured: !!this.sendGridClient,
         alertTypes: Object.keys(this.alertTypes),
         deliveryStats: this.deliveryStats,
         rateLimits: this.notificationLimits,

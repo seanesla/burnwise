@@ -43,7 +43,7 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 - `weather.js`: OpenWeatherMap API wrapped as tool
 - `predictor.js`: Gaussian plume model wrapped as tool
 - `optimizer.js`: Simulated annealing wrapped as tool
-- `alerts.js`: Twilio SMS wrapped as tool
+- `alerts.js`: Twilio SendGrid Email notifications (EMAIL ONLY - no phone numbers)
 
 **Frontend Spatial Interface** (`frontend/src/components/`):
 - `SpatialInterface.js`: Revolutionary map-as-application main component (Bloomberg Terminal meets Google Earth)
@@ -63,13 +63,21 @@ Multi-farm agricultural burn coordination system (TiDB AgentX Hackathon 2025). 5
 - **Cost Optimized**: GPT-5-nano for most, GPT-5-mini only for complex reasoning
 
 **Stack**: TiDB+circuit breaker (`db/connection.js`), Mapbox GL JS (3D terrain+fog), Framer Motion (draggable components), Socket.io, OpenAI Agents SDK, GPT-5-mini/nano | **API**: `/api/{burn-requests,weather,schedule,alerts,farms,analytics,agents}`
-**Setup**: TiDB creds in `backend/.env`, OpenWeatherMap key (`OPENWEATHERMAP_API_KEY`), Mapbox token in `frontend/.env` (`REACT_APP_MAPBOX_TOKEN`), OpenAI key (`OPENAI_API_KEY`) REQUIRED
+**Setup**: TiDB creds in `backend/.env`, OpenWeatherMap key (`OPENWEATHERMAP_API_KEY`), Mapbox token in `frontend/.env` (`REACT_APP_MAPBOX_TOKEN`), OpenAI key (`OPENAI_API_KEY`) REQUIRED, SendGrid API key (`TWILIO_SENDGRID_API_KEY` or `SENDGRID_API_KEY`) for email alerts
 
 ### Authentication & Data Flow
 - **Real bcrypt passwords**: Test user `robert@goldenfields.com` / `TestPassword123!`
 - **NO DEMO MODE**: All authentication is production-ready
 - **Data flow**: TiDB → Backend API → Frontend (no hardcoding)
 - **Seed data**: Robert Wilson is legitimate farm owner in TiDB, not mocked
+
+### Notification System (EMAIL ONLY - Aug 25, 2025)
+- **NO PHONE NUMBERS**: All phone fields removed from database and UI
+- **Email notifications only**: Using Twilio SendGrid for all alerts
+- **Database changes**: `contact_phone` column removed from `farms` table
+- **UI changes**: No phone input fields in any forms (onboarding, settings, etc.)
+- **Alert channels**: Email and Socket.io real-time updates only
+- **Required env vars**: `TWILIO_SENDGRID_API_KEY` or `SENDGRID_API_KEY`
 
 ## Technical Specs
 **Algorithms**: Gaussian plume (`predictor.js:predictSmokeDispersion()`), simulated annealing (`optimizer.js:simulatedAnnealing()`)

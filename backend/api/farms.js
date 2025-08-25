@@ -10,8 +10,7 @@ const router = express.Router();
 const farmCreationSchema = Joi.object({
   name: Joi.string().min(1).max(200).required(),
   owner_name: Joi.string().min(1).max(100).required(),
-  phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,15}$/).optional().allow(''),
-  email: Joi.string().email().optional(),
+  email: Joi.string().email().required(),
   address: Joi.string().min(1).max(500).required(),
   location: Joi.object({
     lat: Joi.number().min(-90).max(90).required(),
@@ -20,17 +19,12 @@ const farmCreationSchema = Joi.object({
   farm_size_acres: Joi.number().positive().required(),
   primary_crops: Joi.array().items(Joi.string().max(50)).min(1).required(),
   certification_number: Joi.string().max(100).optional().allow(''),
-  emergency_contact: Joi.object({
-    name: Joi.string().max(100),
-    phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,15}$/)
-  }).optional(),
   boundary_geojson: Joi.string().optional() // Allow boundary GeoJSON data
 });
 
 const farmUpdateSchema = Joi.object({
   name: Joi.string().min(1).max(200).optional(),
   owner_name: Joi.string().min(1).max(100).optional(),
-  phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,15}$/).optional(),
   email: Joi.string().email().optional(),
   address: Joi.string().min(1).max(500).optional(),
   location: Joi.object({
@@ -39,11 +33,7 @@ const farmUpdateSchema = Joi.object({
   }).optional(),
   farm_size_acres: Joi.number().positive().optional(),
   primary_crops: Joi.array().items(Joi.string().max(50)).min(1).optional(),
-  certification_number: Joi.string().max(100).optional(),
-  emergency_contact: Joi.object({
-    name: Joi.string().max(100),
-    phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,15}$/)
-  }).optional()
+  certification_number: Joi.string().max(100).optional()
 });
 
 /**
@@ -67,7 +57,6 @@ router.get('/current', asyncHandler(async (req, res) => {
       f.farm_name,
       f.owner_name,
       f.contact_email,
-      f.contact_phone,
       f.address,
       f.latitude,
       f.longitude,
@@ -97,7 +86,6 @@ router.get('/current', asyncHandler(async (req, res) => {
       name: farm.farm_name,
       ownerName: farm.owner_name,
       email: farm.contact_email,
-      phone: farm.contact_phone,
       address: farm.address,
       latitude: farm.latitude,
       longitude: farm.longitude,
@@ -209,7 +197,6 @@ router.get('/', asyncHandler(async (req, res) => {
         f.farm_id as id,
         f.farm_name as name,
         f.owner_name,
-        f.contact_phone as phone,
         f.contact_email as email,
         f.address,
         f.longitude as lon,
@@ -443,16 +430,15 @@ router.post('/', asyncHandler(async (req, res) => {
     // Create farm
     const result = await query(`
       INSERT INTO farms (
-        farm_name, owner_name, contact_phone, contact_email, address,
+        farm_name, owner_name, contact_email, address,
         latitude, longitude, total_acreage,
         created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
+        ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
       )
     `, [
       farmData.name,
       farmData.owner_name,
-      farmData.phone || null,
       farmData.email || null,
       farmData.address,
       farmData.location.lat,
@@ -829,7 +815,6 @@ router.get('/nearby/:lat/:lon', asyncHandler(async (req, res) => {
       f.farm_id as id,
       f.farm_name as name,
       f.owner_name,
-      f.contact_phone as phone,
       f.longitude as lon,
       f.latitude as lat,
       f.total_acreage as farm_size_acres,
