@@ -57,7 +57,7 @@ const Login = () => {
         
         console.log('[DEMO] Status check response:', data);
         
-        setDemoModeEnabled(data.available || false);
+        // Demo is always available
         setDemoStats(data.statistics || null);
         
         if (data.available) {
@@ -67,7 +67,6 @@ const Login = () => {
         }
       } catch (error) {
         console.error('[DEMO] Failed to check demo mode:', error);
-        setDemoModeEnabled(false);
         setDemoStats(null);
       } finally {
         setDemoStatusLoading(false);
