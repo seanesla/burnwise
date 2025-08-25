@@ -4,7 +4,7 @@
  * Runs every hour to maintain database cleanliness
  */
 
-const db = require('../db/connection');
+const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 const cron = require('node-cron');
 
@@ -17,10 +17,11 @@ async function cleanupExpiredDemos() {
 
   try {
     // Find expired demo sessions
-    const expired = await db('demo_sessions')
-      .where('expires_at', '<', new Date())
-      .orWhere('is_active', false)
-      .select('session_id', 'farm_id', 'demo_type', 'expires_at', 'total_cost');
+    const expired = await query(
+      `SELECT session_id, farm_id, demo_type, expires_at, total_cost 
+       FROM demo_sessions 
+       WHERE expires_at < NOW() OR is_active = false`
+    );
 
     if (expired.length === 0) {
       console.log('✅ [DEMO CLEANUP] No expired sessions found');
@@ -94,90 +95,147 @@ async function cleanupExpiredDemos() {
  */
 async function cleanupSingleSession(session) {
   let totalDeleted = 0;
+  const { session_id, farm_id } = session;
 
-  await db.transaction(async (trx) => {
-    const { session_id, farm_id } = session;
+  try {
 
     // Delete all demo data in the correct order (foreign key constraints)
     
     // 1. Delete agent interactions
-    const agentInteractions = await trx('agent_interactions')
-      .where({ farm_id, is_demo: true })
-      .del();
-    totalDeleted += agentInteractions;
+    const agentInteractionsResult = await query(
+      'DELETE FROM agent_interactions WHERE farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += agentInteractionsResult.affectedRows || 0;
 
     // 2. Delete vector embeddings
-    const weatherEmbeddings = await trx('weather_embeddings')
-      .where({ farm_id, is_demo: true })
-      .del();
-    totalDeleted += weatherEmbeddings;
+    // Delete weather_vectors that belong to demo weather_data
+    const weatherVectorsResult = await query(
+      `DELETE wv FROM weather_vectors wv 
+       JOIN weather_data wd ON wv.weather_id = wd.weather_id 
+       WHERE wd.is_demo = true`,
+      []
+    );
+    totalDeleted += weatherVectorsResult.affectedRows || 0;
 
-    const smokeEmbeddings = await trx('smoke_embeddings')
-      .where({ is_demo: true })
-      .del();
-    totalDeleted += smokeEmbeddings;
+    // Delete smoke_plume_vectors that belong to burn_requests from this farm
+    const smokeVectorsResult = await query(
+      `DELETE spv FROM smoke_plume_vectors spv 
+       JOIN burn_requests br ON spv.request_id = br.id 
+       WHERE br.farm_id = ?`,
+      [farm_id]
+    );
+    totalDeleted += smokeVectorsResult.affectedRows || 0;
 
-    const burnEmbeddings = await trx('burn_embeddings')
-      .where({ farm_id, is_demo: true })
-      .del();
-    totalDeleted += burnEmbeddings;
+    // Delete burn_embeddings linked to burn_requests from this farm  
+    const burnEmbeddingsResult = await query(
+      `DELETE be FROM burn_embeddings be
+       JOIN burn_requests br ON be.request_id = br.id
+       WHERE br.farm_id = ?`,
+      [farm_id]
+    );
+    totalDeleted += burnEmbeddingsResult.affectedRows || 0;
 
     // 3. Delete alerts
-    const alerts = await trx('alerts')
-      .where({ farm_id, is_demo: true })
-      .del();
-    totalDeleted += alerts;
+    const alertsResult = await query(
+      'DELETE FROM alerts WHERE farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += alertsResult.affectedRows || 0;
 
-    // 4. Delete schedules
-    const schedules = await trx('schedules')
-      .where({ farm_id, is_demo: true })
-      .del();
-    totalDeleted += schedules;
+    // 4. Delete schedules and schedule_items
+    const scheduleItemsResult = await query(
+      'DELETE si FROM schedule_items si JOIN schedules s ON si.schedule_id = s.id WHERE s.farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += scheduleItemsResult.affectedRows || 0;
 
-    // 5. Delete burn requests
-    const burnRequests = await trx('burn_requests')
-      .where({ farm_id, is_demo: true })
-      .del();
-    totalDeleted += burnRequests;
+    const schedulesResult = await query(
+      'DELETE FROM schedules WHERE farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += schedulesResult.affectedRows || 0;
 
-    // 6. Delete weather data
-    const weatherData = await trx('weather_data')
-      .where({ is_demo: true })
-      .del();
-    totalDeleted += weatherData;
+    // 5. Delete burn requests and related data
+    // Delete burn_fields first (foreign key constraint)
+    const burnFieldsResult = await query(
+      'DELETE bf FROM burn_fields bf JOIN burn_requests br ON bf.burn_request_id = br.id WHERE br.farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += burnFieldsResult.affectedRows || 0;
+
+    // Delete burn_smoke_predictions
+    const burnSmokePredictionsResult = await query(
+      'DELETE bsp FROM burn_smoke_predictions bsp JOIN burn_requests br ON bsp.request_id = br.id WHERE br.farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += burnSmokePredictionsResult.affectedRows || 0;
+
+    // Delete burn_optimization_results
+    const burnOptimizationResult = await query(
+      'DELETE bor FROM burn_optimization_results bor JOIN burn_requests br ON bor.request_id = br.id WHERE br.farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += burnOptimizationResult.affectedRows || 0;
+
+    // Now delete burn_requests
+    const burnRequestsResult = await query(
+      'DELETE FROM burn_requests WHERE farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += burnRequestsResult.affectedRows || 0;
+
+    // 6. Delete weather data and analyses
+    const weatherAnalysesResult = await query(
+      'DELETE FROM weather_analyses WHERE farm_id = ?',
+      [farm_id]
+    );
+    totalDeleted += weatherAnalysesResult.affectedRows || 0;
+
+    // weather_data doesn't have farm_id, delete by is_demo flag
+    const weatherDataResult = await query(
+      'DELETE FROM weather_data WHERE is_demo = true',
+      []
+    );
+    totalDeleted += weatherDataResult.affectedRows || 0;
 
     // 7. Find and delete nearby demo farms created with this session
     // (These are farms created around the same time as the main demo farm)
-    const sessionCreatedAt = await trx('demo_sessions')
-      .where('session_id', session_id)
-      .select('created_at')
-      .first();
+    const sessionCreatedAt = await query(
+      'SELECT created_at FROM demo_sessions WHERE session_id = ?',
+      [session_id]
+    );
 
-    if (sessionCreatedAt) {
+    if (sessionCreatedAt && sessionCreatedAt.length > 0) {
       const timeWindow = 5 * 60 * 1000; // 5 minutes
-      const windowStart = new Date(new Date(sessionCreatedAt.created_at).getTime() - timeWindow);
-      const windowEnd = new Date(new Date(sessionCreatedAt.created_at).getTime() + timeWindow);
+      const windowStart = new Date(new Date(sessionCreatedAt[0].created_at).getTime() - timeWindow);
+      const windowEnd = new Date(new Date(sessionCreatedAt[0].created_at).getTime() + timeWindow);
 
-      const nearbyDemoFarms = await trx('farms')
-        .where({ is_demo: true })
-        .whereBetween('created_at', [windowStart, windowEnd])
-        .whereNot('id', farm_id)
-        .del();
-      totalDeleted += nearbyDemoFarms;
+      const nearbyDemoFarmsResult = await query(
+        'DELETE FROM farms WHERE is_demo = true AND created_at BETWEEN ? AND ? AND id != ?',
+        [windowStart, windowEnd, farm_id]
+      );
+      totalDeleted += nearbyDemoFarmsResult.affectedRows || 0;
     }
 
     // 8. Delete main demo farm
-    const mainFarm = await trx('farms')
-      .where({ id: farm_id, is_demo: true })
-      .del();
-    totalDeleted += mainFarm;
+    const mainFarmResult = await query(
+      'DELETE FROM farms WHERE id = ? AND is_demo = true',
+      [farm_id]
+    );
+    totalDeleted += mainFarmResult.affectedRows || 0;
 
     // 9. Finally, delete the demo session
-    const demoSession = await trx('demo_sessions')
-      .where('session_id', session_id)
-      .del();
-    totalDeleted += demoSession;
-  });
+    const demoSessionResult = await query(
+      'DELETE FROM demo_sessions WHERE session_id = ?',
+      [session_id]
+    );
+    totalDeleted += demoSessionResult.affectedRows || 0;
+
+  } catch (error) {
+    console.error(`❌ [DEMO CLEANUP] Error cleaning session ${session_id}:`, error);
+    throw error;
+  }
 
   return totalDeleted;
 }
@@ -190,27 +248,39 @@ async function cleanupSingleSession(session) {
  */
 async function updateCleanupStats(date, sessionsDeleted, costRecovered) {
   try {
+    // Skip updating stats if demo_cost_summary table doesn't exist
+    // This table is optional for tracking cleanup statistics
+    const tables = await query('SHOW TABLES LIKE "demo_cost_summary"');
+    if (tables.length === 0) {
+      console.log('[DEMO CLEANUP] Skipping stats update - demo_cost_summary table not found');
+      return;
+    }
+    
     // Check if record exists for today
-    const existing = await db('demo_cost_summary')
-      .where('date', date)
-      .first();
+    const existing = await query(
+      'SELECT * FROM demo_cost_summary WHERE date = ? LIMIT 1',
+      [date]
+    );
 
-    if (existing) {
+    if (existing && existing.length > 0) {
       // Update existing record
-      await db('demo_cost_summary')
-        .where('date', date)
-        .update({
-          total_sessions: db.raw('total_sessions + ?', [sessionsDeleted]),
-          total_cost: db.raw('total_cost + ?', [costRecovered])
-        });
+      await query(
+        `UPDATE demo_cost_summary 
+         SET total_sessions = total_sessions + ?, 
+             total_cost = total_cost + ?, 
+             sessions_cleaned = sessions_cleaned + ?, 
+             cost_recovered = cost_recovered + ?, 
+             updated_at = NOW() 
+         WHERE date = ?`,
+        [sessionsDeleted, costRecovered, sessionsDeleted, costRecovered, date]
+      );
     } else {
       // Create new record
-      await db('demo_cost_summary').insert({
-        date,
-        total_sessions: sessionsDeleted,
-        total_cost: costRecovered,
-        active_sessions: 0
-      });
+      await query(
+        `INSERT INTO demo_cost_summary (date, total_sessions, total_cost, sessions_cleaned, cost_recovered, active_sessions, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())`,
+        [date, sessionsDeleted, costRecovered, sessionsDeleted, costRecovered]
+      );
     }
   } catch (error) {
     console.error('[DEMO CLEANUP] Failed to update cleanup stats:', error.message);
@@ -228,29 +298,28 @@ async function getCleanupStats(days = 7) {
     sinceDate.setDate(sinceDate.getDate() - days);
     const sinceDateStr = sinceDate.toISOString().split('T')[0];
 
-    const stats = await db('demo_cost_summary')
-      .where('date', '>=', sinceDateStr)
-      .select(
-        db.raw('SUM(total_sessions) as total_sessions_cleaned'),
-        db.raw('SUM(total_cost) as total_cost_recovered'),
-        db.raw('COUNT(*) as cleanup_days'),
-        db.raw('AVG(total_sessions) as avg_sessions_per_day')
-      )
-      .first();
+    const stats = await query(
+      `SELECT 
+        SUM(total_sessions) as total_sessions_cleaned,
+        SUM(total_cost) as total_cost_recovered,
+        COUNT(*) as cleanup_days,
+        AVG(total_sessions) as avg_sessions_per_day
+       FROM demo_cost_summary
+       WHERE date >= ?`,
+      [sinceDateStr]
+    );
 
-    const currentActive = await db('demo_sessions')
-      .where('is_active', true)
-      .where('expires_at', '>', new Date())
-      .count('* as count')
-      .first();
+    const currentActive = await query(
+      'SELECT COUNT(*) as count FROM demo_sessions WHERE is_active = true AND expires_at > NOW()'
+    );
 
     return {
       period: `${days} days`,
-      totalSessionsCleaned: parseInt(stats.total_sessions_cleaned) || 0,
-      totalCostRecovered: parseFloat(stats.total_cost_recovered) || 0,
-      cleanupDays: parseInt(stats.cleanup_days) || 0,
-      avgSessionsPerDay: parseFloat(stats.avg_sessions_per_day) || 0,
-      currentActiveSessions: parseInt(currentActive.count) || 0
+      totalSessionsCleaned: stats && stats[0] ? parseInt(stats[0].total_sessions_cleaned) || 0 : 0,
+      totalCostRecovered: stats && stats[0] ? parseFloat(stats[0].total_cost_recovered) || 0 : 0,
+      cleanupDays: stats && stats[0] ? parseInt(stats[0].cleanup_days) || 0 : 0,
+      avgSessionsPerDay: stats && stats[0] ? parseFloat(stats[0].avg_sessions_per_day) || 0 : 0,
+      currentActiveSessions: currentActive && currentActive[0] ? parseInt(currentActive[0].count) || 0 : 0
     };
   } catch (error) {
     console.error('[DEMO CLEANUP] Failed to get cleanup stats:', error.message);
@@ -267,9 +336,11 @@ async function getCleanupStats(days = 7) {
  */
 async function forceCleanupSession(sessionId) {
   try {
-    const session = await db('demo_sessions')
-      .where('session_id', sessionId)
-      .first();
+    const sessionResult = await query(
+      'SELECT * FROM demo_sessions WHERE session_id = ? LIMIT 1',
+      [sessionId]
+    );
+    const session = sessionResult && sessionResult[0] ? sessionResult[0] : null;
 
     if (!session) {
       return {
