@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -20,13 +20,19 @@ import './HybridOnboarding.css';
 
 const HybridOnboarding = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { completeOnboarding, user, isDemo } = useAuth();
   
-  // Form state
+  // Detect demo mode from query params or location state
+  const demoMode = searchParams.get('demo') || location.state?.demoMode;
+  const isDemoUser = demoMode === 'blank' || location.state?.isDemo;
+  
+  // Form state - with demo defaults
   const [formData, setFormData] = useState({
     farmName: '',
-    ownerName: '',
-    email: '',
+    ownerName: isDemoUser ? 'Demo User' : '',
+    email: isDemoUser ? `demo_${location.state?.sessionId || Date.now()}@burnwise.demo` : '',
     phone: '',
     location: '',
     acreage: '',
@@ -44,13 +50,23 @@ const HybridOnboarding = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formComplete, setFormComplete] = useState(false);
 
-  // Check form completion
+  // Check form completion - different requirements for demo vs real users
   useEffect(() => {
-    const required = ['farmName', 'ownerName', 'email'];
-    const hasLocation = formData.farmBoundary !== null; // Must have boundary drawn
-    const isComplete = required.every(field => formData[field]?.trim()) && hasLocation;
+    let isComplete = false;
+    
+    if (isDemoUser) {
+      // Demo users only need farm name and boundary
+      const hasLocation = formData.farmBoundary !== null;
+      isComplete = formData.farmName?.trim() && hasLocation;
+    } else {
+      // Real users need all required fields
+      const required = ['farmName', 'ownerName', 'email'];
+      const hasLocation = formData.farmBoundary !== null;
+      isComplete = required.every(field => formData[field]?.trim()) && hasLocation;
+    }
+    
     setFormComplete(isComplete);
-  }, [formData]);
+  }, [formData, isDemoUser]);
 
   // Handle form field changes
   const handleFieldChange = (field, value) => {
@@ -86,7 +102,7 @@ const HybridOnboarding = () => {
     }
   };
 
-  // Validate form
+  // Validate form - different validation for demo vs real users
   const validateForm = () => {
     const errors = {};
     
@@ -94,17 +110,20 @@ const HybridOnboarding = () => {
       errors.farmName = 'Farm name is required';
     }
     
-    if (!formData.ownerName.trim()) {
-      errors.ownerName = 'Owner name is required';
+    // Only require owner and email for real users
+    if (!isDemoUser) {
+      if (!formData.ownerName.trim()) {
+        errors.ownerName = 'Owner name is required';
+      }
+      
+      if (!formData.email.trim()) {
+        errors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        errors.email = 'Invalid email format';
+      }
     }
     
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Invalid email format';
-    }
-    
-    // Boundary drawing is required
+    // Boundary drawing is required for all users
     if (!formData.farmBoundary) {
       errors.location = 'Please draw the farm boundary on the map';
     }
@@ -221,14 +240,21 @@ const HybridOnboarding = () => {
       // Mark onboarding complete
       completeOnboarding(onboardingData);
       
-      // For demo users, just redirect
-      if (isDemo || user?.isDemo) {
+      // Route based on user type
+      if (isDemoUser) {
+        // Demo users go to demo spatial interface
         setTimeout(() => {
-          const isDemoRoute = window.location.pathname.startsWith('/demo');
-          navigate(isDemoRoute ? '/demo/spatial' : '/spatial');
+          navigate('/demo/spatial', {
+            state: {
+              isDemo: true,
+              demoMode: demoMode,
+              sessionId: location.state?.sessionId,
+              farmId: location.state?.farmId
+            }
+          });
         }, 1000);
       } else {
-        // For regular users, create account
+        // Real users create actual account and go to regular spatial
         const response = await axios.post('/api/farms/create', formData);
         if (response.data.success) {
           navigate('/spatial');
@@ -250,8 +276,10 @@ const HybridOnboarding = () => {
       <div className="hybrid-onboarding">
         {/* Header */}
         <div className="onboarding-header">
-          <h1>Farm Setup</h1>
-          <p>Complete your farm profile to get started with Burnwise</p>
+          <h1>{isDemoUser ? 'Demo Farm Setup' : 'Farm Setup'}</h1>
+          <p>{isDemoUser 
+            ? 'Set up your demo farm to explore Burnwise features' 
+            : 'Complete your farm profile to get started with Burnwise'}</p>
         </div>
 
         <div className="onboarding-content">
@@ -324,61 +352,63 @@ const HybridOnboarding = () => {
                 </div>
               </div>
 
-              {/* Owner Information */}
-              <div className="form-group">
-                <h3>Owner Information</h3>
-                
-                <div className="form-field">
-                  <label htmlFor="ownerName">
-                    Owner Name <span className="required">*</span>
-                  </label>
-                  <input
-                    id="ownerName"
-                    type="text"
-                    value={formData.ownerName}
-                    onChange={(e) => handleFieldChange('ownerName', e.target.value)}
-                    placeholder="John Doe"
-                    className={validationErrors.ownerName ? 'error' : ''}
-                  />
-                  {validationErrors.ownerName && (
-                    <span className="error-message">{validationErrors.ownerName}</span>
-                  )}
-                </div>
+              {/* Owner Information - Only show for real users */}
+              {!isDemoUser && (
+                <div className="form-group">
+                  <h3>Owner Information</h3>
+                  
+                  <div className="form-field">
+                    <label htmlFor="ownerName">
+                      Owner Name <span className="required">*</span>
+                    </label>
+                    <input
+                      id="ownerName"
+                      type="text"
+                      value={formData.ownerName}
+                      onChange={(e) => handleFieldChange('ownerName', e.target.value)}
+                      placeholder="John Doe"
+                      className={validationErrors.ownerName ? 'error' : ''}
+                    />
+                    {validationErrors.ownerName && (
+                      <span className="error-message">{validationErrors.ownerName}</span>
+                    )}
+                  </div>
 
-                <div className="form-field">
-                  <label htmlFor="email">
-                    Email Address <span className="required">*</span>
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleFieldChange('email', e.target.value)}
-                    placeholder="john@farm.com"
-                    className={validationErrors.email ? 'error' : ''}
-                  />
-                  {validationErrors.email && (
-                    <span className="error-message">{validationErrors.email}</span>
-                  )}
-                </div>
+                  <div className="form-field">
+                    <label htmlFor="email">
+                      Email Address <span className="required">*</span>
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleFieldChange('email', e.target.value)}
+                      placeholder="john@farm.com"
+                      className={validationErrors.email ? 'error' : ''}
+                    />
+                    {validationErrors.email && (
+                      <span className="error-message">{validationErrors.email}</span>
+                    )}
+                  </div>
 
-                <div className="form-field">
-                  <label htmlFor="phone">
-                    Phone Number
-                  </label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleFieldChange('phone', e.target.value)}
-                    placeholder="(555) 123-4567"
-                    className={validationErrors.phone ? 'error' : ''}
-                  />
-                  {validationErrors.phone && (
-                    <span className="error-message">{validationErrors.phone}</span>
-                  )}
+                  <div className="form-field">
+                    <label htmlFor="phone">
+                      Phone Number
+                    </label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleFieldChange('phone', e.target.value)}
+                      placeholder="(555) 123-4567"
+                      className={validationErrors.phone ? 'error' : ''}
+                    />
+                    {validationErrors.phone && (
+                      <span className="error-message">{validationErrors.phone}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Burn Preferences */}
               <div className="form-group">

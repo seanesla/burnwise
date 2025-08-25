@@ -28,7 +28,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
   const [demoStats, setDemoStats] = useState(null);
   const [demoStatusLoading, setDemoStatusLoading] = useState(true);
 
@@ -158,44 +157,11 @@ const Login = () => {
     }
   };
 
-  // Demo session - bypasses authentication entirely
-  const fillDemoCredentials = async () => {
-    setLoading(true);
-    setLoginError('');
-    
-    try {
-      // Use loginDemo from auth context - NO AUTHENTICATION REQUIRED
-      const result = await loginDemo();
-      
-      if (result.success) {
-        // Navigate directly to spatial interface
-        navigate('/spatial');
-      } else {
-        setLoginError(result.error || 'Demo session failed. Please try again.');
-      }
-    } catch (err) {
-      console.error('Demo session error:', err);
-      setLoginError('Failed to create demo session. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Handle demo mode initialization
-  const handleDemo = async () => {
-    try {
-      // In a real implementation, this would initialize demo mode
-      // For now, just enable demo mode and show the demo credentials
-      setDemoModeEnabled(true);
-      setDemoStats({
-        farms: 5,
-        burns: 12,
-        agents: 5
-      });
-    } catch (error) {
-      console.error('Failed to initialize demo mode:', error);
-      setLoginError('Failed to initialize demo mode. Please try again.');
-    }
+  // Handle demo mode initialization - navigate to demo selector
+  const handleDemo = () => {
+    // Navigate to demo initializer where user can choose blank or sample mode
+    navigate('/demo/initialize');
   };
 
   if (authLoading) {
@@ -385,7 +351,7 @@ const Login = () => {
           
           {/* Demo Action Button */}
           <motion.button
-            onClick={demoModeEnabled ? fillDemoCredentials : handleDemo}
+            onClick={handleDemo}
             className="auth-submit-button demo-primary-button"
             disabled={demoStatusLoading || loading}
             whileHover={{ scale: 1.02 }}
@@ -393,15 +359,10 @@ const Login = () => {
           >
             {demoStatusLoading ? (
               <LoadingSpinner size="small" />
-            ) : demoModeEnabled ? (
-              <>
-                <FaArrowRight style={{ marginRight: '8px' }} />
-                Use Demo Account
-              </>
             ) : (
               <>
                 <FaArrowRight style={{ marginRight: '8px' }} />
-                Launch Demo Mode
+                Try Demo
               </>
             )}
           </motion.button>

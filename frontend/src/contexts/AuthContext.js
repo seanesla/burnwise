@@ -477,7 +477,7 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     refreshAuth,
     csrfToken,
-    isDemo: sessionStorage.getItem('isDemo') === 'true'
+    isDemo: sessionStorage.getItem('isDemo') === 'true' || user?.isDemo === true
   };
 
   return (

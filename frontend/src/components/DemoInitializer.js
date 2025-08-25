@@ -103,13 +103,14 @@ const DemoInitializer = () => {
     setInitializationStep('Creating demo session...');
 
     try {
-      // Call demo initialization API
-      const response = await fetch('http://localhost:5001/api/demo/initialize', {
+      // Call demo initialization API - use relative path for production compatibility
+      const response = await fetch('/api/demo/initialize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Demo-Mode': 'true'
         },
+        credentials: 'include', // Important for session cookies
         body: JSON.stringify({
           mode: selectedMode,
           sessionId: sessionId
@@ -137,15 +138,30 @@ const DemoInitializer = () => {
         setInitializationStep('Demo ready! Redirecting...');
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Navigate to demo spatial interface
-        navigate('/demo/spatial', { 
-          replace: true,
-          state: { 
-            isDemo: true, 
-            demoMode: selectedMode,
-            sessionId: data.sessionId 
-          }
-        });
+        // Navigate based on selected mode
+        if (selectedMode === 'blank') {
+          // Blank slate - go to simplified onboarding
+          navigate('/onboarding?demo=blank', { 
+            replace: true,
+            state: { 
+              isDemo: true, 
+              demoMode: 'blank',
+              sessionId: data.sessionId,
+              farmId: data.farmId
+            }
+          });
+        } else {
+          // Preloaded sample farm - skip onboarding, go straight to spatial
+          navigate('/demo/spatial', { 
+            replace: true,
+            state: { 
+              isDemo: true, 
+              demoMode: 'preloaded',
+              sessionId: data.sessionId,
+              farmId: data.farmId
+            }
+          });
+        }
 
       } else {
         throw new Error(data.error || 'Demo initialization failed');
