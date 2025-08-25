@@ -8,7 +8,7 @@ import '../styles/Landing.css';
 
 const Landing = ({ isInitialLoad = true }) => {
   const navigate = useNavigate();
-  const { createDemoSession } = useAuth();
+  const { createDemoSession, isAuthenticated, needsOnboarding, onboardingComplete } = useAuth();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [scrollY, setScrollY] = useState(0);
   const [animationPhase, setAnimationPhase] = useState(isInitialLoad ? 'startup' : 'complete');
@@ -403,14 +403,24 @@ const Landing = ({ isInitialLoad = true }) => {
           </p>
           
           <div className="cta-buttons">
-            <button className="cta-primary" onClick={async () => {
-              const success = await createDemoSession();
-              if (success) {
-                navigate('/onboarding');
-              }
-            }}>
-              Get Started
-            </button>
+            {!isAuthenticated ? (
+              <button className="cta-primary" onClick={async () => {
+                const success = await createDemoSession();
+                if (success) {
+                  navigate('/onboarding');
+                }
+              }}>
+                Get Started
+              </button>
+            ) : needsOnboarding ? (
+              <button className="cta-primary" onClick={() => navigate('/onboarding')}>
+                Continue Setup
+              </button>
+            ) : (
+              <button className="cta-primary" onClick={() => navigate('/spatial')}>
+                Go to Dashboard
+              </button>
+            )}
           </div>
         </section>
 

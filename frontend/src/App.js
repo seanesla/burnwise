@@ -59,18 +59,8 @@ function AppContent() {
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
             <Routes>
-              {/* Root route shows Landing if not authenticated, else redirects based on onboarding */}
-              <Route path="/" element={
-                loading ? (
-                  <div className="flex items-center justify-center min-h-screen">
-                    <LoadingSpinner size="large" />
-                  </div>
-                ) : !isAuthenticated ? (
-                  <Landing />
-                ) : (
-                  <Navigate to={needsOnboarding ? "/onboarding" : "/spatial"} replace />
-                )
-              } />
+              {/* Root route ALWAYS shows Landing page - it handles auth state internally */}
+              <Route path="/" element={<Landing />} />
               
               {/* Landing page (for direct access) */}
               <Route path="/landing" element={<Landing />} />
