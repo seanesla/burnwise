@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaRocket, FaDatabase, FaRobot, FaArrowRight, FaFire } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import EmberBackground from './backgrounds/EmberBackground';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,7 +17,7 @@ import './Auth.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loginDemo, isAuthenticated, needsOnboarding, loading: authLoading, clearError } = useAuth();
+  const { login, isAuthenticated, needsOnboarding, loading: authLoading, clearError } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -28,8 +28,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const [demoStats, setDemoStats] = useState(null);
-  const [demoStatusLoading, setDemoStatusLoading] = useState(true);
+  // Demo mode removed - now handled in onboarding
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -47,34 +46,7 @@ const Login = () => {
     clearError();
   }, [clearError]);
 
-  // Check if demo mode is enabled with TiDB integration
-  useEffect(() => {
-    const checkDemoMode = async () => {
-      setDemoStatusLoading(true);
-      try {
-        const response = await fetch('http://localhost:5001/api/auth/demo-status');
-        const data = await response.json();
-        
-        console.log('[DEMO] Status check response:', data);
-        
-        // Demo is always available
-        setDemoStats(data.statistics || null);
-        
-        if (data.available) {
-          console.log('[DEMO] Demo mode available with TiDB integration');
-        } else {
-          console.log('[DEMO] Demo mode not available:', data.message);
-        }
-      } catch (error) {
-        console.error('[DEMO] Failed to check demo mode:', error);
-        setDemoStats(null);
-      } finally {
-        setDemoStatusLoading(false);
-      }
-    };
-    
-    checkDemoMode();
-  }, []);
+  // Demo mode check removed - now handled in onboarding
 
   // Validate email format
   const validateEmail = (email) => {
@@ -156,13 +128,6 @@ const Login = () => {
     }
   };
 
-
-  // Handle demo mode initialization - navigate to demo selector
-  const handleDemo = () => {
-    // Navigate to demo initializer where user can choose blank or sample mode
-    navigate('/demo/initialize');
-  };
-
   if (authLoading) {
     return (
       <div className="auth-loading">
@@ -178,14 +143,12 @@ const Login = () => {
       {/* Add right side ribbon curve */}
       <div className="ribbon-curve-right" />
       
-      {/* Desktop: Two-card layout */}
-      <div className="auth-cards-container">
-        {/* Login Card */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="auth-card auth-card-login"
+      {/* Single card layout - demo moved to onboarding */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="auth-card auth-card-center"
       >
         {/* Logo */}
         <div className="auth-logo">
@@ -286,87 +249,17 @@ const Login = () => {
           <p className="auth-footer-text">
             Don't have an account?{' '}
             <Link to="/onboarding" className="auth-link">
-              Get Started with AI Setup
+              Get Started
+            </Link>
+          </p>
+          <p className="auth-footer-text" style={{ marginTop: '12px' }}>
+            Want to try Burnwise first?{' '}
+            <Link to="/onboarding" className="auth-link">
+              Start Demo
             </Link>
           </p>
         </div>
       </motion.div>
-
-      {/* Demo Card */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="auth-card auth-card-demo"
-      >
-        <div className="demo-badge-corner">
-          <span>LIVE DEMO</span>
-        </div>
-          
-          <div className="demo-header">
-            <FaRocket className="demo-header-icon" />
-            <h2 className="demo-title">Try Demo Mode</h2>
-            <p className="demo-subtitle">Experience full features without registration</p>
-          </div>
-          
-          <div className="demo-features-grid">
-            <div className="demo-feature-item">
-              <FaRobot className="demo-feature-icon" />
-              <span>5 AI Agents</span>
-            </div>
-            <div className="demo-feature-item">
-              <FaDatabase className="demo-feature-icon" />
-              <span>Real TiDB</span>
-            </div>
-            <div className="demo-feature-item">
-              <FaRocket className="demo-feature-icon" />
-              <span>3D Interface</span>
-            </div>
-            <div className="demo-feature-item">
-              <FaFire className="demo-feature-icon" />
-              <span>Full Features</span>
-            </div>
-          </div>
-          
-          {demoStats && (
-            <div className="demo-stats-container">
-              <div className="demo-stat">
-                <div className="demo-stat-value">{demoStats.active_sessions || 0}</div>
-                <div className="demo-stat-label">Active Sessions</div>
-              </div>
-              <div className="demo-stat-divider" />
-              <div className="demo-stat">
-                <div className="demo-stat-value">{demoStats.demo_farms || 0}</div>
-                <div className="demo-stat-label">Demo Farms</div>
-              </div>
-            </div>
-          )}
-          
-          <div className="demo-benefits">
-            <div className="demo-benefit">✓ No registration</div>
-            <div className="demo-benefit">✓ 24-hour session</div>
-            <div className="demo-benefit">✓ Real AI interactions</div>
-          </div>
-          
-          {/* Demo Action Button */}
-          <motion.button
-            onClick={handleDemo}
-            className="auth-submit-button demo-primary-button"
-            disabled={demoStatusLoading || loading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {demoStatusLoading ? (
-              <LoadingSpinner size="small" />
-            ) : (
-              <>
-                <FaArrowRight style={{ marginRight: '8px' }} />
-                Try Demo
-              </>
-            )}
-          </motion.button>
-        </motion.div>
-      </div>
       
       {/* Ember background - rendered last to be on top */}
       <EmberBackground intensity={1.0} blur={true} />

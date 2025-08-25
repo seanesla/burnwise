@@ -16,7 +16,6 @@ const Login = lazy(() => import('./components/Login'));
 const HybridOnboarding = lazy(() => import('./components/HybridOnboarding'));
 const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
-const DemoInitializer = lazy(() => import('./components/DemoInitializer'));
 
 // Debug system (disabled for production)
 const DEBUG = false;
@@ -45,13 +44,12 @@ function AppContent() {
     // You can add more logic here to show different panels in the spatial interface
   };
   
-  // Check if we're on auth pages or demo initialization pages
+  // Check if we're on auth pages
   const isAuthPage = ['/', '/login', '/signup', '/onboarding'].includes(location.pathname);
-  const isDemoInitPage = ['/demo/initialize', '/demo/try'].includes(location.pathname);
   const isDemoSpatialPage = location.pathname === '/demo/spatial';
-  // Show sidebar only when authenticated AND not on auth or demo init pages
+  // Show sidebar only when authenticated AND not on auth pages
   // OR when on demo spatial page (since demo spatial needs sidebar immediately)
-  const shouldShowSidebar = (isAuthenticated && !isAuthPage && !isDemoInitPage) || isDemoSpatialPage;
+  const shouldShowSidebar = (isAuthenticated && !isAuthPage) || isDemoSpatialPage;
   
   return (
     <div className={`App ${isAuthPage ? 'auth-page' : ''}`}>
@@ -68,12 +66,10 @@ function AppContent() {
               <Route path="/" element={<Landing isInitialLoad={location.pathname === '/' && isInitialLoad} />} />
               <Route path="/login" element={<Login />} />
               
-              {/* Onboarding Route - Public Access for New Users */}
+              {/* Onboarding Route - Public Access for New Users and Demo Mode */}
               <Route path="/onboarding" element={<HybridOnboarding />} />
               
-              {/* Demo Routes - Public Access */}
-              <Route path="/demo/initialize" element={<DemoInitializer />} />
-              <Route path="/demo/try" element={<DemoInitializer />} />
+              {/* Demo Spatial Route - After onboarding */}
               <Route path="/demo/spatial" element={<SpatialInterface />} />
               
               {/* Main Spatial Interface - Replaces all dashboard/map/schedule routes */}
