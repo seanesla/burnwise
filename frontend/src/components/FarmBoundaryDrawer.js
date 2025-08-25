@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaDrawPolygon, FaUndo, FaRedo, FaTrash, 
   FaFileImport, FaFileExport, FaSatellite,
-  FaRuler, FaCheck, FaTimes, FaInfoCircle
+  FaRuler, FaCheck, FaTimes, FaInfoCircle, FaQuestionCircle
 } from 'react-icons/fa';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
@@ -40,7 +40,7 @@ const FarmBoundaryDrawer = ({
   const [currentArea, setCurrentArea] = useState(0);
   const [parcels, setParcels] = useState([]);
   const [mapStyle, setMapStyle] = useState('satellite');
-  const [showInstructions, setShowInstructions] = useState(true);
+  // Instructions now shown via hover dropdown, no state needed
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -357,7 +357,6 @@ const FarmBoundaryDrawer = ({
       
       // Small delay to prevent flicker
       setIsDrawing(true);
-      setShowInstructions(false);
       
       setTimeout(() => {
         if (draw.current) {
@@ -646,38 +645,29 @@ const FarmBoundaryDrawer = ({
         </div>
       )}
 
-      {/* Instructions */}
-      <AnimatePresence>
-        {showInstructions && (
-          <motion.div
-            className="drawing-instructions"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <button
-              className="close-instructions"
-              onClick={() => setShowInstructions(false)}
-            >
-              <FaTimes />
-            </button>
-            <h4>
-              <FaInfoCircle />
-              How to Draw Your Farm Boundary
-            </h4>
-            <ol>
-              <li>Click the polygon tool to start drawing</li>
-              <li>Click on the map to add boundary points</li>
-              <li>Click the first point again to close the shape</li>
-              <li>Drag points to adjust the boundary</li>
-              <li>Draw multiple parcels if your farm is non-contiguous</li>
-            </ol>
-            <p className="tip">
-              Tip: Toggle to satellite view for better visibility of property lines
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Instructions Dropdown - Top Right Corner */}
+      <div className="instructions-dropdown-container">
+        <div className="instructions-trigger">
+          <FaQuestionCircle />
+          <span>Help</span>
+        </div>
+        <div className="instructions-dropdown">
+          <h4>
+            <FaInfoCircle />
+            How to Draw Your Farm Boundary
+          </h4>
+          <ol>
+            <li>Click the polygon tool to start drawing</li>
+            <li>Click on the map to add boundary points</li>
+            <li>Click the first point again to close the shape</li>
+            <li>Drag points to adjust the boundary</li>
+            <li>Draw multiple parcels if your farm is non-contiguous</li>
+          </ol>
+          <p className="tip">
+            <strong>Tip:</strong> Toggle to satellite view for better visibility of property lines
+          </p>
+        </div>
+      </div>
 
       {/* Parcel List (if multiple) */}
       {parcels.length > 1 && (
