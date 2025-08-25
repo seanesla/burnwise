@@ -297,7 +297,26 @@ const HybridOnboarding = () => {
           method: showAI ? 'hybrid_ai' : 'form_only'
         };
         
-        const response = await axios.post('/api/farms', formData);
+        // Transform frontend field names to match backend schema
+        const backendData = {
+          name: formData.farmName,
+          owner_name: formData.ownerName,
+          email: formData.email,
+          phone: formData.phone || '',
+          address: formData.location || 'Map-defined boundary',
+          location: {
+            // Extract center point from boundary or use default
+            lat: formData.farmBoundary?.features?.[0]?.geometry?.coordinates?.[0]?.[0]?.[1] || 39.45,
+            lon: formData.farmBoundary?.features?.[0]?.geometry?.coordinates?.[0]?.[0]?.[0] || -98.45
+          },
+          farm_size_acres: parseFloat(formData.acreage) || 0,
+          primary_crops: formData.primaryCrops ? [formData.primaryCrops] : ['General'],
+          certification_number: '',
+          // Store boundary as JSON string in certification_number field (temporary)
+          boundary_geojson: JSON.stringify(formData.farmBoundary)
+        };
+        
+        const response = await axios.post('/api/farms', backendData);
         if (response.data.success) {
           completeOnboarding(onboardingData);
           navigate('/spatial');

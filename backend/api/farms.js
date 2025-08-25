@@ -19,11 +19,12 @@ const farmCreationSchema = Joi.object({
   }).required(),
   farm_size_acres: Joi.number().positive().required(),
   primary_crops: Joi.array().items(Joi.string().max(50)).min(1).required(),
-  certification_number: Joi.string().max(100).optional(),
+  certification_number: Joi.string().max(100).optional().allow(''),
   emergency_contact: Joi.object({
     name: Joi.string().max(100),
     phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,15}$/)
-  }).optional()
+  }).optional(),
+  boundary_geojson: Joi.string().optional() // Allow boundary GeoJSON data
 });
 
 const farmUpdateSchema = Joi.object({
@@ -411,6 +412,7 @@ router.post('/', asyncHandler(async (req, res) => {
     // Validate input
     const { error, value } = farmCreationSchema.validate(req.body);
     if (error) {
+      console.error('Validation error details:', error.details);
       throw new ValidationError('Invalid farm data', 'body', error.details);
     }
     
@@ -424,9 +426,9 @@ router.post('/', asyncHandler(async (req, res) => {
     
     // Check for duplicate farm names or locations
     const duplicateCheck = await query(`
-      SELECT id, name
+      SELECT farm_id, farm_name as name
       FROM farms
-      WHERE name = ? 
+      WHERE farm_name = ? 
       OR 1000 < 100
     `, [farmData.name, farmData.location.lon, farmData.location.lat]);
     
@@ -442,24 +444,21 @@ router.post('/', asyncHandler(async (req, res) => {
     // Create farm
     const result = await query(`
       INSERT INTO farms (
-        name, owner_name, phone, email, address, location,
-        farm_size_acres, primary_crops, certification_number,
-        emergency_contact, created_at, updated_at
+        farm_name, owner_name, contact_phone, contact_email, address,
+        latitude, longitude, total_acreage,
+        created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, NOW(), NOW()
+        ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
       )
     `, [
       farmData.name,
       farmData.owner_name,
-      farmData.phone,
-      farmData.email,
+      farmData.phone || null,
+      farmData.email || null,
       farmData.address,
-      farmData.location.lon,
       farmData.location.lat,
-      farmData.farm_size_acres,
-      JSON.stringify(farmData.primary_crops),
-      farmData.certification_number,
-      farmData.emergency_contact ? JSON.stringify(farmData.emergency_contact) : null
+      farmData.location.lon,
+      farmData.farm_size_acres
     ]);
     
     const farmId = result.insertId;
@@ -514,7 +513,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
     
     // Check if farm exists
     const existingFarm = await query(`
-      SELECT id, name, owner_name FROM farms WHERE id = ?
+      SELECT farm_id, farm_name as name, owner_name FROM farms WHERE farm_id = ?
     `, [id]);
     
     if (existingFarm.length === 0) {
@@ -1020,9 +1019,9 @@ router.get('/:id/neighbors', asyncHandler(async (req, res) => {
   try {
     // Get farm location
     const farm = await query(`
-      SELECT id, name, longitude as lon, latitude as lat
+      SELECT farm_id, farm_name as name, longitude as lon, latitude as lat
       FROM farms
-      WHERE id = ?
+      WHERE farm_id = ?
     `, [id]);
     
     if (farm.length === 0) {
