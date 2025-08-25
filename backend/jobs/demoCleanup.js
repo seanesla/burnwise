@@ -173,12 +173,8 @@ async function cleanupSingleSession(session) {
     );
     totalDeleted += burnSmokePredictionsResult.affectedRows || 0;
 
-    // Delete burn_optimization_results
-    const burnOptimizationResult = await query(
-      'DELETE bor FROM burn_optimization_results bor JOIN burn_requests br ON bor.request_id = br.request_id WHERE br.farm_id = ?',
-      [farm_id]
-    );
-    totalDeleted += burnOptimizationResult.affectedRows || 0;
+    // Skip burn_optimization_results - it's a summary table without request_id
+    // No deletion needed for optimization results as they're aggregated stats
 
     // Now delete burn_requests
     const burnRequestsResult = await query(

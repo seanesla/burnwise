@@ -424,13 +424,12 @@ router.post('/', asyncHandler(async (req, res) => {
       location: farmData.location
     });
     
-    // Check for duplicate farm names or locations
+    // Check for duplicate farm names
     const duplicateCheck = await query(`
       SELECT farm_id, farm_name as name
       FROM farms
-      WHERE farm_name = ? 
-      OR 1000 < 100
-    `, [farmData.name, farmData.location.lon, farmData.location.lat]);
+      WHERE farm_name = ?
+    `, [farmData.name]);
     
     if (duplicateCheck.length > 0) {
       const duplicate = duplicateCheck[0];
