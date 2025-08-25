@@ -37,7 +37,10 @@ const HybridOnboarding = () => {
     acreage: '',
     farmBoundary: null, // GeoJSON boundary
     primaryCrops: '',
-    burnFrequency: 'seasonal'
+    burnFrequency: 'seasonal',
+    // Notification preferences
+    notificationEmail: '',
+    emailNotificationsEnabled: false
   });
   
   // UI state
@@ -143,6 +146,15 @@ const HybridOnboarding = () => {
         errors.email = 'Email is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
         errors.email = 'Invalid email format';
+      }
+    }
+    
+    // Validate notification email if notifications are enabled
+    if (formData.emailNotificationsEnabled) {
+      if (!formData.notificationEmail.trim()) {
+        errors.notificationEmail = 'Email address is required for notifications';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.notificationEmail)) {
+        errors.notificationEmail = 'Invalid email format';
       }
     }
     
@@ -265,13 +277,26 @@ const HybridOnboarding = () => {
             expiresAt: demoResponse.data.expiresAt,
             startedAt: new Date().toISOString()
           }));
+          
+          // Update farm with user data including notification preferences
+          if (formData.farmName || formData.notificationEmail) {
+            await axios.post('http://localhost:5001/api/demo/update-farm', {
+              sessionId: sessionId,
+              farmData: formData
+            }, {
+              headers: { 'X-Demo-Mode': 'true' },
+              withCredentials: true
+            });
+          }
 
-          // Save onboarding data
+          // Save onboarding data with notification preferences
           const onboardingData = {
             ...formData,
             isDemo: true,
             completedAt: new Date().toISOString(),
-            method: showAI ? 'hybrid_ai' : 'form_only'
+            method: showAI ? 'hybrid_ai' : 'form_only',
+            notificationEmail: formData.notificationEmail,
+            emailNotificationsEnabled: formData.emailNotificationsEnabled
           };
           
           completeOnboarding(onboardingData);
@@ -446,6 +471,45 @@ const HybridOnboarding = () => {
                     <option value="occasional">Occasional (as needed)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Notification Preferences */}
+              <div className="form-group">
+                <h3>Notification Preferences</h3>
+                
+                <div className="form-field">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.emailNotificationsEnabled}
+                      onChange={(e) => handleFieldChange('emailNotificationsEnabled', e.target.checked)}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Send me email updates about burn windows and alerts
+                  </label>
+                </div>
+
+                {formData.emailNotificationsEnabled && (
+                  <div className="form-field">
+                    <label htmlFor="notificationEmail">
+                      Notification Email Address
+                    </label>
+                    <input
+                      id="notificationEmail"
+                      type="email"
+                      value={formData.notificationEmail}
+                      onChange={(e) => handleFieldChange('notificationEmail', e.target.value)}
+                      placeholder="your-email@example.com"
+                      className={validationErrors.notificationEmail ? 'error' : ''}
+                    />
+                    {validationErrors.notificationEmail && (
+                      <span className="error-message">{validationErrors.notificationEmail}</span>
+                    )}
+                    <p className="field-hint">
+                      You'll receive notifications about weather windows, burn conflicts, and schedule updates
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

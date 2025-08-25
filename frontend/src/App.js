@@ -43,10 +43,11 @@ function AppContent() {
     // You can add more logic here to show different panels in the spatial interface
   };
   
-  // Check if we're on onboarding page
+  // Check if we're on pages that should NOT show sidebar
   const isOnboardingPage = location.pathname === '/onboarding';
-  // Show sidebar when authenticated and not on onboarding
-  const shouldShowSidebar = isAuthenticated && !isOnboardingPage;
+  const isLandingPage = location.pathname === '/' || location.pathname === '/landing';
+  // Show sidebar when authenticated and NOT on landing or onboarding pages
+  const shouldShowSidebar = isAuthenticated && !isOnboardingPage && !isLandingPage;
   
   return (
     <div className={`App ${isOnboardingPage ? 'auth-page' : ''}`}>

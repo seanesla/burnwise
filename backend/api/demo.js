@@ -68,12 +68,14 @@ router.post('/update-farm', async (req, res) => {
     
     const farmId = sessions[0].farm_id;
     
-    // Update farm with user data
+    // Update farm with user data including notification preferences
     await db.query(`
       UPDATE farms SET
         farm_name = ?,
         owner_name = ?,
         contact_email = ?,
+        notification_email = ?,
+        email_notifications_enabled = ?,
         address = ?,
         latitude = ?,
         longitude = ?,
@@ -81,13 +83,15 @@ router.post('/update-farm', async (req, res) => {
         updated_at = NOW()
       WHERE farm_id = ?
     `, [
-      farmData.name || 'Demo Farm',
-      farmData.owner_name || 'Demo User',
+      farmData.name || farmData.farmName || 'Demo Farm',
+      farmData.owner_name || farmData.ownerName || 'Demo User',
       farmData.email || `demo_${sessionId}@burnwise.demo`,
-      farmData.address || 'Demo Location',
-      farmData.location?.lat || 32.7157,
-      farmData.location?.lon || -117.1611,
-      farmData.farm_size_acres || 500,
+      farmData.notificationEmail || null,
+      farmData.emailNotificationsEnabled || false,
+      farmData.address || farmData.location || 'Demo Location',
+      farmData.location?.lat || farmData.latitude || 32.7157,
+      farmData.location?.lon || farmData.longitude || -117.1611,
+      farmData.farm_size_acres || farmData.acreage || 500,
       farmId
     ]);
     

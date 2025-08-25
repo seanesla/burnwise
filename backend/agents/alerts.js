@@ -601,23 +601,41 @@ For all alerts, prioritize:
     const recipients = [];
     
     try {
-      // Get farm-specific recipients
+      // Get farm-specific recipients including notification preferences
       if (alertData.farm_id) {
         const farmContacts = await query(`
-          SELECT contact_phone as phone, contact_email as email, farm_name as name, owner_name
+          SELECT 
+            contact_phone as phone, 
+            contact_email as email, 
+            notification_email,
+            email_notifications_enabled,
+            farm_name as name, 
+            owner_name
           FROM farms
           WHERE farm_id = ?
         `, [alertData.farm_id]);
         
         if (farmContacts.length > 0) {
           const farm = farmContacts[0];
+          
+          // Use notification email if notifications are enabled, otherwise use contact email
+          const alertEmail = (farm.email_notifications_enabled && farm.notification_email) 
+            ? farm.notification_email 
+            : farm.email;
+          
+          // Only include email channel if notifications are enabled
+          const channels = farm.email_notifications_enabled 
+            ? alertData.channels 
+            : alertData.channels.filter(c => c !== 'email');
+          
           recipients.push({
             type: 'farm_owner',
             farm_id: alertData.farm_id,
             name: farm.owner_name,
             phone: farm.phone,
-            email: farm.email,
-            channels: alertData.channels
+            email: alertEmail,
+            channels: channels,
+            notificationsEnabled: farm.email_notifications_enabled
           });
         }
       }
@@ -721,19 +739,6 @@ For all alerts, prioritize:
       deliveryResults.summary.socket = socketResults.summary;
     }
     
-    // Send email notifications (if configured)
-    if (alertData.channels.includes('email') && process.env.EMAIL_ENABLED === 'true') {
-      const emailResults = await this.sendEmailNotifications(
-        alertMessage.formatted.email,
-        recipients.filter(r => r.email && r.channels.includes('email')),
-        dbAlertId
-      );
-      
-      deliveryResults.channels.push('email');
-      deliveryResults.successful.push(...emailResults.successful);
-      deliveryResults.failed.push(...emailResults.failed);
-      deliveryResults.summary.email = emailResults.summary;
-    }
     
     return deliveryResults;
   }
@@ -853,35 +858,6 @@ For all alerts, prioritize:
     return results;
   }
 
-  async sendEmailNotifications(emailData, recipients, alertId) {
-    // Email functionality would be implemented here
-    // For now, just log that email would be sent
-    
-    const results = {
-      successful: [],
-      failed: [],
-      summary: { sent: 0, failed: 0 }
-    };
-    
-    recipients.forEach(recipient => {
-      if (recipient.email) {
-        // Simulate email sending
-        results.successful.push({
-          recipient: recipient.name,
-          email: recipient.email,
-          status: 'simulated'
-        });
-        results.summary.sent++;
-        
-        logger.agent(this.agentName, 'debug', 'Email notification simulated', {
-          recipient: recipient.name,
-          email: recipient.email
-        });
-      }
-    });
-    
-    return results;
-  }
 
   async storeAlert(alertData, alertMessage, recipients) {
     try {
