@@ -568,18 +568,168 @@ For all alerts, prioritize:
   }
 
   formatForEmail(subject, content, alertData) {
+    // Professional HTML email template with proper styling
+    const severityColors = {
+      critical: '#DC2626',
+      high: '#EA580C', 
+      warning: '#F59E0B',
+      medium: '#3B82F6',
+      info: '#6B7280'
+    };
+    
+    const alertTypeIcons = {
+      burn_scheduled: '📅',
+      burn_starting: '🔥',
+      smoke_warning: '💨',
+      weather_alert: '🌤️',
+      conflict_detected: '⚠️',
+      schedule_change: '🔄'
+    };
+    
+    const severityColor = severityColors[alertData.severity] || severityColors.info;
+    const icon = alertTypeIcons[alertData.type] || '📢';
+    
     return {
-      subject: `[BURNWISE] ${subject}`,
-      body: `
-        <h2>BURNWISE Agricultural Burn Alert</h2>
-        <p><strong>Alert Type:</strong> ${alertData.type.replace('_', ' ').toUpperCase()}</p>
-        <p><strong>Severity:</strong> ${alertData.severity.toUpperCase()}</p>
-        <p><strong>Message:</strong></p>
-        <p>${content}</p>
-        <hr>
-        <p><small>This is an automated alert from the BURNWISE Agricultural Burn Coordination System.</small></p>
+      subject: `[BURNWISE] ${icon} ${subject}`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f3f4f6;">
+            <tr>
+              <td align="center" style="padding: 40px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #EF4444 0%, #F97316 100%); padding: 30px; border-radius: 8px 8px 0 0;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; text-align: center;">
+                        BURNWISE
+                      </h1>
+                      <p style="margin: 5px 0 0 0; color: #ffffff; font-size: 14px; text-align: center; opacity: 0.9;">
+                        Agricultural Burn Coordination System
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Alert Badge -->
+                  <tr>
+                    <td style="padding: 30px 30px 20px 30px;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="background-color: ${severityColor}; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-align: center;">
+                            <span style="font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                              ${alertData.type.replace(/_/g, ' ')}
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 0 30px 30px 30px;">
+                      <h2 style="margin: 0 0 15px 0; color: #111827; font-size: 20px; font-weight: 600;">
+                        ${subject}
+                      </h2>
+                      <div style="background-color: #f9fafb; border-left: 4px solid ${severityColor}; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                        <p style="margin: 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                          ${content}
+                        </p>
+                      </div>
+                      
+                      <!-- Metadata -->
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 20px;">
+                        <tr>
+                          <td style="padding: 8px 0;">
+                            <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Severity:</span>
+                            <span style="color: ${severityColor}; font-size: 14px; font-weight: 600; text-transform: uppercase; margin-left: 8px;">
+                              ${alertData.severity}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 8px 0;">
+                            <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Time:</span>
+                            <span style="color: #374151; font-size: 14px; margin-left: 8px;">
+                              ${new Date().toLocaleString('en-US', { 
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZoneName: 'short'
+                              })}
+                            </span>
+                          </td>
+                        </tr>
+                        ${alertData.farm_id ? `
+                        <tr>
+                          <td style="padding: 8px 0;">
+                            <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Farm ID:</span>
+                            <span style="color: #374151; font-size: 14px; margin-left: 8px;">#${alertData.farm_id}</span>
+                          </td>
+                        </tr>
+                        ` : ''}
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Action Button (if applicable) -->
+                  ${alertData.type === 'burn_scheduled' || alertData.type === 'schedule_change' ? `
+                  <tr>
+                    <td style="padding: 0 30px 30px 30px;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                        <tr>
+                          <td style="border-radius: 6px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/spatial" 
+                               style="display: inline-block; padding: 12px 30px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px;">
+                              View in Dashboard
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  ` : ''}
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 20px 30px; border-radius: 0 0 8px 8px;">
+                      <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center; line-height: 1.5;">
+                        This is an automated alert from the BURNWISE Agricultural Burn Coordination System.<br>
+                        To manage your notification preferences, visit your dashboard settings.
+                      </p>
+                      <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">
+                        © ${new Date().getFullYear()} BURNWISE. All rights reserved.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `,
-      text: content
+      text: `[BURNWISE ALERT]
+      
+Alert Type: ${alertData.type.replace(/_/g, ' ').toUpperCase()}
+Severity: ${alertData.severity.toUpperCase()}
+
+${content}
+
+Time: ${new Date().toLocaleString()}
+${alertData.farm_id ? `Farm ID: #${alertData.farm_id}` : ''}
+
+---
+This is an automated alert from BURNWISE.
+To manage notifications, visit your dashboard settings.`
     };
   }
 
@@ -759,15 +909,16 @@ For all alerts, prioritize:
       try {
         if (!recipient.email) continue;
         
+        // Message is already formatted with subject, html, and text
         const emailMsg = {
           to: recipient.email,
           from: {
             email: this.sendGridConfig.fromEmail,
             name: this.sendGridConfig.fromName
           },
-          subject: 'Burnwise Alert',
-          text: message,
-          html: `<p>${message.replace(/\n/g, '<br>')}</p>`
+          subject: message.subject || 'Burnwise Alert',
+          text: message.text || message,
+          html: message.html || `<p>${String(message).replace(/\n/g, '<br>')}</p>`
         };
         
         const [emailResult] = await this.sendGridClient.send(emailMsg);
