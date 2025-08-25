@@ -103,8 +103,12 @@ const DemoInitializer = () => {
     setInitializationStep('Creating demo session...');
 
     try {
-      // Call demo initialization API - use relative path for production compatibility
-      const response = await fetch('/api/demo/initialize', {
+      // Call demo initialization API - use backend port for development
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '/api/demo/initialize' 
+        : 'http://localhost:5001/api/demo/initialize';
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
