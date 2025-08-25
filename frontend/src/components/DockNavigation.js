@@ -50,6 +50,26 @@ const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
       action: () => onAction('ai')
     },
     {
+      id: 'metrics',
+      label: 'Backend Metrics',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="6"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+          <path d="M12 2v4"></path>
+          <path d="M12 18v4"></path>
+          <path d="M4.93 4.93l2.83 2.83"></path>
+          <path d="M16.24 16.24l2.83 2.83"></path>
+          <path d="M2 12h4"></path>
+          <path d="M18 12h4"></path>
+          <path d="M4.93 19.07l2.83-2.83"></path>
+          <path d="M16.24 7.76l2.83-2.83"></path>
+        </svg>
+      ),
+      action: () => onAction('metrics')
+    },
+    {
       id: 'user',
       label: 'Settings',
       icon: (

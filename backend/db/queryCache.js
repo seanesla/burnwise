@@ -1,5 +1,8 @@
 const logger = require('../middleware/logger');
 
+// Store io reference for Socket.io emissions
+let io = null;
+
 /**
  * Simple in-memory cache for query results
  * Reduces database load for frequently accessed data
@@ -148,8 +151,8 @@ class QueryCache {
     });
     
     // Emit to frontend if io available
-    if (global.io) {
-      global.io.emit('backend.cache', {
+    if (io) {
+      io.emit('backend.cache', {
         hits: this.hits,
         misses: this.misses,
         hitRate: `${hitRate}%`,
@@ -178,6 +181,12 @@ class QueryCache {
 
 // Singleton instance
 const queryCache = new QueryCache();
+
+// Setter for Socket.io instance
+queryCache.setIO = (socketIO) => {
+  io = socketIO;
+  logger.debug('Socket.io instance set for queryCache');
+};
 
 // Cache invalidation rules for different tables
 const invalidationRules = {

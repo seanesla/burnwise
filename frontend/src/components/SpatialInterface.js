@@ -13,6 +13,7 @@ import { useMap } from '../contexts/MapContext';
 import FloatingAI from './FloatingAI';
 import DockNavigation from './DockNavigation';
 import TimelineScrubber from './TimelineScrubber';
+import BackendMetrics from './BackendMetrics';
 import DemoSessionBanner from './DemoSessionBanner';
 import DashboardView from './DashboardView';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
@@ -43,6 +44,7 @@ const SpatialInterface = () => {
   const [activeBurnsVisible, setActiveBurnsVisible] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
   const [isMapView, setIsMapView] = useState(true); // Toggle between map and dashboard
+  const [metricsVisible, setMetricsVisible] = useState(false); // Backend metrics panel visibility
   
   // Data state
   const [farms, setFarms] = useState([]);
@@ -684,6 +686,17 @@ const SpatialInterface = () => {
         break;
       default:
         break;
+    }
+  };
+  
+  // Handle dock navigation actions
+  const handleAction = (action) => {
+    if (action === 'metrics') {
+      setMetricsVisible(!metricsVisible);
+    } else if (action === 'ai') {
+      setActivePanel(activePanel === 'ai' ? null : 'ai');
+    } else if (action === 'user') {
+      setActivePanel(activePanel === 'settings' ? null : 'settings');
     }
   };
   
@@ -1451,6 +1464,15 @@ const SpatialInterface = () => {
           Smoke
         </button>
       </div>
+      
+      {/* Floating AI Assistant */}
+      <FloatingAI />
+      
+      {/* Dock Navigation */}
+      <DockNavigation onAction={handleAction} />
+      
+      {/* Backend Metrics Panel */}
+      <BackendMetrics isOpen={metricsVisible} onClose={() => setMetricsVisible(false)} />
       
       {/* Tutorial Overlay - Dynamic walkthrough */}
       {/* <TutorialOverlay /> */}

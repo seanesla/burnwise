@@ -2,6 +2,9 @@ const mysql = require('mysql2/promise');
 const logger = require('../middleware/logger');
 const { queryCache, invalidateRelatedCaches } = require('./queryCache');
 
+// Store io reference for Socket.io emissions
+let io = null;
+
 class CircuitBreaker {
   constructor(threshold = 5, timeout = 60000) {
     this.threshold = threshold;
@@ -137,9 +140,9 @@ class DatabaseConnection {
     const duration = Date.now() - startTime;
     
     // Emit query execution to frontend if io available
-    if (global.io) {
+    if (io) {
       const queryType = sql.trim().split(' ')[0].toUpperCase();
-      global.io.emit('backend.query', {
+      io.emit('backend.query', {
         type: queryType,
         duration,
         cached: false,
@@ -248,6 +251,12 @@ class DatabaseConnection {
 
 const dbConnection = new DatabaseConnection();
 
+// Setter for Socket.io instance
+const setIO = (socketIO) => {
+  io = socketIO;
+  logger.debug('Socket.io instance set for database connection');
+};
+
 // Vector similarity search using TiDB's native vector functions
 async function vectorSimilaritySearch(tableName, vectorColumn, searchVector, limit = 10, filters = {}) {
   try {
@@ -318,5 +327,7 @@ module.exports = {
   getCacheStats: () => queryCache.getStats(),
   clearCache: () => queryCache.clear(),
   // Export vector operations with stub for compatibility
-  vectorSimilaritySearch
+  vectorSimilaritySearch,
+  // Export setIO for Socket.io initialization
+  setIO
 };

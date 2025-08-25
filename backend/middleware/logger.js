@@ -99,6 +99,14 @@ logger.stream = {
   }
 };
 
+// Store io reference for Socket.io emissions
+let io = null;
+
+logger.setIO = (socketIO) => {
+  io = socketIO;
+  logger.debug('Socket.io instance set for logger');
+};
+
 // Helper methods for different log contexts
 logger.agent = (agentName, level, message, meta = {}) => {
   logger.log(level, `[${agentName.toUpperCase()}] ${message}`, {
@@ -116,8 +124,8 @@ logger.performance = (operation, duration, meta = {}) => {
   });
   
   // Emit to frontend if io available
-  if (global.io) {
-    global.io.emit('backend.performance', {
+  if (io) {
+    io.emit('backend.performance', {
       operation,
       duration,
       timestamp: new Date().toISOString(),

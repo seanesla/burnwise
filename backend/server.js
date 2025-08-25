@@ -72,6 +72,13 @@ const io = socketIo(server, {
 // Make io globally accessible for logger and queryCache
 global.io = io;
 
+// Set io for modules that need it for backend visibility
+logger.setIO(io);
+const { queryCache } = require('./db/queryCache');
+queryCache.setIO(io);
+const { setIO: setDBIO } = require('./db/connection');
+setDBIO(io);
+
 const PORT = process.env.PORT || 5001;
 
 console.log('Express app created');
