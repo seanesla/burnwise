@@ -117,6 +117,9 @@ const FarmBoundaryDrawer = ({
         trackResize: true // Track container resize
       });
       
+      // Don't add any navigation controls - users can zoom with scroll/pinch
+      // and we have our own drawing tools on the left
+      
       console.log('Map instance created');
       
       // Force immediate render
