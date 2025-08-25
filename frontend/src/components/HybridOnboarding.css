@@ -62,6 +62,9 @@
   flex: 1;
   padding: 40px;
   min-height: 600px;
+  max-width: 100%;
+  overflow-x: hidden; /* Prevent horizontal overflow */
+  box-sizing: border-box;
 }
 
 .form-group {
@@ -93,6 +96,45 @@
 .form-field .required {
   color: #ff6b35;
   margin-left: 4px;
+}
+
+/* Map Container */
+.map-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+  overflow: hidden;
+  max-height: 550px; /* Contain the map height including status */
+  box-sizing: border-box;
+}
+
+/* Override FarmBoundaryDrawer width to prevent overflow */
+.map-container .farm-boundary-drawer {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.map-container .boundary-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 8px;
+  color: #4caf50;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.map-container .field-hint {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 12px;
+  margin-bottom: 8px;
 }
 
 /* Boundary Options */

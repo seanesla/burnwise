@@ -93,7 +93,7 @@ const Landing = ({ isInitialLoad = true }) => {
 
   // Lock scrolling immediately on mount if initial load
   useEffect(() => {
-    if (isInitialLoad) {
+    if (isInitialLoad && animationPhase !== 'complete') {
       // Save current scroll position
       const scrollY = window.scrollY;
       
@@ -120,44 +120,39 @@ const Landing = ({ isInitialLoad = true }) => {
         window.removeEventListener('touchmove', preventScroll);
       };
     }
-    
-    return () => {
-      // Cleanup on unmount
-      if (isInitialLoad) {
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.documentElement.style.overflow = '';
-      }
-    };
-  }, []); // Run immediately on mount, only once
+  }, [isInitialLoad, animationPhase]); // Track animation phase
+  
+  // Separate effect to unlock scroll when animation completes
+  useEffect(() => {
+    if (animationPhase === 'complete') {
+      // Restore scroll
+      const scrollTop = parseInt(document.body.style.top || '0') * -1;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.documentElement.style.overflow = '';
+      window.scrollTo(0, scrollTop);
+    }
+  }, [animationPhase]);
   
   // Animation timeline for unified experience
   useEffect(() => {
     console.log('Setting up animation timeline, isInitialLoad:', isInitialLoad);
     if (isInitialLoad) {
-      // Phase transitions
+      // Phase transitions with smoother timing
       const phase2Timer = setTimeout(() => {
         console.log('Moving to transitioning phase');
         setAnimationPhase('transitioning');
-      }, 2500);
+      }, 2000);
       const disappearTimer = setTimeout(() => {
-        console.log('Moving to disappearing phase - skipping reveal');
+        console.log('Moving to disappearing phase');
         setAnimationPhase('disappearing');
-      }, 4000);
+      }, 3000);
       const completeTimer = setTimeout(() => {
         console.log('Animation complete');
         setAnimationPhase('complete');
-        // Restore scroll
-        const scrollY = parseInt(document.body.style.top || '0') * -1;
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.documentElement.style.overflow = '';
-        window.scrollTo(0, scrollY);
-      }, 5000);
+      }, 3800);
       
       return () => {
         clearTimeout(phase2Timer);
@@ -193,17 +188,18 @@ const Landing = ({ isInitialLoad = true }) => {
   const videoTransform = `translateY(${scrollY * 0.5}px) scale(${1.05 + scrollY * 0.0001})`;
   const overlayOpacity = Math.min(1, scrollY / 600);
   
-  // Animation variants for unified experience
+  // Animation variants for smooth fade transition
   const backgroundVariants = {
     startup: {
       opacity: 1,
     },
     transitioning: {
       opacity: 1,
+      transition: { duration: 0.5 }
     },
     disappearing: {
       opacity: 0,
-      transition: { duration: 0.5, ease: 'easeOut' }
+      transition: { duration: 0.8, ease: 'easeInOut' }
     },
     complete: {
       opacity: 0,
@@ -239,50 +235,65 @@ const Landing = ({ isInitialLoad = true }) => {
     transitioning: {
       x: viewportCenterX,
       y: viewportCenterY,
-      scale: 1,  // Keep full size, no shrinking
+      scale: 1,
       opacity: 1,
       transition: { 
-        duration: 1.5, 
-        ease: [0.43, 0.13, 0.23, 0.96]
+        duration: 0.8, 
+        ease: "easeInOut"
       }
     },
     disappearing: {
-      x: viewportCenterX,  // Stay at center, no movement
-      y: viewportCenterY,  // Stay at center, no movement
-      scale: 1,  // Keep full size, no shrinking
+      x: viewportCenterX,
+      y: viewportCenterY,
+      scale: 0.8,  // Slightly shrink while fading
       opacity: 0,  // Fade out
       transition: { 
-        duration: 1,
-        opacity: {
+        duration: 0.8,
+        ease: "easeInOut",
+        scale: {
           duration: 0.8,
-          ease: "easeIn"
+          ease: "easeInOut"
         }
       }
     },
     complete: {
-      x: viewportCenterX,  // Stay at center
-      y: viewportCenterY,  // Stay at center
-      scale: 1,  // Keep full size
+      x: viewportCenterX,
+      y: viewportCenterY,
+      scale: 0.8,
       opacity: 0,
     }
   };
   
   const contentVariants = {
     startup: { opacity: 0 },
-    transitioning: { opacity: 0 },
+    transitioning: { 
+      opacity: 0,
+      transition: { duration: 0.3 }
+    },
     disappearing: { 
       opacity: 1,
-      transition: { duration: 0.8, ease: 'easeOut' }
+      transition: { 
+        duration: 0.8, 
+        ease: 'easeOut',
+        delay: 0.2  // Start fading in as black background fades out
+      }
     },
     complete: { opacity: 1 }
   };
   
   const videoVariants = {
     startup: { opacity: 0 },
-    transitioning: { opacity: 0 },
+    transitioning: { 
+      opacity: 0,
+      transition: { duration: 0.3 }
+    },
     disappearing: { 
       opacity: videoOpacity,
-      transition: { duration: 1, ease: 'easeOut' }
+      transition: { 
+        duration: 0.8, 
+        ease: 'easeOut',
+        delay: 0.2  // Sync with content fade-in
+      }
     },
     complete: { opacity: videoOpacity }
   };
@@ -392,9 +403,6 @@ const Landing = ({ isInitialLoad = true }) => {
           <div className="cta-buttons">
             <button className="cta-primary" onClick={() => navigate('/onboarding')}>
               Get Started
-            </button>
-            <button className="cta-secondary" onClick={() => navigate('/spatial')}>
-              View Live Map
             </button>
           </div>
         </section>
@@ -576,26 +584,6 @@ const Landing = ({ isInitialLoad = true }) => {
                   <li>Increased crop yields through optimal burn timing</li>
                 </ul>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="cta-section">
-          <div className="section-container">
-            <h2>Ready to Transform Agricultural Burning?</h2>
-            <p>
-              Join the future of coordinated agricultural management. Burnwise is revolutionizing 
-              how farms coordinate burns for safer, cleaner, and more efficient operations.
-            </p>
-            
-            <div className="cta-buttons-bottom">
-              <button className="cta-primary-large" onClick={() => navigate('/onboarding')}>
-                Start Coordinating
-              </button>
-              <button className="cta-secondary-large" onClick={() => navigate('/spatial')}>
-                Request a Burn
-              </button>
             </div>
           </div>
         </section>

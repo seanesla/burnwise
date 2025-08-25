@@ -37,7 +37,7 @@ const HybridOnboarding = () => {
   
   // UI state
   const [showAI, setShowAI] = useState(false);
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true); // Always show map
   const [aiInput, setAiInput] = useState('');
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
@@ -47,7 +47,7 @@ const HybridOnboarding = () => {
   // Check form completion
   useEffect(() => {
     const required = ['farmName', 'ownerName', 'email'];
-    const hasLocation = formData.farmBoundary || (formData.location?.trim() && formData.acreage?.trim());
+    const hasLocation = formData.farmBoundary !== null; // Must have boundary drawn
     const isComplete = required.every(field => formData[field]?.trim()) && hasLocation;
     setFormComplete(isComplete);
   }, [formData]);
@@ -104,18 +104,9 @@ const HybridOnboarding = () => {
       errors.email = 'Invalid email format';
     }
     
-    // Either boundary or text location is required
-    if (!formData.farmBoundary && !formData.location.trim()) {
-      errors.location = 'Farm location or boundary is required';
-    }
-    
-    // If no boundary, acreage is required
+    // Boundary drawing is required
     if (!formData.farmBoundary) {
-      if (!formData.acreage.trim()) {
-        errors.acreage = 'Acreage is required (or draw boundary on map)';
-      } else if (isNaN(formData.acreage) || parseFloat(formData.acreage) <= 0) {
-        errors.acreage = 'Acreage must be a positive number';
-      }
+      errors.location = 'Please draw the farm boundary on the map';
     }
     
     if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
@@ -292,59 +283,29 @@ const HybridOnboarding = () => {
                   <label>
                     Farm Boundary <span className="required">*</span>
                   </label>
-                  <div className="boundary-options">
-                    <button
-                      type="button"
-                      onClick={() => setShowMap(!showMap)}
-                      className={`btn-boundary ${showMap ? 'active' : ''}`}
-                    >
-                      <FaMap />
-                      {showMap ? 'Hide Map' : 'Draw on Map'}
-                    </button>
+                  <div className="map-container">
                     {formData.farmBoundary && (
                       <span className="boundary-status">
                         <FaCheck /> Boundary drawn ({formData.acreage} acres)
                       </span>
                     )}
-                  </div>
-                  
-                  {showMap && (
+                    
                     <FarmBoundaryDrawer
                       onBoundaryComplete={handleBoundaryComplete}
                       initialBoundary={formData.farmBoundary}
                       initialLocation={formData.location}
                     />
-                  )}
-                  
-                  {!showMap && (
-                    <>
-                      <div className="form-field-group">
-                        <input
-                          id="location"
-                          type="text"
-                          value={formData.location}
-                          onChange={(e) => handleFieldChange('location', e.target.value)}
-                          placeholder="Location (e.g., Sacramento, CA)"
-                          className={validationErrors.location ? 'error' : ''}
-                        />
-                        <input
-                          id="acreage"
-                          type="text"
-                          value={formData.acreage}
-                          onChange={(e) => handleFieldChange('acreage', e.target.value)}
-                          placeholder="Acres (e.g., 500)"
-                          className={validationErrors.acreage ? 'error' : ''}
-                        />
-                      </div>
+                    
+                    {!formData.farmBoundary && (
                       <p className="field-hint">
-                        Or click "Draw on Map" for precise boundary definition
+                        Click and drag on the map to draw your farm boundary
                       </p>
-                    </>
-                  )}
+                    )}
+                  </div>
                   
-                  {(validationErrors.location || validationErrors.acreage) && (
+                  {validationErrors.location && (
                     <span className="error-message">
-                      {validationErrors.location || validationErrors.acreage}
+                      {validationErrors.location}
                     </span>
                   )}
                 </div>

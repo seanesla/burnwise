@@ -26,13 +26,13 @@
   overflow: hidden;
 }
 
-/* Force Mapbox canvas to fill container */
-.mapboxgl-canvas {
+/* Force Mapbox canvas to fill container - scoped to SpatialInterface only */
+.spatial-interface .mapboxgl-canvas {
   width: 100% !important;
   height: 100% !important;
 }
 
-.mapboxgl-map {
+.spatial-interface .mapboxgl-map {
   width: 100% !important;
   height: 100% !important;
 }

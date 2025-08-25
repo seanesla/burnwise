@@ -109,11 +109,6 @@ export const AuthProvider = ({ children }) => {
           const hasOnboarded = userData.onboardingCompleted === true;
           setOnboardingComplete(hasOnboarded);
           
-          // If not onboarded and not already on onboarding page, redirect
-          if (!hasOnboarded && !window.location.pathname.includes('/onboarding')) {
-            window.location.href = '/onboarding';
-          }
-          
           // Restore onboarding data
           const userOnboardingDataKey = `${STORAGE_KEYS.ONBOARDING_DATA}_${userData.farmId}`;
           const savedOnboardingData = localStorage.getItem(userOnboardingDataKey);
