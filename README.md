@@ -36,13 +36,23 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
 ### Revolutionary Spatial Interface (UNCONVENTIONAL)
 **MAP-AS-APPLICATION**: No traditional pages or navigation - the map IS the entire interface
 - **Floating AI Assistant** - Draggable chat bubble like Facebook Messenger
-- **4-Icon Dock** - Replaced 8 tabs with minimalist bottom dock (Map, AI, Burns, Settings)
+- **5-Icon Dock** - Minimalist bottom dock (Layers, Burns, AI, Metrics, Settings)
 - **Timeline Scrubber** - Scrub through past/present/future burns like video editing
 - **Spatial Interactions** - Click farms directly, drag to create burn zones
 - **3D Perspective** - 45° pitch with terrain exaggeration and atmospheric fog
 - **Glass Morphism** - Semi-transparent floating panels with backdrop blur
 - **Spring Physics** - Smooth draggable components using Framer Motion
 - **Bloomberg Terminal meets Google Earth** - Professional yet intuitive
+
+### Real-Time Backend Visibility
+- **Live Metrics Panel** - Monitor TiDB queries, cache performance, and operations
+- **Socket.io Integration** - Real-time updates without polling
+- **Query Counter** - Track SELECT, INSERT, UPDATE, DELETE operations
+- **Cache Performance Gauge** - Visual hit/miss ratio with circular gauge
+- **Recent Operations List** - Scrollable feed of backend events with timestamps
+- **No Mocks** - All data from actual backend operations
+- **Glass Morphism Design** - Consistent with spatial interface aesthetic
+- **Powered by TiDB** - Direct visibility into database performance
 
 ### Natural Language Interface
 - **Conversational UI** - Chat with agents instead of filling forms

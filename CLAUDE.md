@@ -20,8 +20,9 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 **Features**: Real handoffs | Human-in-loop (`needsApproval`) | Natural language | Proactive monitoring | NO EMOJIS
 
 ### Spatial UI (Map IS Application)
-**frontend/src/components/**: SpatialInterface | FloatingAI | DockNavigation (4 icons) | TimelineScrubber | AgentChat | HandoffDiagram | ApprovalModal | InteractiveTutorial | OnboardingChat
+**frontend/src/components/**: SpatialInterface | FloatingAI | DockNavigation (5 icons) | TimelineScrubber | AgentChat | HandoffDiagram | ApprovalModal | InteractiveTutorial | OnboardingChat | BackendMetrics
 **Design**: Bloomberg Terminal × Google Earth | 3D terrain+fog | Glass morphism | Spring physics | NO traditional navigation
+**Backend Visibility**: Real-time metrics panel shows TiDB queries, cache performance, operations via Socket.io
 
 ### Stack & Setup
 **Tech**: TiDB+circuit breaker | Mapbox GL | Framer Motion | Socket.io | OpenAI SDK | GPT-5-mini/nano
@@ -38,7 +39,8 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 ## Technical
 **Algorithms**: Gaussian plume | Simulated annealing
 **Vectors**: Weather 128D | Smoke 64D | Burns 32D (text-embedding-3-large)
-**Reliability**: Circuit breaker (5 fail) | Rate limit (100/15min) | Pool (max 10)
+**Reliability**: Circuit breaker (5 fail) | Rate limit (100/15min) | Pool (max 30)
+**Monitoring**: Real-time Socket.io events for queries, cache, performance | BackendMetrics panel in UI
 
 ## GPT-5 Cost & Usage
 **Pricing/1M**: mini $0.25/$2.00 | nano $0.05/$0.40 | embedding $0.065
