@@ -70,13 +70,15 @@
   position: relative; /* Contain absolute children */
 }
 
-/* Map Container - Properly contain the boundary drawer */
+/* Map Container - Fixed height to contain map */
 .map-container {
   position: relative;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  height: 520px; /* Fixed height: 500px map + 20px for hint */
+  overflow: visible; /* Show instructions panel outside container */
   box-sizing: border-box;
+  display: block !important; /* Override any flex */
 }
 
 /* Ensure FarmBoundaryDrawer doesn't overflow */
