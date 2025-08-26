@@ -32,15 +32,11 @@ const HybridOnboarding = () => {
   const [formData, setFormData] = useState({
     farmName: '',
     ownerName: '',
-    email: '',
     location: '',
     acreage: '',
     farmBoundary: null, // GeoJSON boundary
     primaryCrops: '',
-    burnFrequency: 'seasonal',
-    // Notification preferences
-    notificationEmail: '',
-    emailNotificationsEnabled: false
+    burnFrequency: 'seasonal'
   });
   
   // UI state
@@ -57,14 +53,12 @@ const HybridOnboarding = () => {
     if (selectedMode === 'demo') {
       setFormData(prev => ({
         ...prev,
-        ownerName: 'Demo User',
-        email: `demo_${sessionId}@burnwise.demo`
+        ownerName: 'Demo User'
       }));
     } else if (selectedMode === 'real') {
       setFormData(prev => ({
         ...prev,
-        ownerName: '',
-        email: ''
+        ownerName: ''
       }));
     }
   }, [selectedMode, sessionId]);
@@ -82,7 +76,7 @@ const HybridOnboarding = () => {
       isComplete = formData.farmName?.trim() && hasLocation;
     } else {
       // Real users need all required fields
-      const required = ['farmName', 'ownerName', 'email'];
+      const required = ['farmName', 'ownerName'];
       const hasLocation = formData.farmBoundary !== null;
       isComplete = required.every(field => formData[field]?.trim()) && hasLocation;
     }
@@ -136,25 +130,10 @@ const HybridOnboarding = () => {
       errors.farmName = 'Farm name is required';
     }
     
-    // Only require owner and email for real users
+    // Only require owner for real users
     if (selectedMode === 'real') {
       if (!formData.ownerName.trim()) {
         errors.ownerName = 'Owner name is required';
-      }
-      
-      if (!formData.email.trim()) {
-        errors.email = 'Email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        errors.email = 'Invalid email format';
-      }
-    }
-    
-    // Validate notification email if notifications are enabled
-    if (formData.emailNotificationsEnabled) {
-      if (!formData.notificationEmail.trim()) {
-        errors.notificationEmail = 'Email address is required for notifications';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.notificationEmail)) {
-        errors.notificationEmail = 'Invalid email format';
       }
     }
     
@@ -172,7 +151,6 @@ const HybridOnboarding = () => {
     setFormData({
       farmName: 'Demo Farm',
       ownerName: 'Demo User',
-      email: 'demo@burnwise.local',
       location: 'San Diego, CA',
       acreage: '500',
       farmBoundary: null,
@@ -220,8 +198,6 @@ const HybridOnboarding = () => {
     const acreMatch = text.match(/(\d+)\s*(?:acres?|acre)/i);
     if (acreMatch) updates.acreage = acreMatch[1];
     
-    const emailMatch = text.match(/([^\s@]+@[^\s@]+\.[^\s@]+)/);
-    if (emailMatch) updates.email = emailMatch[1];
     
     // Look for location patterns
     const locationPatterns = [
@@ -278,8 +254,8 @@ const HybridOnboarding = () => {
             startedAt: new Date().toISOString()
           }));
           
-          // Update farm with user data including notification preferences
-          if (formData.farmName || formData.notificationEmail) {
+          // Update farm with user data
+          if (formData.farmName) {
             await axios.post('http://localhost:5001/api/demo/update-farm', {
               sessionId: sessionId,
               farmData: formData
@@ -294,9 +270,7 @@ const HybridOnboarding = () => {
             ...formData,
             isDemo: true,
             completedAt: new Date().toISOString(),
-            method: showAI ? 'hybrid_ai' : 'form_only',
-            notificationEmail: formData.notificationEmail,
-            emailNotificationsEnabled: formData.emailNotificationsEnabled
+            method: showAI ? 'hybrid_ai' : 'form_only'
           };
           
           completeOnboarding(onboardingData);
@@ -432,23 +406,6 @@ const HybridOnboarding = () => {
                       <span className="error-message">{validationErrors.ownerName}</span>
                     )}
                   </div>
-
-                  <div className="form-field">
-                    <label htmlFor="email">
-                      Email Address <span className="required">*</span>
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleFieldChange('email', e.target.value)}
-                      placeholder="john@farm.com"
-                      className={validationErrors.email ? 'error' : ''}
-                    />
-                    {validationErrors.email && (
-                      <span className="error-message">{validationErrors.email}</span>
-                    )}
-                  </div>
                 </div>
               )}
 
@@ -471,45 +428,6 @@ const HybridOnboarding = () => {
                     <option value="occasional">Occasional (as needed)</option>
                   </select>
                 </div>
-              </div>
-
-              {/* Notification Preferences */}
-              <div className="form-group">
-                <h3>Notification Preferences</h3>
-                
-                <div className="form-field">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={formData.emailNotificationsEnabled}
-                      onChange={(e) => handleFieldChange('emailNotificationsEnabled', e.target.checked)}
-                      style={{ marginRight: '8px' }}
-                    />
-                    Send me email updates about burn windows and alerts
-                  </label>
-                </div>
-
-                {formData.emailNotificationsEnabled && (
-                  <div className="form-field">
-                    <label htmlFor="notificationEmail">
-                      Notification Email Address
-                    </label>
-                    <input
-                      id="notificationEmail"
-                      type="email"
-                      value={formData.notificationEmail}
-                      onChange={(e) => handleFieldChange('notificationEmail', e.target.value)}
-                      placeholder="your-email@example.com"
-                      className={validationErrors.notificationEmail ? 'error' : ''}
-                    />
-                    {validationErrors.notificationEmail && (
-                      <span className="error-message">{validationErrors.notificationEmail}</span>
-                    )}
-                    <p className="field-hint">
-                      You'll receive notifications about weather windows, burn conflicts, and schedule updates
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Action Buttons */}
@@ -561,7 +479,7 @@ const HybridOnboarding = () => {
                     <textarea
                       value={aiInput}
                       onChange={(e) => setAiInput(e.target.value)}
-                      placeholder="Example: My farm is Green Valley Farm, 500 acres near Sacramento, I'm John Doe and my email is john@farm.com"
+                      placeholder="Example: My farm is Green Valley Farm, 500 acres near Sacramento, I'm John Doe"
                       rows={4}
                       disabled={isProcessingAI}
                     />

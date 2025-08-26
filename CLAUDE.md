@@ -16,7 +16,7 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 
 ### 5-Agent System (OpenAI Agents SDK)
 **backend/agents-sdk/**: orchestrator | BurnRequestAgent (nano) | WeatherAnalyst (nano) | ConflictResolver (mini) | ScheduleOptimizer (nano) | ProactiveMonitor (nano) | OnboardingAgent (mini)
-**backend/agents/**: coordinator | weather | predictor | optimizer | alerts (EMAIL ONLY via SendGrid)
+**backend/agents/**: coordinator | weather | predictor | optimizer | alerts (stub only - no functionality)
 **Features**: Real handoffs | Human-in-loop (`needsApproval`) | Natural language | Proactive monitoring | NO EMOJIS
 
 ### Spatial UI (Map IS Application)
@@ -26,7 +26,7 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 
 ### Stack & Setup
 **Tech**: TiDB+circuit breaker | Mapbox GL | Framer Motion | Socket.io | OpenAI SDK | GPT-5-mini/nano
-**ENV**: TiDB creds | OPENWEATHERMAP_API_KEY | REACT_APP_MAPBOX_TOKEN | OPENAI_API_KEY | TWILIO_SENDGRID_API_KEY
+**ENV**: TiDB creds | OPENWEATHERMAP_API_KEY | REACT_APP_MAPBOX_TOKEN | OPENAI_API_KEY
 **API**: `/api/{burn-requests,weather,schedule,alerts,farms,analytics,agents}`
 
 ### Auth & Data
@@ -34,7 +34,7 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 - Auto-creates sessions on app load
 - 24-hour temporary data
 - TiDB → Backend → Frontend (no hardcoding)
-- EMAIL ONLY - no phone fields anywhere
+- NO notifications of any kind (no email, SMS, or alerts)
 
 ## Technical
 **Algorithms**: Gaussian plume | Simulated annealing

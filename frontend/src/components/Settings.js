@@ -23,22 +23,8 @@ const Settings = () => {
   const [settings, setSettings] = useState({
     profile: {
       name: '',
-      email: '',
-      phone: '',
       farmName: '',
       role: 'Farm Owner'
-    },
-    notifications: {
-      emailAlerts: true,
-      smsAlerts: true,
-      browserNotifications: false,
-      alertTypes: {
-        burnApproved: true,
-        burnRejected: true,
-        weatherChange: true,
-        conflictDetected: true,
-        scheduleUpdate: true
-      }
     },
     preferences: {
       mapStyle: 'satellite',
@@ -210,7 +196,6 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: FaUser },
-    { id: 'notifications', label: 'Notifications', icon: FaBell },
     { id: 'preferences', label: 'Preferences', icon: FaPalette },
     { id: 'system', label: 'System', icon: FaCog }
   ];
@@ -285,32 +270,6 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
                 
                 <div className="form-group">
                   <label className="form-label">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={settings.profile.email}
-                    onChange={(e) => handleInputChange('profile', 'email', e.target.value)}
-                    className="form-input"
-                    placeholder="john@example.com"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={settings.profile.phone}
-                    onChange={(e) => handleInputChange('profile', 'phone', e.target.value)}
-                    className="form-input"
-                    placeholder="+1 555-123-4567"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">
                     Farm Name
                   </label>
                   <input
@@ -354,7 +313,7 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
                     <FaUser className="account-icon" />
                     <div>
                       <h4>Account Status</h4>
-                      <p>Signed in as: <strong>{user?.email || 'Unknown'}</strong></p>
+                      <p>Signed in as: <strong>Demo User</strong></p>
                       <p>Farm ID: <strong>#{user?.farmId || 'Unknown'}</strong></p>
                     </div>
                   </div>
@@ -450,88 +409,6 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
                       }
                     </p>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Notifications Tab */}
-          {activeTab === 'notifications' && (
-            <div>
-              <h2 className="section-title">Notification Preferences</h2>
-              
-              <div>
-                <h3 className="subsection-title">Alert Channels</h3>
-                
-                <label className="toggle-card">
-                  <div className="toggle-info">
-                    <FaBell className="toggle-icon" />
-                    <div className="toggle-text">
-                      <p className="toggle-title">Email Alerts</p>
-                      <p className="toggle-description">Receive alerts via email</p>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.notifications.emailAlerts}
-                    onChange={(e) => handleInputChange('notifications', 'emailAlerts', e.target.checked)}
-                    className="checkbox-input"
-                  />
-                </label>
-                
-                <label className="toggle-card">
-                  <div className="toggle-info">
-                    <FaBell className="toggle-icon" />
-                    <div className="toggle-text">
-                      <p className="toggle-title">SMS Alerts</p>
-                      <p className="toggle-description">Receive alerts via text message</p>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.notifications.smsAlerts}
-                    onChange={(e) => handleInputChange('notifications', 'smsAlerts', e.target.checked)}
-                    className="checkbox-input"
-                  />
-                </label>
-                
-                <label className="toggle-card">
-                  <div className="toggle-info">
-                    <FaBell className="toggle-icon" />
-                    <div className="toggle-text">
-                      <p className="toggle-title">Browser Notifications</p>
-                      <p className="toggle-description">Show desktop notifications</p>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.notifications.browserNotifications}
-                    onChange={(e) => handleInputChange('notifications', 'browserNotifications', e.target.checked)}
-                    className="checkbox-input"
-                  />
-                </label>
-              </div>
-              
-              <div className="subsection">
-                <h3 className="subsection-title">Alert Types</h3>
-                <div className="alert-types-grid">
-                  {Object.entries({
-                    burnApproved: 'Burn Request Approved',
-                    burnRejected: 'Burn Request Rejected',
-                    weatherChange: 'Weather Condition Changes',
-                    conflictDetected: 'Conflict Detected',
-                    scheduleUpdate: 'Schedule Updates'
-                  }).map(([key, label]) => (
-                    <label key={key} className="alert-type-item">
-                      <span className="alert-type-label">{label}</span>
-                      <input
-                        type="checkbox"
-                        checked={settings.notifications.alertTypes[key]}
-                        onChange={(e) => handleNestedChange('notifications', 'alertTypes', key, e.target.checked)}
-                        className="checkbox-input"
-                      />
-                    </label>
-                  ))}
                 </div>
               </div>
             </div>
@@ -784,7 +661,6 @@ Are you sure you want to reset your demo session?
 This will:
 • Delete all demo data from TiDB database
 • Clear your burn requests and farm data  
-• Remove phone number (if added)
 • Reset tutorial progress
 • Return you to demo mode selection
 
@@ -889,7 +765,6 @@ This action cannot be undone.
           <ul>
             <li>Real TiDB database integration</li>
             <li>Live GPT-5 agent interactions</li>
-            <li>Secure encrypted phone storage</li>
             <li>Full spatial interface experience</li>
           </ul>
         </div>

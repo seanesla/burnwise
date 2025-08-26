@@ -20,10 +20,10 @@ router.post('/session', async (req, res) => {
     const sessionId = uuidv4();
     const mode = 'blank'; // Always start with blank mode
     
-    // Create demo farm in TiDB - removed contact_phone column
+    // Create demo farm in TiDB
     const farmResult = await db.query(
-      'INSERT INTO farms (farm_name, owner_name, contact_email, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
-      ['Demo Farm', 'Demo User', `demo_${sessionId}@burnwise.demo`, 32.7157, -117.1611, 500, true]
+      'INSERT INTO farms (farm_name, owner_name, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+      ['Demo Farm', 'Demo User', 32.7157, -117.1611, 500, true]
     );
 
     const farmId = farmResult.insertId;
@@ -68,14 +68,11 @@ router.post('/update-farm', async (req, res) => {
     
     const farmId = sessions[0].farm_id;
     
-    // Update farm with user data including notification preferences
+    // Update farm with user data
     await db.query(`
       UPDATE farms SET
         farm_name = ?,
         owner_name = ?,
-        contact_email = ?,
-        notification_email = ?,
-        email_notifications_enabled = ?,
         address = ?,
         latitude = ?,
         longitude = ?,
@@ -85,9 +82,6 @@ router.post('/update-farm', async (req, res) => {
     `, [
       farmData.name || farmData.farmName || 'Demo Farm',
       farmData.owner_name || farmData.ownerName || 'Demo User',
-      farmData.email || `demo_${sessionId}@burnwise.demo`,
-      farmData.notificationEmail || null,
-      farmData.emailNotificationsEnabled || false,
       farmData.address || farmData.location || 'Demo Location',
       farmData.location?.lat || farmData.latitude || 32.7157,
       farmData.location?.lon || farmData.longitude || -117.1611,

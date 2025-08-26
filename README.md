@@ -82,7 +82,7 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
 - **Conflict Detection** - Automatic identification of overlapping smoke zones
 - **Schedule Optimization** - AI-powered rescheduling to eliminate conflicts
 - **Weather Integration** - Live weather data affecting burn decisions
-- **Alert Management** - Automated notifications via email (SendGrid)
+- **Monitoring Dashboard** - Real-time system status and metrics
 
 ### TiDB Vector Capabilities
 - **Weather Pattern Vectors** (128-dimensional) - Historical pattern matching
@@ -105,7 +105,6 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
 - **Node.js** with Express.js
 - **TiDB Serverless** with vector columns
 - **OpenWeatherMap API** for weather data
-- **SendGrid** for email alerts
 - **Socket.io** for real-time updates
 - **Bull** for job queuing
 - **Winston** for logging
@@ -134,7 +133,6 @@ Burnwise coordinates burns across multiple farms to ensure safe air quality whil
   - **OpenAI API key** (CRITICAL - GPT-5-mini for JSON tasks, GPT-5-nano for text agents)
   - OpenWeatherMap API key (required)
   - Mapbox token (required)
-  - Twilio credentials (optional, for SMS)
 
 ## Quick Start
 
@@ -166,8 +164,6 @@ OPENAI_API_KEY=your-openai-api-key
 # Weather API
 OPENWEATHERMAP_API_KEY=your-api-key
 
-# Optional: Email Alerts
-TWILIO_SENDGRID_API_KEY=your-sendgrid-api-key
 
 # Server
 PORT=5001
@@ -214,14 +210,14 @@ The application will be available at:
 ### Monitor Real-time Status
 1. The dashboard shows current burn activities
 2. Map displays smoke plume predictions
-3. Alerts panel shows notifications
+3. Status panel shows system health
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Frontend (React)                      │
-│  Map │ Dashboard │ Schedule │ Forms │ Alerts            │
+│  Map │ Dashboard │ Schedule │ Forms │ Status            │
 └─────────────────────────────────────────────────────────┘
                             │
                      Socket.io / REST
@@ -233,7 +229,7 @@ The application will be available at:
 │  │                                                   │  │
 │  │  Coordinator → Weather → Predictor → Optimizer   │  │
 │  │                    ↓                              │  │
-│  │                  Alerts                           │  │
+│  │                  Monitor                          │  │
 │  └───────────────────────────────────────────────────┘  │
 │                                                          │
 │  API Routes │ Middleware │ Utils │ Job Queue           │
@@ -245,7 +241,7 @@ The application will be available at:
 │                  TiDB Serverless                         │
 │                                                          │
 │  Tables: farms, burn_requests, weather_conditions,      │
-│  smoke_predictions, alerts, optimized_schedules          │
+│  smoke_predictions, optimized_schedules                 │
 │                                                          │
 │  Vectors: weather_pattern_embedding, plume_vector,      │
 │  burn_vector                                             │
@@ -267,9 +263,9 @@ The application will be available at:
 - `POST /api/schedule/optimize` - Run optimization algorithm
 - `GET /api/schedule/:date` - Get schedule for date
 
-### Alerts
-- `GET /api/alerts` - List alerts
-- `POST /api/alerts/send` - Trigger alert delivery
+### System
+- `GET /api/status` - System health check
+- `GET /api/metrics` - Performance metrics
 
 ## 🧪 Testing
 
