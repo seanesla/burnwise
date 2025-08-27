@@ -20,19 +20,11 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { initializeDatabase, query } = require('./db/connection');
 const { smartCache, conditionalRequests } = require('./middleware/cacheHeaders');
 const { authenticateToken, optionalAuth } = require('./middleware/auth');
-// Check if performance optimizations exist
-let performanceMiddleware = {};
-try {
-  performanceMiddleware = require('./middleware/performanceOptimizations');
-} catch (err) {
-  console.log('Performance optimizations not found, using defaults');
-}
-const { 
-  responseCacheMiddleware = (ttl) => (req, res, next) => next(), 
-  optimizeQueryParams = (req, res, next) => next(), 
-  deduplicateRequests = () => (req, res, next) => next(),
-  monitorMemoryUsage = () => {} 
-} = performanceMiddleware;
+// Simple middleware fallbacks
+const responseCacheMiddleware = (ttl) => (req, res, next) => next();
+const optimizeQueryParams = (req, res, next) => next();
+const deduplicateRequests = () => (req, res, next) => next();
+const monitorMemoryUsage = () => {};
 console.log('Database module loaded');
 
 // Import API routes
@@ -68,8 +60,8 @@ const predictorAgent = require('./agents/predictor');
 console.log('Predictor agent loaded');
 const optimizerAgent = require('./agents/optimizer');
 console.log('Optimizer agent loaded');
-const alertsAgent = require('./agents/alerts');
-console.log('Alerts agent loaded');
+// alertsAgent removed - stub functionality eliminated
+console.log('Alerts agent removed (was stub)');
 const { startCleanupJob } = require('./jobs/demoCleanup');
 console.log('Demo cleanup job loaded');
 
@@ -439,11 +431,11 @@ async function startServer() {
     console.log('Optimizer Agent initialized');
     logger.info('Optimizer Agent initialized successfully');
     
-    console.log('Step 5: Initializing Alerts Agent...');
-    logger.info('Initializing Alerts Agent...');
-    await alertsAgent.initialize();
-    console.log('Alerts Agent initialized');
-    logger.info('Alerts Agent initialized successfully');
+    console.log('Step 5: Alerts Agent removed (was stub)...');
+    logger.info('Alerts Agent removed - no initialization needed');
+    // Alerts Agent removed - no initialization needed
+    console.log('Alerts Agent removed (was stub)');
+    logger.info('Alerts Agent removed - stub functionality eliminated');
     
     console.log('All agents initialized successfully');
     logger.info('All agents initialized successfully');

@@ -3,7 +3,7 @@ const { query } = require('../db/connection');
 const { asyncHandler, ValidationError, DatabaseError } = require('../middleware/errorHandler');
 const optimizerAgent = require('../agents/optimizer');
 const weatherAgent = require('../agents/weather');
-const alertsAgent = require('../agents/alerts');
+// alertsAgent removed - stub functionality not needed
 const logger = require('../middleware/logger');
 const Joi = require('joi');
 
@@ -854,20 +854,14 @@ router.put('/update', asyncHandler(async (req, res) => {
     
     // Send notifications
     const io = req.app.get('io');
-    await alertsAgent.processAlert({
-      type: 'schedule_update',
+    // Alert functionality removed - was stub only
+    logger.info('Schedule updated - notifications disabled', {
       farm_id: scheduleItem.farm_id,
       burn_request_id: burn_request_id,
-      title: 'Burn Schedule Updated',
-      message: `Your burn for ${scheduleItem.field_name} has been rescheduled`,
-      severity: 'medium',
-      data: {
-        farmName: scheduleItem.farm_name,
-        fieldName: scheduleItem.field_name,
-        newTime: `${new_time_slot.start_time} - ${new_time_slot.end_time}`,
-        reason
-      }
-    }, null, io);
+      field_name: scheduleItem.field_name,
+      new_time: `${new_time_slot.start_time} - ${new_time_slot.end_time}`,
+      reason
+    });
     
     const duration = Date.now() - startTime;
     
@@ -1091,18 +1085,13 @@ router.post('/reoptimize/:date', asyncHandler(async (req, res) => {
     
     // Send notifications about re-optimization
     const io = req.app.get('io');
-    await alertsAgent.processAlert({
-      type: 'schedule_reoptimized',
-      title: 'Schedule Re-optimized',
-      message: `Schedule for ${date} has been re-optimized`,
-      severity: 'medium',
-      data: {
-        date,
-        newScore: optimizationResult.metrics?.overallScore,
-        improvement,
-        algorithm: algorithm
-      }
-    }, optimizationResult, io);
+    // Alert functionality removed - was stub only
+    logger.info('Schedule re-optimization complete - notifications disabled', {
+      date,
+      newScore: optimizationResult.metrics?.overallScore,
+      improvement,
+      algorithm: algorithm
+    });
     
     const duration = Date.now() - startTime;
     

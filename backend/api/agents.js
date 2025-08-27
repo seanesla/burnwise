@@ -9,7 +9,7 @@ const coordinatorAgent = require('../agents/coordinator');
 const weatherAgent = require('../agents/weather');
 const predictorAgent = require('../agents/predictor');
 const optimizerAgent = require('../agents/optimizer');
-const alertsAgent = require('../agents/alerts');
+// alertsAgent removed - stub functionality eliminated
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 

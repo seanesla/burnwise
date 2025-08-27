@@ -1,7 +1,7 @@
 const express = require('express');
 const { query } = require('../db/connection');
 const { asyncHandler, ValidationError, DatabaseError } = require('../middleware/errorHandler');
-const alertsAgent = require('../agents/alerts');
+// alertsAgent removed - stub functionality eliminated
 const logger = require('../middleware/logger');
 const Joi = require('joi');
 
@@ -270,7 +270,8 @@ router.post('/', asyncHandler(async (req, res) => {
     
     // Process alert through alerts agent
     const io = req.app.get('io');
-    const alertResult = await alertsAgent.processAlert(alertData, null, io);
+    // Alert processing disabled - was stub functionality only
+    const alertResult = { success: true, message: 'Alert processing disabled' };
     
     const duration = Date.now() - startTime;
     
@@ -390,7 +391,8 @@ router.put('/:id', asyncHandler(async (req, res) => {
  */
 router.get('/types', asyncHandler(async (req, res) => {
   try {
-    const agentStatus = await alertsAgent.getStatus();
+    // Agent status disabled - was stub functionality only
+    const agentStatus = { initialized: false, message: 'Alerts disabled' };
     
     if (!agentStatus.alertTypes) {
       throw new DatabaseError('Alert types not available', new Error('Agent not properly initialized'));
@@ -424,7 +426,7 @@ router.get('/types', asyncHandler(async (req, res) => {
       
       return {
         type,
-        configuration: alertsAgent.alertTypes ? alertsAgent.alertTypes[type] : null,
+        configuration: null, // Alert types disabled
         usage_statistics: stats
       };
     });
@@ -910,7 +912,8 @@ router.get('/delivery-status/:id', asyncHandler(async (req, res) => {
  */
 router.get('/agent-status', asyncHandler(async (req, res) => {
   try {
-    const agentStatus = await alertsAgent.getStatus();
+    // Agent status disabled - was stub functionality only
+    const agentStatus = { initialized: false, message: 'Alerts disabled' };
     
     res.json({
       success: true,
