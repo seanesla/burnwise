@@ -207,7 +207,7 @@ async function cleanupSingleSession(session) {
       const windowEnd = new Date(new Date(sessionCreatedAt[0].created_at).getTime() + timeWindow);
 
       const nearbyDemoFarmsResult = await query(
-        'DELETE FROM farms WHERE is_demo = true AND created_at BETWEEN ? AND ? AND id != ?',
+        'DELETE FROM farms WHERE is_demo = true AND created_at BETWEEN ? AND ? AND farm_id != ?',
         [windowStart, windowEnd, farm_id]
       );
       totalDeleted += nearbyDemoFarmsResult.affectedRows || 0;
@@ -215,7 +215,7 @@ async function cleanupSingleSession(session) {
 
     // 8. Delete main demo farm
     const mainFarmResult = await query(
-      'DELETE FROM farms WHERE id = ? AND is_demo = true',
+      'DELETE FROM farms WHERE farm_id = ? AND is_demo = true',
       [farm_id]
     );
     totalDeleted += mainFarmResult.affectedRows || 0;
