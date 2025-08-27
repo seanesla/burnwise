@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  FaMap, FaFire, FaCloudSun, FaBell, FaCog, 
+  FaMap, FaFire, FaCloudSun, FaCog, 
   FaUser, FaSignOutAlt, FaBars, FaTimes,
   FaExclamationTriangle, FaCheck, FaQuestionCircle
 } from 'react-icons/fa';
@@ -37,7 +37,6 @@ const Sidebar = ({ onPanelChange }) => {
   const [farmData, setFarmData] = useState(null);
   const [activeBurnsCount, setActiveBurnsCount] = useState(0);
   const [weatherStatus, setWeatherStatus] = useState(null);
-  const [alertsCount, setAlertsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Save sidebar state to localStorage
@@ -116,8 +115,6 @@ const Sidebar = ({ onPanelChange }) => {
         setWeatherStatus({ condition: 'Unknown', temperature: null });
       }
 
-      // Get alerts count (simplified for now)
-      setAlertsCount(0); // Will be updated when alerts API is available
 
     } catch (error) {
       console.error('Failed to load farm data:', error);
@@ -125,7 +122,6 @@ const Sidebar = ({ onPanelChange }) => {
       setFarmData({ name: 'Your Farm' });
       setActiveBurnsCount(0);
       setWeatherStatus({ condition: 'Unknown' });
-      setAlertsCount(0);
     } finally {
       setLoading(false);
     }
@@ -212,14 +208,6 @@ const Sidebar = ({ onPanelChange }) => {
       action: () => handlePanelChange('weather'),
       status: weatherStatus?.condition || 'Loading...',
       description: 'Current weather conditions'
-    },
-    {
-      id: 'alerts',
-      label: 'Alerts',
-      icon: FaBell,
-      action: () => handlePanelChange('alerts'),
-      badge: alertsCount,
-      description: 'Safety and weather alerts'
     },
     {
       id: 'settings',
