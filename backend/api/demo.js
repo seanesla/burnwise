@@ -164,17 +164,16 @@ router.post('/initialize', async (req, res) => {
     const farmData = {
       farm_name: mode === 'blank' ? 'Your Demo Farm' : 'Golden Valley Demo Farm',
       owner_name: 'Demo User',
-      contact_email: `demo_${sessionId}@burnwise.demo`,
       latitude: 32.7157, // San Diego area for demo
       longitude: -117.1611,
       total_acreage: mode === 'blank' ? 500 : 750,
       is_demo: true
     };
 
-    // Insert farm and get the ID
+    // Insert farm and get the ID (removed contact_email - column doesn't exist)
     const farmResult = await db.query(
-      'INSERT INTO farms (farm_name, owner_name, contact_email, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
-      [farmData.farm_name, farmData.owner_name, farmData.contact_email, farmData.latitude, farmData.longitude, farmData.total_acreage, farmData.is_demo]
+      'INSERT INTO farms (farm_name, owner_name, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+      [farmData.farm_name, farmData.owner_name, farmData.latitude, farmData.longitude, farmData.total_acreage, farmData.is_demo]
     );
 
     const farmId = farmResult.insertId;

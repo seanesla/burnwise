@@ -182,7 +182,7 @@ async function cleanupSingleSession(session) {
 
     // 6. Delete weather data and analyses
     const weatherAnalysesResult = await query(
-      'DELETE FROM weather_analyses WHERE farm_id = ?',
+      'DELETE wa FROM weather_analyses wa JOIN burn_requests br ON wa.burn_request_id = br.request_id WHERE br.farm_id = ?',
       [farm_id]
     );
     totalDeleted += weatherAnalysesResult.affectedRows || 0;
