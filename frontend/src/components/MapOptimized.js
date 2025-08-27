@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import LoadingSpinner from './LoadingSpinner';
 import MapboxWebGLHandler from './MapboxWebGLHandler';
 
 const MapOptimized = () => {
@@ -279,7 +278,7 @@ const MapOptimized = () => {
           className="absolute inset-0 flex items-center justify-center z-10 bg-black/50"
         >
           <div className="text-center">
-            <LoadingSpinner size="large" />
+            Loading...
             <p className="text-white mt-4">Loading map...</p>
           </div>
         </motion.div>

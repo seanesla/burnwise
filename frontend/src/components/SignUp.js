@@ -14,7 +14,6 @@ import {
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import EmberBackground from './backgrounds/EmberBackground';
 import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from './LoadingSpinner';
 import './Auth.css';
 
 const SignUp = () => {
@@ -179,7 +178,7 @@ const SignUp = () => {
   if (authLoading) {
     return (
       <div className="auth-loading">
-        <LoadingSpinner size="large" />
+        Loading...
       </div>
     );
   }
@@ -384,7 +383,7 @@ const SignUp = () => {
           >
             {loading ? (
               <>
-                <LoadingSpinner size="small" />
+                Loading...
                 <span>Creating Account...</span>
               </>
             ) : (

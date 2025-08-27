@@ -11,7 +11,6 @@ import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import EmberBackground from './backgrounds/EmberBackground';
 import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from './LoadingSpinner';
 // Demo section separated for better desktop layout
 import './Auth.css';
 
@@ -131,7 +130,7 @@ const Login = () => {
   if (authLoading) {
     return (
       <div className="auth-loading">
-        <LoadingSpinner size="large" />
+        Loading...
       </div>
     );
   }
@@ -234,7 +233,7 @@ const Login = () => {
           >
             {loading ? (
               <>
-                <LoadingSpinner size="small" />
+                Loading...
                 <span>Signing in...</span>
               </>
             ) : (

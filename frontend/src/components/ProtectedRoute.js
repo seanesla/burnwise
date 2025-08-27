@@ -7,7 +7,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from './LoadingSpinner';
 
 const ProtectedRoute = ({ children, requireOnboarding = false }) => {
   const { isAuthenticated, loading, needsOnboarding } = useAuth();
@@ -23,7 +22,7 @@ const ProtectedRoute = ({ children, requireOnboarding = false }) => {
         minHeight: '100vh',
         background: 'linear-gradient(135deg, #000000 0%, #1a0f0f 50%, #2a1111 100%)'
       }}>
-        <LoadingSpinner size="large" />
+        Loading...
       </div>
     );
   }

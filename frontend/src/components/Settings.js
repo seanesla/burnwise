@@ -7,7 +7,7 @@ import {
   FaTrash, FaRedo, FaClock, FaShieldAlt, FaSignOutAlt, FaKey
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import LoadingSpinner from './LoadingSpinner';
+// LoadingSpinner removed - no page loading animations
 import settingsManager from '../utils/settingsManager';
 import { useAuth } from '../contexts/AuthContext';
 import './Settings.css';
@@ -203,7 +203,7 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
   if (loading) {
     return (
       <div className="settings-loading">
-        <LoadingSpinner size="large" />
+        <div>Loading settings...</div>
       </div>
     );
   }
@@ -364,7 +364,7 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
                     >
                       {isLoggingOut ? (
                         <>
-                          <LoadingSpinner size="small" color="#fff" />
+                          <span>Loading...</span>
                           Signing Out...
                         </>
                       ) : (
@@ -386,7 +386,7 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
                         >
                           {isLoggingOut ? (
                             <>
-                              <LoadingSpinner size="small" color="#fff" />
+                              <span>Loading...</span>
                               Ending Demo...
                             </>
                           ) : (
@@ -619,7 +619,7 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
           >
             {saving ? (
               <>
-                <LoadingSpinner size="small" color="#fff" />
+                Loading...
                 Saving...
               </>
             ) : (
@@ -788,7 +788,7 @@ This action cannot be undone.
         >
           {isResetting ? (
             <>
-              <LoadingSpinner size="small" color="#fff" />
+              Loading...
               Resetting Demo...
             </>
           ) : (

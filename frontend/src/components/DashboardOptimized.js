@@ -5,7 +5,6 @@ import {
   FaCalendarAlt, FaChartLine, FaLeaf 
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import LoadingSpinner from './LoadingSpinner';
 
 // Memoized stat card component
 const StatCard = memo(({ icon: Icon, title, value, trend, color }) => (
@@ -170,7 +169,7 @@ const DashboardOptimized = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-dark">
-        <LoadingSpinner size="large" />
+        Loading...
       </div>
     );
   }

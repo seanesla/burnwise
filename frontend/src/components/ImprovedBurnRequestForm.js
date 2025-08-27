@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaFire, FaMapMarkedAlt, FaCalendarAlt, FaClock, FaLeaf, FaExclamationTriangle, FaCheck, FaUser, FaShieldAlt, FaCloudSun, FaRoute } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import LoadingSpinner from './LoadingSpinner';
 import '../styles/BurnRequestRedesign.css';
 // import '../styles/mapbox-overrides.css'; // DISABLED - Let Mapbox handle sizing
 import '../styles/input-stabilization.css';
@@ -467,7 +466,7 @@ const ImprovedBurnRequestForm = () => {
           
           {!mapLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <LoadingSpinner size="large" />
+              Loading...
             </div>
           )}
           
@@ -936,7 +935,7 @@ const ImprovedBurnRequestForm = () => {
           >
             {loading ? (
               <>
-                <LoadingSpinner size="small" color="#fff" />
+                Loading...
                 Submitting...
               </>
             ) : (

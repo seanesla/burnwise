@@ -10,7 +10,6 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import axios from 'axios';
-import LoadingSpinner from './LoadingSpinner';
 import './Analytics.css';
 
 const Analytics = () => {
@@ -99,7 +98,7 @@ const Analytics = () => {
   if (loading) {
     return (
       <div className="analytics-loading">
-        <LoadingSpinner size="large" />
+        Loading...
       </div>
     );
   }

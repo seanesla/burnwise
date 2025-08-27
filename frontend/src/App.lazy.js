@@ -1,7 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import './styles/theme.css';
 import './styles/global.css';
@@ -19,7 +18,7 @@ const Settings = lazy(() => import('./components/Settings'));
 // Loading fallback component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-dark">
-    <LoadingSpinner size="large" />
+    Loading...
   </div>
 );
 

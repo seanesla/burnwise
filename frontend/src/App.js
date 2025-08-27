@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import LoadingSpinner from './components/LoadingSpinner';
+// LoadingSpinner removed - no page loading animations
 import ErrorBoundary from './components/ErrorBoundary';
 // ProtectedRoute no longer needed - everything is demo
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -58,7 +58,7 @@ function AppContent() {
       
       <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''}`}>
         <ErrorBoundary>
-          <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size="large" /></div>}>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
             <Routes>
               {/* Root route ALWAYS shows Landing page - it handles auth state internally */}
               <Route path="/" element={<Landing />} />

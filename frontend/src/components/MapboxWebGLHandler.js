@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { FaExclamationTriangle, FaSync } from 'react-icons/fa';
-import LoadingSpinner from './LoadingSpinner';
 
 /**
  * Higher-order component to handle WebGL context lost errors in Mapbox
@@ -196,7 +195,7 @@ const MapboxWebGLHandler = ({ children, onContextLost, onContextRestored }) => {
           
           {recovering ? (
             <div className="flex items-center justify-center gap-2">
-              <LoadingSpinner size="small" />
+              Loading...
               <span className="text-white">Recovering...</span>
             </div>
           ) : (
