@@ -1,21 +1,203 @@
 /**
- * Agent API Routes - Simplified Direct Agent Interface
- * Uses core agents directly instead of SDK wrapper layer
+ * Agent API Routes - Real OpenAI Agents SDK Integration
+ * Uses 5-Agent System with proper handoffs
  */
 
 const express = require('express');
 const router = express.Router();
-const coordinatorAgent = require('../agents/coordinator');
-const weatherAgent = require('../agents/weather');
-const predictorAgent = require('../agents/predictor');
-const optimizerAgent = require('../agents/optimizer');
-// alertsAgent removed - stub functionality eliminated
+const { run } = require('@openai/agents');
+const orchestrator = require('../agents-sdk/orchestrator');
+const burnRequestAgent = require('../agents-sdk/BurnRequestAgent');
+const weatherAnalyst = require('../agents-sdk/WeatherAnalyst');
+const conflictResolver = require('../agents-sdk/ConflictResolver');
+const scheduleOptimizer = require('../agents-sdk/ScheduleOptimizer');
+const proactiveMonitor = require('../agents-sdk/ProactiveMonitor');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
 
+// Monitoring state
+let monitoringState = {
+  isRunning: false,
+  lastCheck: null,
+  checkInterval: null
+};
+
+// Helper function to resolve conflicts
+async function resolveConflicts(burnDate, conflictData) {
+  try {
+    const request = `Resolve conflicts for burns scheduled on ${burnDate}. ${conflictData ? `Additional data: ${JSON.stringify(conflictData)}` : ''}`;
+    
+    const result = await run(conflictResolver, request, {
+      context: { burnDate, conflictData }
+    });
+    
+    return {
+      success: true,
+      resolution: result.finalOutput || 'Conflicts resolved',
+      agentUsed: 'ConflictResolver'
+    };
+  } catch (error) {
+    logger.error('Conflict resolution failed', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Helper function to optimize burn schedule
+async function optimizeBurnSchedule(date, burnRequests) {
+  try {
+    const request = `Optimize burn schedule for ${date}. ${burnRequests ? `Burns to schedule: ${JSON.stringify(burnRequests)}` : ''}`;
+    
+    const result = await run(scheduleOptimizer, request, {
+      context: { date, burnRequests }
+    });
+    
+    return {
+      success: true,
+      optimizedSchedule: result.finalOutput || 'Schedule optimized',
+      agentUsed: 'ScheduleOptimizer'
+    };
+  } catch (error) {
+    logger.error('Schedule optimization failed', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Helper function to start monitoring
+async function startMonitoring(io) {
+  if (monitoringState.isRunning) {
+    return { message: 'Monitoring already running' };
+  }
+  
+  monitoringState.isRunning = true;
+  monitoringState.lastCheck = new Date();
+  
+  // Run monitoring check every 15 minutes
+  monitoringState.checkInterval = setInterval(async () => {
+    try {
+      const result = await run(proactiveMonitor, 'Perform routine monitoring check', {
+        context: { timestamp: new Date() }
+      });
+      
+      monitoringState.lastCheck = new Date();
+      
+      // Emit alerts via Socket.io if any
+      if (result.finalOutput && io) {
+        io.emit('monitoring-alert', {
+          timestamp: new Date(),
+          alerts: result.finalOutput
+        });
+      }
+    } catch (error) {
+      logger.error('Monitoring check failed', error);
+    }
+  }, 15 * 60 * 1000); // 15 minutes
+  
+  return { message: 'Monitoring started', interval: '15 minutes' };
+}
+
+// Helper function to stop monitoring
+function stopMonitoring() {
+  if (monitoringState.checkInterval) {
+    clearInterval(monitoringState.checkInterval);
+    monitoringState.checkInterval = null;
+  }
+  
+  monitoringState.isRunning = false;
+  return { message: 'Monitoring stopped' };
+}
+
+// Helper function to get monitoring status
+function getMonitoringStatus() {
+  return {
+    isRunning: monitoringState.isRunning,
+    lastCheck: monitoringState.lastCheck,
+    nextCheck: monitoringState.isRunning && monitoringState.lastCheck
+      ? new Date(monitoringState.lastCheck.getTime() + 15 * 60 * 1000)
+      : null
+  };
+}
+
+// Helper function to trigger manual check
+async function triggerManualCheck() {
+  try {
+    const result = await run(proactiveMonitor, 'Perform immediate monitoring check - manual trigger', {
+      context: { 
+        timestamp: new Date(),
+        manual: true
+      }
+    });
+    
+    monitoringState.lastCheck = new Date();
+    
+    return {
+      success: true,
+      results: result.finalOutput || 'Manual check completed',
+      timestamp: monitoringState.lastCheck
+    };
+  } catch (error) {
+    logger.error('Manual check failed', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Helper function to execute full workflow
+async function executeFullWorkflow(burnRequest, io) {
+  const workflow = {
+    timestamp: new Date(),
+    stages: []
+  };
+  
+  try {
+    // Stage 1: Process burn request
+    const stage1 = await run(burnRequestAgent, JSON.stringify(burnRequest), {
+      context: { burnRequest }
+    });
+    workflow.stages.push({ agent: 'BurnRequestAgent', success: true });
+    
+    // Stage 2: Weather analysis
+    const stage2 = await run(weatherAnalyst, `Analyze weather for burn at ${burnRequest.location}`, {
+      context: { burnRequest }
+    });
+    workflow.stages.push({ agent: 'WeatherAnalyst', success: true });
+    
+    // Stage 3: Conflict detection
+    const stage3 = await run(conflictResolver, `Check conflicts for burn on ${burnRequest.burn_date}`, {
+      context: { burnRequest }
+    });
+    workflow.stages.push({ agent: 'ConflictResolver', success: true });
+    
+    // Stage 4: Schedule optimization
+    const stage4 = await run(scheduleOptimizer, `Optimize schedule including new burn`, {
+      context: { burnRequest }
+    });
+    workflow.stages.push({ agent: 'ScheduleOptimizer', success: true });
+    
+    // Stage 5: Start monitoring
+    const stage5 = await run(proactiveMonitor, `Begin monitoring for new burn`, {
+      context: { burnRequest }
+    });
+    workflow.stages.push({ agent: 'ProactiveMonitor', success: true });
+    
+    workflow.success = true;
+    workflow.summary = 'Full workflow executed successfully';
+    
+    // Emit workflow completion via Socket.io
+    if (io) {
+      io.emit('workflow-complete', workflow);
+    }
+    
+    return workflow;
+  } catch (error) {
+    logger.error('Workflow execution failed', error);
+    workflow.success = false;
+    workflow.error = error.message;
+    return workflow;
+  }
+}
+
 /**
  * POST /api/agents/chat
- * Simplified chat endpoint using core agents directly
+ * Real OpenAI Agents SDK chat endpoint with orchestrator
  */
 router.post('/chat', async (req, res) => {
   try {
@@ -28,49 +210,51 @@ router.post('/chat', async (req, res) => {
     logger.info('Agent chat request', { userId, conversationId, messageLength: message.length });
     const startTime = Date.now();
     
-    // Simple routing based on message content
-    let response = 'I understand you want to interact with the burn management system.';
-    let toolsUsed = [];
-    
     try {
-      if (message.toLowerCase().includes('burn') || message.toLowerCase().includes('request')) {
-        // Use coordinator for burn requests
-        const result = await coordinatorAgent.coordinateBurnRequest({
-          farm_id: req.session?.demoFarmId || 1,
-          field_name: 'Field-' + Date.now(),
-          acres: 50,
-          crop_type: 'wheat',
-          burn_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          time_window_start: '08:00',
-          time_window_end: '12:00',
-          urgency: 'medium',
-          reason: 'Extracted from: ' + message.substring(0, 100)
+      // Use OpenAI Agents SDK to run the orchestrator
+      const result = await run(orchestrator, message, {
+        context: {
+          userId,
+          conversationId,
+          farmId: req.session?.demoFarmId || 1,
+          sessionId: req.sessionID
+        }
+      });
+      
+      // Extract agent handoffs and tools used from the result
+      const toolsUsed = [];
+      const agentsInvolved = ['BurnwiseOrchestrator'];
+      
+      if (result.runItems) {
+        result.runItems.forEach(item => {
+          if (item.type === 'tool_call') {
+            toolsUsed.push(item.name);
+          } else if (item.type === 'handoff_call') {
+            agentsInvolved.push(item.name);
+          }
         });
-        response = result.success ? 
-          `Created burn request #${result.burnRequestId}. ${result.message}` :
-          `Failed to create burn request: ${result.error}`;
-        toolsUsed.push('coordinator');
-      } else if (message.toLowerCase().includes('weather')) {
-        // Use weather agent
-        const result = await weatherAgent.getCurrentWeatherData(38.544, -121.740);
-        response = `Current weather conditions: ${result.temperature}°F, wind ${result.windSpeed} mph, humidity ${result.humidity}%. ${result.burnRecommendation || 'Conditions analyzed.'}`;
-        toolsUsed.push('weather');
-      } else {
-        // General response
-        response = 'I can help you with burn requests, weather analysis, schedule optimization, and conflict prediction. Try asking about weather conditions or creating a burn request.';
       }
+      
+      res.json({
+        success: true,
+        response: result.finalOutput || 'Request processed successfully',
+        toolsUsed,
+        agentsInvolved,
+        conversationId,
+        duration: Date.now() - startTime,
+        handoffs: agentsInvolved.length - 1 // Number of agent handoffs
+      });
+      
     } catch (agentError) {
-      logger.warn('Agent processing failed, using fallback', { error: agentError.message });
-      response = 'I\'m having trouble processing that request right now, but I\'m here to help with burn management. Please try rephrasing your request.';
+      logger.warn('Agent processing failed', { error: agentError.message });
+      res.json({
+        success: false,
+        response: 'I encountered an issue processing your request. Please try rephrasing or be more specific.',
+        error: agentError.message,
+        conversationId,
+        duration: Date.now() - startTime
+      });
     }
-    
-    res.json({
-      success: true,
-      response,
-      toolsUsed,
-      conversationId,
-      duration: Date.now() - startTime
-    });
     
   } catch (error) {
     logger.error('Agent chat failed', { error: error.message });
@@ -83,7 +267,7 @@ router.post('/chat', async (req, res) => {
 
 /**
  * POST /api/agents/burn-request
- * Simplified burn request processing using core agents
+ * Natural language burn request using BurnRequestAgent
  */
 router.post('/burn-request', async (req, res) => {
   try {
@@ -95,37 +279,43 @@ router.post('/burn-request', async (req, res) => {
     
     logger.info('Natural language burn request', { userId, textLength: text.length });
     
-    // Simple structured data extraction from text
-    const structured = {
-      farm_id: req.session?.demoFarmId || 1,
-      field_name: `Field-${Date.now()}`,
-      acres: 50, // Default, could parse from text
-      crop_type: text.toLowerCase().includes('wheat') ? 'wheat' : 
-                 text.toLowerCase().includes('corn') ? 'corn' : 'wheat',
-      burn_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      time_window_start: '08:00',
-      time_window_end: '12:00',
-      urgency: text.toLowerCase().includes('urgent') || text.toLowerCase().includes('asap') ? 'high' : 'medium',
-      reason: `Processed from: ${text.substring(0, 100)}`
-    };
+    // Use BurnRequestAgent directly for natural language processing
+    const result = await run(burnRequestAgent, text, {
+      context: {
+        userId,
+        farmId: req.session?.demoFarmId || 1,
+        sessionId: req.sessionID
+      }
+    });
     
-    // Process with coordinator agent
-    const result = await coordinatorAgent.coordinateBurnRequest(structured);
+    // Extract structured data and validation from agent result
+    const structured = {};
+    let burnRequestId = null;
+    let validationIssues = [];
     
-    if (!result.success) {
-      return res.status(400).json(result);
+    if (result.runItems) {
+      result.runItems.forEach(item => {
+        if (item.type === 'tool_call' && item.name === 'store_burn_request') {
+          burnRequestId = item.result?.requestId;
+          structured.acres = item.arguments?.acres;
+          structured.crop_type = item.arguments?.crop_type;
+          structured.burn_date = item.arguments?.burn_date;
+        } else if (item.type === 'tool_call' && item.name === 'validate_parameters') {
+          validationIssues = item.result?.issues || [];
+        }
+      });
     }
     
     res.json({
-      success: true,
-      burnRequestId: result.burnRequestId,
+      success: !!burnRequestId,
+      burnRequestId,
       structured,
-      workflow: {
-        weatherDecision: 'SAFE', // Simplified
-        conflictsFound: 0,
-        scheduled: true
+      validation: {
+        issues: validationIssues,
+        needsApproval: structured.acres > 100
       },
-      message: `Created burn request #${result.burnRequestId} for ${structured.acres} acres`
+      message: result.finalOutput || `Processed burn request for ${structured.acres || 'unknown'} acres`,
+      agentUsed: 'BurnRequestAgent'
     });
     
   } catch (error) {
@@ -139,7 +329,7 @@ router.post('/burn-request', async (req, res) => {
 
 /**
  * POST /api/agents/weather-analysis
- * Simplified weather analysis using core weather agent
+ * Autonomous weather analysis using WeatherAnalyst agent
  */
 router.post('/weather-analysis', async (req, res) => {
   try {
@@ -151,25 +341,44 @@ router.post('/weather-analysis', async (req, res) => {
     
     logger.info('Weather analysis request', { location, burnDate });
     
-    // Use core weather agent
-    const lat = location.lat || 38.544;
-    const lng = location.lng || -121.740;
-    const weatherData = await weatherAgent.getCurrentWeatherData(lat, lng);
+    // Prepare context for WeatherAnalyst
+    const analysisRequest = `Analyze weather conditions for a burn at latitude ${location.lat || 38.544}, longitude ${location.lng || -121.740} on ${burnDate}. Burn details: ${burnDetails.acres || 50} acres of ${burnDetails.crop_type || 'wheat'}.`;
     
-    // Simple safety analysis
-    const isSafe = weatherData.windSpeed < 15 && 
-                   weatherData.humidity > 30 && 
-                   weatherData.temperature < 85;
+    // Use WeatherAnalyst with OpenAI SDK
+    const result = await run(weatherAnalyst, analysisRequest, {
+      context: {
+        burnDate,
+        location,
+        burnDetails,
+        burnRequestId: burnDetails.id || null
+      }
+    });
+    
+    // Extract decision and analysis from agent result
+    let decision = 'MARGINAL';
+    let needsApproval = false;
+    let confidence = 75;
+    let issues = [];
+    
+    if (result.runItems) {
+      result.runItems.forEach(item => {
+        if (item.type === 'tool_call' && item.name === 'analyze_burn_safety') {
+          decision = item.result?.decision || 'MARGINAL';
+          needsApproval = item.result?.needsApproval || false;
+          confidence = item.result?.confidence || 75;
+          issues = item.result?.issues || [];
+        }
+      });
+    }
     
     res.json({
       success: true,
-      decision: isSafe ? 'SAFE' : 'UNSAFE',
-      requiresApproval: !isSafe,
-      analysis: `Wind: ${weatherData.windSpeed}mph, Humidity: ${weatherData.humidity}%, Temp: ${weatherData.temperature}°F`,
-      reasons: isSafe ? ['Conditions within safe parameters'] : ['Weather conditions unsafe for burning'],
-      confidence: 85,
-      currentWeather: weatherData,
-      forecast: []
+      decision,
+      requiresApproval: needsApproval,
+      analysis: result.finalOutput || 'Weather analysis complete',
+      reasons: issues,
+      confidence,
+      agentUsed: 'WeatherAnalyst'
     });
     
   } catch (error) {

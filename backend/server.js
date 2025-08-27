@@ -50,18 +50,8 @@ console.log('Demo routes loaded');
 const onboardingRoutes = require('./api/onboarding');
 console.log('Onboarding routes loaded');
 
-// Import agents for initialization
-console.log('Loading agents...');
-const coordinatorAgent = require('./agents/coordinator');
-console.log('Coordinator agent loaded');
-const weatherAgent = require('./agents/weather');
-console.log('Weather agent loaded');
-const predictorAgent = require('./agents/predictor');
-console.log('Predictor agent loaded');
-const optimizerAgent = require('./agents/optimizer');
-console.log('Optimizer agent loaded');
-// alertsAgent removed - stub functionality eliminated
-console.log('Alerts agent removed (was stub)');
+// OpenAI Agents SDK agents are loaded on-demand via API routes
+console.log('OpenAI Agents SDK agents will be loaded on-demand');
 const { startCleanupJob } = require('./jobs/demoCleanup');
 console.log('Demo cleanup job loaded');
 
@@ -288,8 +278,21 @@ io.on('connection', (socket) => {
   // Request real-time weather update
   socket.on('request-weather', async (location) => {
     try {
-      const weatherData = await weatherAgent.fetchCurrentWeather(location);
-      socket.emit('weather-update', weatherData);
+      // Use OpenWeatherMap API directly for real-time updates
+      const axios = require('axios');
+      const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+      const response = await axios.get(
+        `https://api.openweathermap.org/data/2.5/weather`,
+        {
+          params: {
+            lat: location.lat,
+            lon: location.lng || location.lon,
+            appid: apiKey,
+            units: 'imperial'
+          }
+        }
+      );
+      socket.emit('weather-update', response.data);
     } catch (error) {
       socket.emit('weather-error', { error: error.message });
     }
@@ -404,41 +407,14 @@ async function startServer() {
     console.log('Database initialized');
     logger.info('Database initialized successfully');
     
-    // Initialize agents with granular logging
-    console.log('Starting agent initialization sequence...');
-    
-    console.log('Step 1: Initializing Coordinator Agent...');
-    logger.info('Initializing Coordinator Agent...');
-    await coordinatorAgent.initialize();
-    console.log('Coordinator Agent initialized');
-    logger.info('Coordinator Agent initialized successfully');
-    
-    console.log('Step 2: Initializing Weather Agent...');
-    logger.info('Initializing Weather Agent...');
-    await weatherAgent.initialize();
-    console.log('Weather Agent initialized');
-    logger.info('Weather Agent initialized successfully');
-    
-    console.log('Step 3: Initializing Predictor Agent...');
-    logger.info('Initializing Predictor Agent...');
-    await predictorAgent.initialize();
-    console.log('Predictor Agent initialized');
-    logger.info('Predictor Agent initialized successfully');
-    
-    console.log('Step 4: Initializing Optimizer Agent...');
-    logger.info('Initializing Optimizer Agent...');
-    await optimizerAgent.initialize();
-    console.log('Optimizer Agent initialized');
-    logger.info('Optimizer Agent initialized successfully');
-    
-    console.log('Step 5: Alerts Agent removed (was stub)...');
-    logger.info('Alerts Agent removed - no initialization needed');
-    // Alerts Agent removed - no initialization needed
-    console.log('Alerts Agent removed (was stub)');
-    logger.info('Alerts Agent removed - stub functionality eliminated');
-    
-    console.log('All agents initialized successfully');
-    logger.info('All agents initialized successfully');
+    // OpenAI Agents SDK agents are loaded on-demand - no initialization needed
+    console.log('OpenAI Agents SDK 5-Agent System Ready:');
+    console.log('- BurnRequestAgent: Natural language processing');
+    console.log('- WeatherAnalyst: Autonomous safety decisions');
+    console.log('- ConflictResolver: Multi-farm negotiation');
+    console.log('- ScheduleOptimizer: AI-enhanced simulated annealing');
+    console.log('- ProactiveMonitor: 24/7 autonomous monitoring');
+    logger.info('OpenAI Agents SDK system ready - agents loaded on-demand via API calls');
     
     // Start server with detailed logging
     console.log('About to start HTTP server on port', PORT);
@@ -448,7 +424,7 @@ async function startServer() {
       logger.info(`BURNWISE Backend Server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Socket.io enabled for real-time updates`);
-      logger.info(`5-Agent System: Coordinator | Weather | Predictor | Optimizer | Alerts`);
+      logger.info(`5-Agent System: BurnRequestAgent | WeatherAnalyst | ConflictResolver | ScheduleOptimizer | ProactiveMonitor`);
       
       // Start demo cleanup job
       try {

@@ -224,14 +224,11 @@ const FarmBoundaryDrawer = ({
     });
     
     map.current.on('idle', () => {
-      console.log('Map idle - fully rendered');
+      // Map idle - check canvas silently
       const container = mapContainer.current;
       if (container) {
         const canvas = container.querySelector('.mapboxgl-canvas');
-        console.log('Canvas check on idle:', !!canvas);
-        if (canvas) {
-          console.log('Canvas size:', canvas.width, 'x', canvas.height);
-        }
+        // Canvas exists: canvas.width x canvas.height
       }
     });
 

@@ -158,15 +158,9 @@ const EmberBackground = ({ intensity = 1, blur = false }) => {
       particlesRef.current.forEach((particle, i) => {
         particle.update(deltaTime);
         particle.draw(ctx);
-        if (frameCount === 0 && i === 0) {
-          console.log('Drawing first particle at:', particle.x, particle.y, 'opacity:', particle.opacity);
-        }
       });
 
       frameCount++;
-      if (frameCount % 60 === 0) {
-        console.log(`Animation running: frame ${frameCount}, particles: ${particlesRef.current.length}`);
-      }
 
       animationRef.current = requestAnimationFrame(animate);
     };

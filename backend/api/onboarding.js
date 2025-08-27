@@ -7,6 +7,7 @@ const express = require('express');
 const { authenticateFromCookie } = require('../middleware/cookieAuth');
 const logger = require('../middleware/logger');
 const { query } = require('../db/connection');
+const OnboardingAgent = require('../agents-sdk/OnboardingAgent');
 
 const router = express.Router();
 
