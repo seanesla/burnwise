@@ -73,17 +73,15 @@ router.post('/update-farm', async (req, res) => {
       UPDATE farms SET
         farm_name = ?,
         owner_name = ?,
-        address = ?,
         latitude = ?,
         longitude = ?,
         total_acreage = ?,
-        farm_boundary = ?,
+        boundary = ?,
         updated_at = NOW()
       WHERE farm_id = ?
     `, [
       farmData.name || farmData.farmName || 'Demo Farm',
       farmData.owner_name || farmData.ownerName || 'Demo User',
-      farmData.address || farmData.location || 'Demo Location',
       farmData.location?.lat || farmData.latitude || null,
       farmData.location?.lon || farmData.longitude || null,
       farmData.farm_size_acres || farmData.acreage || 500,
