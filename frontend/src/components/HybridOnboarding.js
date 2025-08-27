@@ -97,22 +97,20 @@ const HybridOnboarding = () => {
 
   // Handle location selection from search
   const handleLocationSelect = (locationData) => {
-    console.log('Location selected:', locationData);
+    console.log('Location search result:', locationData);
     
-    // Update form data with selected location
-    setFormData(prev => ({
-      ...prev,
-      location: locationData.address || locationData.name
-    }));
+    // DON'T set location as "selected" - just center the map
+    // Location is only considered selected after boundary is drawn
     
-    // Set coordinates for map to use
+    // Set coordinates for map to fly to
     setSelectedLocationCoords({
       lng: locationData.coordinates.lng,
       lat: locationData.coordinates.lat,
-      zoom: 14 // Good zoom level for farm boundaries
+      zoom: 14, // Good zoom level for farm boundaries
+      searchedAddress: locationData.address || locationData.name // Store for reference
     });
     
-    // Clear location validation error
+    // Clear location validation error if any
     if (validationErrors.location) {
       setValidationErrors(prev => {
         const next = { ...prev };
@@ -129,8 +127,10 @@ const HybridOnboarding = () => {
         ...prev,
         farmBoundary: boundaryData,
         acreage: boundaryData.properties?.totalAcres?.toFixed(2) || '',
-        // Extract rough location from boundary center
-        location: prev.location || 'Map-defined boundary'
+        // NOW set the location since boundary is drawn
+        location: selectedLocationCoords?.searchedAddress || 
+                  prev.location || 
+                  'Farm boundary defined'
       }));
       
       // Store boundary data in sessionStorage for dashboard continuity
@@ -185,8 +185,8 @@ const HybridOnboarding = () => {
     setFormData({
       farmName: 'Demo Farm',
       ownerName: 'Demo User',
-      location: 'San Diego, CA',
-      acreage: '500',
+      location: '',  // Let user select their actual location
+      acreage: '',   // Will be calculated from drawn boundary
       farmBoundary: null,
       primaryCrops: 'Wheat',
       burnFrequency: 'seasonal'
@@ -322,9 +322,14 @@ const HybridOnboarding = () => {
                     onLocationSelect={handleLocationSelect}
                     placeholder="Search for your farm location (e.g., Sacramento, CA)"
                   />
-                  {formData.location && (
+                  {selectedLocationCoords && !formData.farmBoundary && (
+                    <p className="field-hint" style={{ color: '#2196F3', marginTop: '0.5rem' }}>
+                      <FaMapMarkerAlt /> Map centered on: {selectedLocationCoords.searchedAddress}
+                    </p>
+                  )}
+                  {formData.farmBoundary && formData.location && (
                     <p className="field-hint" style={{ color: '#4CAF50', marginTop: '0.5rem' }}>
-                      <FaCheck /> Location selected: {formData.location}
+                      <FaCheck /> Farm location confirmed: {formData.location}
                     </p>
                   )}
                 </div>
