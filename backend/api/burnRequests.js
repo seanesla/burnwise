@@ -5,7 +5,7 @@ const coordinatorAgent = require('../agents/coordinator');
 const weatherAgent = require('../agents/weather');
 const predictorAgent = require('../agents/predictor');
 const optimizerAgent = require('../agents/optimizer');
-const alertsAgent = require('../agents/alerts');
+// alertsAgent removed - stub functionality eliminated
 const logger = require('../middleware/logger');
 
 const router = express.Router();
@@ -367,20 +367,9 @@ router.post('/', asyncHandler(async (req, res) => {
       });
     }
     
-    const alertResult = await alertsAgent.processAlert({
-      type: 'schedule_change',
-      farm_id: transformedRequest.farm_id,
-      burn_request_id: burnRequestId,
-      title: 'New Burn Request Submitted',
-      message: `Burn request for ${transformedRequest.field_name} has been submitted and processed`,
-      severity: 'medium',
-      data: {
-        farmId: transformedRequest.farm_id,
-        fieldName: transformedRequest.field_name,
-        acres: transformedRequest.acres,
-        burnDate: transformedRequest.burn_date
-      }
-    }, optimizationResult, io);
+    // Alert processing disabled - was stub functionality only
+    const alertResult = { success: true, message: 'Alert processing disabled' };
+    // Original alert data was for type: 'schedule_change'
     
     // Update burn request status
     await query(`
@@ -525,18 +514,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
     
     // Send update notifications
     const io = req.app.get('io');
-    reprocessResults.alerts = await alertsAgent.processAlert({
-      type: 'burn_request_updated',
-      farm_id: req.body.farm_id,
-      burn_request_id: id,
-      title: 'Burn Request Updated',
-      message: `Burn request for ${req.body.field_name} has been updated`,
-      severity: 'medium',
-      data: {
-        changes: significantChanges,
-        fieldName: req.body.field_name
-      }
-    }, reprocessResults.optimization, io);
+    reprocessResults.alerts = { success: true, message: 'Alerts disabled' };
     
     const duration = Date.now() - startTime;
     
@@ -615,19 +593,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
     
     // Send cancellation notifications
     const io = req.app.get('io');
-    await alertsAgent.processAlert({
-      type: 'burn_cancelled',
-      farm_id: request.farm_id,
-      burn_request_id: id,
-      title: 'Burn Request Cancelled',
-      message: `Burn request for ${request.field_name} has been cancelled`,
-      severity: 'medium',
-      data: {
-        farmName: request.farm_name,
-        fieldName: request.field_name,
-        reason: reason || 'No reason provided'
-      }
-    }, null, io);
+    // Alert processing disabled
     
     logger.info('Burn request cancelled', {
       burnRequestId: id,
@@ -829,19 +795,7 @@ router.post('/:id/reprocess', asyncHandler(async (req, res) => {
     
     if (agents.includes('alerts')) {
       const io = req.app.get('io');
-      reprocessResults.alerts = await alertsAgent.processAlert({
-        type: 'burn_request_reprocessed',
-        farm_id: request.farm_id,
-        burn_request_id: id,
-        title: 'Burn Request Reprocessed',
-        message: `Burn request for ${request.field_name} has been reprocessed`,
-        severity: 'medium',
-        data: {
-          farmName: request.farm_name,
-          fieldName: request.field_name,
-          agentsReprocessed: agents
-        }
-      }, reprocessResults.optimizer, io);
+      reprocessResults.alerts = { success: true, message: 'Alerts disabled' };
     }
     
     const duration = Date.now() - startTime;

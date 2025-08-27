@@ -101,12 +101,9 @@ async function cleanupSingleSession(session) {
 
     // Delete all demo data in the correct order (foreign key constraints)
     
-    // 1. Delete agent interactions
-    const agentInteractionsResult = await query(
-      'DELETE FROM agent_interactions WHERE farm_id = ?',
-      [farm_id]
-    );
-    totalDeleted += agentInteractionsResult.affectedRows || 0;
+    // 1. Agent interactions table was removed - skip cleanup
+    // const agentInteractionsResult = await query('DELETE FROM agent_interactions WHERE farm_id = ?', [farm_id]);
+    // totalDeleted += agentInteractionsResult.affectedRows || 0;
 
     // 2. Delete vector embeddings
     // Delete weather_vectors that belong to demo weather_data
