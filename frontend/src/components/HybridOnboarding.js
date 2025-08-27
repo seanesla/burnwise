@@ -1,16 +1,14 @@
 /**
- * HybridOnboarding - Smart form with optional AI assistance
- * Reduces AI dependency from 100% to optional enhancement
- * Form works completely without AI if needed
+ * HybridOnboarding - Simple, clean onboarding form
+ * Direct form-based setup without AI complexity
  */
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaUser, FaEnvelope, FaMapMarkerAlt, 
-  FaTree, FaRobot, FaChevronRight, FaChevronLeft,
+  FaTree, FaChevronRight, FaChevronLeft,
   FaMagic, FaCheck, FaTimes, FaMap, FaRocket
 } from 'react-icons/fa';
 import axios from 'axios';
@@ -40,10 +38,7 @@ const HybridOnboarding = () => {
   });
   
   // UI state
-  const [showAI, setShowAI] = useState(false);
   const [showMap, setShowMap] = useState(true); // Always show map
-  const [aiInput, setAiInput] = useState('');
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formComplete, setFormComplete] = useState(false);
@@ -159,69 +154,6 @@ const HybridOnboarding = () => {
     });
   }, []);
 
-  // Process AI input to extract form data
-  const processAIInput = async () => {
-    if (!aiInput.trim()) return;
-    
-    setIsProcessingAI(true);
-    
-    try {
-      // Try to use AI to extract data
-      const response = await axios.post('/api/onboarding/extract', {
-        text: aiInput
-      });
-      
-      if (response.data.success && response.data.extracted) {
-        // Merge extracted data with existing form data
-        setFormData(prev => ({
-          ...prev,
-          ...response.data.extracted
-        }));
-        
-        // Clear AI input after successful extraction
-        setAiInput('');
-      }
-    } catch (error) {
-      console.log('AI extraction failed, user can fill manually');
-      // Parse locally as fallback
-      parseLocalFallback(aiInput);
-    } finally {
-      setIsProcessingAI(false);
-    }
-  };
-
-  // Local parsing fallback when AI unavailable
-  const parseLocalFallback = (text) => {
-    const updates = {};
-    
-    // Simple pattern matching for common phrases
-    const acreMatch = text.match(/(\d+)\s*(?:acres?|acre)/i);
-    if (acreMatch) updates.acreage = acreMatch[1];
-    
-    
-    // Look for location patterns
-    const locationPatterns = [
-      /(?:in|at|near|located in)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,?\s*[A-Z]{2})/i,
-      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,?\s*(?:CA|California|OR|Oregon|WA|Washington))/i
-    ];
-    
-    for (const pattern of locationPatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        updates.location = match[1];
-        break;
-      }
-    }
-    
-    // Look for farm name patterns
-    const farmNameMatch = text.match(/(?:called|named|is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+Farm)/i);
-    if (farmNameMatch) updates.farmName = farmNameMatch[1];
-    
-    // Apply any extracted data
-    if (Object.keys(updates).length > 0) {
-      setFormData(prev => ({ ...prev, ...updates }));
-    }
-  };
 
   // Submit form
   const handleSubmit = async (e) => {
@@ -265,12 +197,11 @@ const HybridOnboarding = () => {
             });
           }
 
-          // Save onboarding data with notification preferences
+          // Save onboarding data
           const onboardingData = {
             ...formData,
             isDemo: true,
-            completedAt: new Date().toISOString(),
-            method: showAI ? 'hybrid_ai' : 'form_only'
+            completedAt: new Date().toISOString()
           };
           
           completeOnboarding(onboardingData);
@@ -446,67 +377,6 @@ const HybridOnboarding = () => {
             </form>
           </div>
 
-          {/* AI Assistant Section (Optional) - Only show after mode selection */}
-          {selectedMode && (
-          <div className={`ai-section ${showAI ? 'active' : ''}`}>
-            <button
-              className="ai-toggle"
-              onClick={() => setShowAI(!showAI)}
-              title={showAI ? 'Hide AI Assistant' : 'Show AI Assistant'}
-            >
-              <FaRobot />
-              {showAI ? <FaChevronRight /> : <FaChevronLeft />}
-            </button>
-
-            <AnimatePresence>
-              {showAI && (
-                <motion.div
-                  className="ai-panel"
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: '100%', opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3>
-                    <FaRobot />
-                    AI Assistant
-                  </h3>
-                  <p className="ai-description">
-                    Describe your farm in one sentence and I'll fill the form for you
-                  </p>
-                  
-                  <div className="ai-input-group">
-                    <textarea
-                      value={aiInput}
-                      onChange={(e) => setAiInput(e.target.value)}
-                      placeholder="Example: My farm is Green Valley Farm, 500 acres near Sacramento, I'm John Doe"
-                      rows={4}
-                      disabled={isProcessingAI}
-                    />
-                    
-                    <button
-                      onClick={processAIInput}
-                      disabled={!aiInput.trim() || isProcessingAI}
-                      className="btn-ai"
-                    >
-                      {isProcessingAI ? 'Processing...' : 'Auto-Fill Form'}
-                    </button>
-                  </div>
-
-                  <div className="ai-tips">
-                    <h4>Quick Tips:</h4>
-                    <ul>
-                      <li>Include farm name, location, and acreage</li>
-                      <li>Add your name and contact info</li>
-                      <li>Mention primary crops if relevant</li>
-                      <li>AI will extract and fill the form</li>
-                    </ul>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          )}
         </div>
       </div>
       

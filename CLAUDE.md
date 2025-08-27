@@ -15,7 +15,7 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 ## Architecture
 
 ### 5-Agent System (OpenAI Agents SDK)
-**backend/agents-sdk/**: orchestrator | BurnRequestAgent (nano) | WeatherAnalyst (nano) | ConflictResolver (mini) | ScheduleOptimizer (nano) | ProactiveMonitor (nano) | OnboardingAgent (mini)
+**backend/agents-sdk/**: orchestrator | BurnRequestAgent (mini) | WeatherAnalyst (nano) | ConflictResolver (mini) | ScheduleOptimizer (nano) | ProactiveMonitor (nano) | OnboardingAgent (mini)
 **backend/agents/**: coordinator | weather | predictor | optimizer | alerts (stub only - no functionality)
 **Features**: Real handoffs | Human-in-loop (`needsApproval`) | Natural language | Proactive monitoring | NO EMOJIS
 

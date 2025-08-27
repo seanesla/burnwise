@@ -159,6 +159,28 @@ export const AuthProvider = ({ children }) => {
   // Clear error
   const clearError = () => setError(null);
 
+  // Logout function for demo sessions - clears session and returns to landing
+  const logout = async () => {
+    // Clear session storage
+    sessionStorage.removeItem('demo_session_id');
+    sessionStorage.removeItem('demo_session_data');
+    
+    // Clear onboarding data
+    const currentDemoId = user?.id;
+    if (currentDemoId) {
+      localStorage.removeItem(`demo_onboarding_${currentDemoId}`);
+      localStorage.removeItem(`demo_onboarding_data_${currentDemoId}`);
+    }
+    
+    // Clear state
+    setUser(null);
+    setIsAuthenticated(false);
+    setOnboardingComplete(false);
+    setOnboardingData(null);
+    
+    return true; // Indicate successful logout
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -173,6 +195,7 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     createDemoSession,
     resetDemoSession,
+    logout, // Add logout function
     isDemo: true // Always demo mode
   };
 
