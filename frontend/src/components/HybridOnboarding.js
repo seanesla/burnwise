@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { motion } from 'framer-motion';
 import { 
   FaUser, FaEnvelope, FaMapMarkerAlt, 
   FaTree, FaChevronRight, FaChevronLeft,
@@ -332,7 +333,15 @@ const HybridOnboarding = () => {
                   <label>
                     Farm Boundary <span className="required">*</span>
                   </label>
-                  <div className="map-container">
+                  <motion.div 
+                    className="map-container"
+                    layoutId="farm-map-container"
+                    transition={{
+                      type: "spring",
+                      stiffness: 100,
+                      damping: 30
+                    }}
+                  >
                     {formData.farmBoundary && (
                       <span className="boundary-status">
                         <FaCheck /> Boundary drawn ({formData.acreage} acres)
@@ -354,7 +363,7 @@ const HybridOnboarding = () => {
                         }
                       </p>
                     )}
-                  </div>
+                  </motion.div>
                   
                   {validationErrors.location && (
                     <span className="error-message">

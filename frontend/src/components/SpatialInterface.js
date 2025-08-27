@@ -776,7 +776,16 @@ const SpatialInterface = () => {
       {isMapView ? (
         <>
           {/* Main Map Container */}
-          <div ref={mapContainer} className="map-container" />
+          <motion.div 
+            ref={mapContainer} 
+            className="map-container"
+            layoutId="farm-map-container"
+            transition={{
+              type: "spring",
+              stiffness: 100,
+              damping: 30
+            }}
+          />
           
           {/* Coordinate Display - only show in map view */}
           <div className="coordinates-display">

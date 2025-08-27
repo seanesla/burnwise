@@ -26,6 +26,9 @@ export const MapProvider = ({ children }) => {
   // Selected farm (if any)
   const [selectedFarm, setSelectedFarm] = useState(null);
   
+  // Farm boundary geometry (GeoJSON)
+  const [farmBoundary, setFarmBoundary] = useState(null);
+  
   // Update map center
   const updateMapCenter = (lat, lng, zoom = null) => {
     setMapCenter(prev => ({
@@ -71,6 +74,18 @@ export const MapProvider = ({ children }) => {
               );
               // Also set as selected farm
               setSelectedFarm(data.farm);
+              
+              // Load boundary if available
+              if (data.farm.farm_boundary) {
+                try {
+                  const boundary = typeof data.farm.farm_boundary === 'string' 
+                    ? JSON.parse(data.farm.farm_boundary)
+                    : data.farm.farm_boundary;
+                  setFarmBoundary(boundary);
+                } catch (e) {
+                  console.error('Failed to parse farm boundary:', e);
+                }
+              }
             } else if (data.farm.location) {
               // Parse location if stored differently
               const [lat, lng] = data.farm.location.split(',').map(Number);
@@ -94,6 +109,8 @@ export const MapProvider = ({ children }) => {
     mapCenter,
     selectedFarm,
     setSelectedFarm,
+    farmBoundary,
+    setFarmBoundary,
     updateMapCenter,
     getCurrentLocation
   };
