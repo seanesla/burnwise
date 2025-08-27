@@ -20,10 +20,10 @@ router.post('/session', async (req, res) => {
     const sessionId = uuidv4();
     const mode = 'blank'; // Always start with blank mode
     
-    // Create demo farm in TiDB
+    // Create demo farm in TiDB with no location initially
     const farmResult = await db.query(
       'INSERT INTO farms (farm_name, owner_name, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-      ['Demo Farm', 'Demo User', 32.7157, -117.1611, 500, true]
+      ['Demo Farm', 'Demo User', null, null, 500, true]
     );
 
     const farmId = farmResult.insertId;
@@ -77,15 +77,17 @@ router.post('/update-farm', async (req, res) => {
         latitude = ?,
         longitude = ?,
         total_acreage = ?,
+        farm_boundary = ?,
         updated_at = NOW()
       WHERE farm_id = ?
     `, [
       farmData.name || farmData.farmName || 'Demo Farm',
       farmData.owner_name || farmData.ownerName || 'Demo User',
       farmData.address || farmData.location || 'Demo Location',
-      farmData.location?.lat || farmData.latitude || 32.7157,
-      farmData.location?.lon || farmData.longitude || -117.1611,
+      farmData.location?.lat || farmData.latitude || null,
+      farmData.location?.lon || farmData.longitude || null,
       farmData.farm_size_acres || farmData.acreage || 500,
+      farmData.farmBoundary ? JSON.stringify(farmData.farmBoundary) : null,
       farmId
     ]);
     

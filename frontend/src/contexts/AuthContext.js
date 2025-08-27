@@ -9,10 +9,8 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-// Configure axios defaults for cookie-based auth
+// API configuration
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-axios.defaults.baseURL = API_BASE;
-axios.defaults.withCredentials = true; // CRITICAL: Send cookies with every request
 
 // Storage keys for non-sensitive data only
 const STORAGE_KEYS = {
@@ -71,7 +69,9 @@ export const AuthProvider = ({ children }) => {
   const createDemoSession = async () => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/demo/session');
+      const response = await axios.post(`${API_BASE}/api/demo/session`, {}, {
+        withCredentials: true
+      });
       
       if (response.data.success) {
         const demoUser = {

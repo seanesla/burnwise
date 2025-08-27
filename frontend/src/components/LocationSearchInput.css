@@ -1,0 +1,270 @@
+/**
+ * LocationSearchInput Styles
+ * Glass morphism design matching Burnwise UI
+ * Smooth animations and transitions
+ */
+
+.location-search-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.location-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.location-search-input-wrapper:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.20);
+}
+
+.location-search-input-wrapper:focus-within {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 107, 34, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 107, 34, 0.1);
+}
+
+.search-icon {
+  color: rgba(255, 255, 255, 0.6);
+  margin-right: 0.75rem;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.location-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.95rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+.location-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.location-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.loading-spinner {
+  color: rgba(255, 107, 34, 0.8);
+  margin-left: 0.75rem;
+  font-size: 1rem;
+}
+
+.loading-spinner.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.search-error-message {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.location-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(20, 20, 25, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+}
+
+/* Custom scrollbar for dropdown */
+.location-suggestions-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.location-suggestions-dropdown::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.location-suggestions-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 34, 0.4);
+  border-radius: 3px;
+}
+
+.location-suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 34, 0.6);
+}
+
+.location-suggestion-item {
+  display: flex;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.location-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.location-suggestion-item:hover,
+.location-suggestion-item.selected {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 107, 34, 0.15) 0%,
+    rgba(255, 107, 34, 0.05) 100%
+  );
+}
+
+.location-suggestion-item.selected {
+  border-left: 3px solid rgba(255, 107, 34, 0.8);
+  padding-left: calc(1rem - 3px);
+}
+
+.location-icon {
+  color: rgba(255, 107, 34, 0.7);
+  margin-right: 0.875rem;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.location-details {
+  flex: 1;
+  overflow: hidden;
+}
+
+.location-name {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+}
+
+.location-address {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-suggestions-message {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: rgba(20, 20, 25, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  text-align: center;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .location-search-input-wrapper {
+    padding: 0.625rem 0.875rem;
+  }
+  
+  .location-search-input {
+    font-size: 0.9rem;
+  }
+  
+  .location-suggestions-dropdown {
+    max-height: 220px;
+  }
+  
+  .location-suggestion-item {
+    padding: 0.75rem 0.875rem;
+  }
+  
+  .location-name {
+    font-size: 0.9rem;
+  }
+  
+  .location-address {
+    font-size: 0.8rem;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .location-search-input-wrapper,
+  .location-suggestion-item,
+  .loading-spinner.spinning {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Dark mode compatibility (already dark by default) */
+@media (prefers-color-scheme: light) {
+  .location-search-input-wrapper {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .location-search-input {
+    color: #333;
+  }
+  
+  .location-search-input::placeholder {
+    color: rgba(0, 0, 0, 0.4);
+  }
+  
+  .search-icon {
+    color: rgba(0, 0, 0, 0.5);
+  }
+  
+  .location-suggestions-dropdown {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .location-name {
+    color: #333;
+  }
+  
+  .location-address {
+    color: #666;
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 // LoadingSpinner removed - no page loading animations
 import ErrorBoundary from './components/ErrorBoundary';
@@ -59,34 +60,36 @@ function AppContent() {
       <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''}`}>
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-            <Routes>
-              {/* Root route ALWAYS shows Landing page - it handles auth state internally */}
-              <Route path="/" element={<Landing />} />
-              
-              {/* Landing page (for direct access) */}
-              <Route path="/landing" element={<Landing />} />
-              
-              {/* Onboarding Route */}
-              <Route path="/onboarding" element={<HybridOnboarding />} />
-              
-              {/* Main Spatial Interface */}
-              <Route path="/spatial" element={<SpatialInterface />} />
-              
-              {/* Redirect old routes to spatial interface */}
-              <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
-              <Route path="/map" element={<Navigate to="/spatial" replace />} />
-              <Route path="/schedule" element={<Navigate to="/spatial" replace />} />
-              <Route path="/alerts" element={<Navigate to="/spatial" replace />} />
-              <Route path="/request" element={<Navigate to="/spatial" replace />} />
-              <Route path="/agent-chat" element={<Navigate to="/spatial" replace />} />
-              <Route path="/analytics" element={<Navigate to="/spatial" replace />} />
-              
-              {/* Settings still accessible */}
-              <Route path="/settings" element={<Settings />} />
-              
-              {/* Catch all - redirect to root */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AnimatePresence mode="wait">
+              <Routes location={location} key={location.pathname}>
+                {/* Root route ALWAYS shows Landing page - it handles auth state internally */}
+                <Route path="/" element={<Landing />} />
+                
+                {/* Landing page (for direct access) */}
+                <Route path="/landing" element={<Landing />} />
+                
+                {/* Onboarding Route */}
+                <Route path="/onboarding" element={<HybridOnboarding />} />
+                
+                {/* Main Spatial Interface */}
+                <Route path="/spatial" element={<SpatialInterface />} />
+                
+                {/* Redirect old routes to spatial interface */}
+                <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
+                <Route path="/map" element={<Navigate to="/spatial" replace />} />
+                <Route path="/schedule" element={<Navigate to="/spatial" replace />} />
+                <Route path="/alerts" element={<Navigate to="/spatial" replace />} />
+                <Route path="/request" element={<Navigate to="/spatial" replace />} />
+                <Route path="/agent-chat" element={<Navigate to="/spatial" replace />} />
+                <Route path="/analytics" element={<Navigate to="/spatial" replace />} />
+                
+                {/* Settings still accessible */}
+                <Route path="/settings" element={<Settings />} />
+                
+                {/* Catch all - redirect to root */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </AnimatePresence>
           </Suspense>
         </ErrorBoundary>
       </div>

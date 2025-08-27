@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMap } from '../contexts/MapContext';
@@ -27,12 +28,20 @@ mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
 const SpatialInterface = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const location = useLocation();
   const { mapCenter, updateMapCenter, setSelectedFarm: setGlobalSelectedFarm } = useMap();
   
-  // Map state - initialize from context
-  const [lng, setLng] = useState(mapCenter.lng);
-  const [lat, setLat] = useState(mapCenter.lat);
-  const [zoom, setZoom] = useState(mapCenter.zoom);
+  // Get farm location and boundary from navigation state (from onboarding)
+  const navigationState = location.state || {};
+  const farmLocationFromOnboarding = navigationState.farmLocation;
+  const farmBoundaryFromOnboarding = navigationState.farmBoundary;
+  const isTransitioningFromOnboarding = navigationState.transitionFromOnboarding;
+  
+  // Initialize map state - prefer onboarding location over context default
+  const initialLocation = farmLocationFromOnboarding || mapCenter;
+  const [lng, setLng] = useState(initialLocation.lng);
+  const [lat, setLat] = useState(initialLocation.lat);
+  const [zoom, setZoom] = useState(initialLocation.zoom || mapCenter.zoom);
   
   // UI state
   const [activePanel, setActivePanel] = useState(null);
@@ -136,6 +145,54 @@ const SpatialInterface = () => {
         'space-color': 'rgb(11, 11, 25)',
         'star-intensity': 0.6
       });
+      
+      // Add farm boundary from onboarding if available
+      if (farmBoundaryFromOnboarding) {
+        console.log('Adding farm boundary from onboarding to map');
+        
+        // Add the farm boundary as a source
+        map.current.addSource('user-farm-boundary', {
+          type: 'geojson',
+          data: farmBoundaryFromOnboarding
+        });
+        
+        // Add a fill layer for the boundary
+        map.current.addLayer({
+          id: 'user-farm-boundary-fill',
+          type: 'fill',
+          source: 'user-farm-boundary',
+          paint: {
+            'fill-color': '#ff6b35',
+            'fill-opacity': 0.15
+          }
+        });
+        
+        // Add a line layer for the boundary outline
+        map.current.addLayer({
+          id: 'user-farm-boundary-line',
+          type: 'line',
+          source: 'user-farm-boundary',
+          paint: {
+            'line-color': '#ff6b35',
+            'line-width': 3,
+            'line-opacity': 0.8
+          }
+        });
+        
+        // Optionally fit bounds to show the entire farm
+        if (farmBoundaryFromOnboarding.features && farmBoundaryFromOnboarding.features[0]) {
+          const bounds = new mapboxgl.LngLatBounds();
+          const coordinates = farmBoundaryFromOnboarding.features[0].geometry.coordinates[0];
+          coordinates.forEach(coord => bounds.extend(coord));
+          
+          // Fit the map to the boundary with some padding
+          map.current.fitBounds(bounds, {
+            padding: { top: 100, bottom: 100, left: 100, right: 100 },
+            duration: 2000, // Smooth transition
+            maxZoom: 15
+          });
+        }
+      }
       
       // Load initial data
       loadFarms();

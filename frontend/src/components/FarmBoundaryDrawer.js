@@ -30,7 +30,8 @@ if (typeof mapboxgl !== 'undefined' && mapboxgl) {
 const FarmBoundaryDrawer = ({ 
   onBoundaryComplete, 
   initialBoundary = null,
-  initialLocation = null 
+  initialLocation = null,
+  selectedCoordinates = null 
 }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -339,6 +340,23 @@ const FarmBoundaryDrawer = ({
       calculateArea();
     }
   }, [initialBoundary, mapLoaded, calculateArea]);
+
+  // Handle flyTo animation when location is selected from search
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !selectedCoordinates) return;
+    
+    console.log('Flying to selected coordinates:', selectedCoordinates);
+    
+    // Fly to the selected location with smooth animation
+    map.current.flyTo({
+      center: [selectedCoordinates.lng, selectedCoordinates.lat],
+      zoom: selectedCoordinates.zoom || 14,
+      duration: 2000, // 2 second animation
+      essential: true, // This animation is essential with respect to prefers-reduced-motion
+      curve: 1.42, // Zoom speed curve
+      easing: (t) => t // Linear easing
+    });
+  }, [selectedCoordinates, mapLoaded]);
 
   // Handle draw create
   const handleDrawCreate = useCallback((e) => {

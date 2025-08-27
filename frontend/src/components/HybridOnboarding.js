@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import axios from 'axios';
 import FarmBoundaryDrawer from './FarmBoundaryDrawer';
+import LocationSearchInput from './LocationSearchInput';
 import EmberBackground from './backgrounds/EmberBackground';
 import './HybridOnboarding.css';
 
@@ -42,6 +43,7 @@ const HybridOnboarding = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formComplete, setFormComplete] = useState(false);
+  const [selectedLocationCoords, setSelectedLocationCoords] = useState(null);
 
   // Update form when mode is selected
   useEffect(() => {
@@ -92,6 +94,33 @@ const HybridOnboarding = () => {
     }
   };
 
+  // Handle location selection from search
+  const handleLocationSelect = (locationData) => {
+    console.log('Location selected:', locationData);
+    
+    // Update form data with selected location
+    setFormData(prev => ({
+      ...prev,
+      location: locationData.address || locationData.name
+    }));
+    
+    // Set coordinates for map to use
+    setSelectedLocationCoords({
+      lng: locationData.coordinates.lng,
+      lat: locationData.coordinates.lat,
+      zoom: 14 // Good zoom level for farm boundaries
+    });
+    
+    // Clear location validation error
+    if (validationErrors.location) {
+      setValidationErrors(prev => {
+        const next = { ...prev };
+        delete next.location;
+        return next;
+      });
+    }
+  };
+
   // Handle boundary completion from map
   const handleBoundaryComplete = (boundaryData) => {
     if (boundaryData) {
@@ -102,6 +131,15 @@ const HybridOnboarding = () => {
         // Extract rough location from boundary center
         location: prev.location || 'Map-defined boundary'
       }));
+      
+      // Store boundary data in sessionStorage for dashboard continuity
+      const boundarySessionData = {
+        boundary: boundaryData,
+        location: selectedLocationCoords,
+        timestamp: new Date().toISOString()
+      };
+      sessionStorage.setItem('burnwise_farm_boundary', JSON.stringify(boundarySessionData));
+      console.log('Stored farm boundary data for dashboard continuity');
       
       // Clear location/acreage validation errors
       setValidationErrors(prev => {
@@ -213,7 +251,11 @@ const HybridOnboarding = () => {
                 isDemo: true,
                 demoMode: 'blank',
                 sessionId: demoResponse.data.sessionId,
-                farmId: demoResponse.data.farmId
+                farmId: demoResponse.data.farmId,
+                // Pass location and boundary data for seamless transition
+                farmLocation: selectedLocationCoords,
+                farmBoundary: formData.farmBoundary,
+                transitionFromOnboarding: true
               }
             });
           }, 1000);
@@ -273,6 +315,21 @@ const HybridOnboarding = () => {
 
                 <div className="form-field">
                   <label>
+                    Farm Location <span className="required">*</span>
+                  </label>
+                  <LocationSearchInput 
+                    onLocationSelect={handleLocationSelect}
+                    placeholder="Search for your farm location (e.g., Sacramento, CA)"
+                  />
+                  {formData.location && (
+                    <p className="field-hint" style={{ color: '#4CAF50', marginTop: '0.5rem' }}>
+                      <FaCheck /> Location selected: {formData.location}
+                    </p>
+                  )}
+                </div>
+
+                <div className="form-field">
+                  <label>
                     Farm Boundary <span className="required">*</span>
                   </label>
                   <div className="map-container">
@@ -286,11 +343,15 @@ const HybridOnboarding = () => {
                       onBoundaryComplete={handleBoundaryComplete}
                       initialBoundary={formData.farmBoundary}
                       initialLocation={formData.location}
+                      selectedCoordinates={selectedLocationCoords}
                     />
                     
                     {!formData.farmBoundary && (
                       <p className="field-hint">
-                        Click and drag on the map to draw your farm boundary
+                        {selectedLocationCoords ? 
+                          "Map centered on your location. Click and drag to draw your farm boundary" :
+                          "Search for your location above, then click and drag on the map to draw your farm boundary"
+                        }
                       </p>
                     )}
                   </div>
