@@ -68,6 +68,8 @@ router.post('/update-farm', async (req, res) => {
     
     const farmId = sessions[0].farm_id;
     
+    // Remove the band-aid fix - don't ALTER TABLE on every request
+    
     // Update farm with user data
     await db.query(`
       UPDATE farms SET
