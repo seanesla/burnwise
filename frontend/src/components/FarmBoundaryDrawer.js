@@ -17,6 +17,7 @@ import {
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import './FarmBoundaryDrawer.css';
+import '../styles/mapbox-overrides.css'; // Hide default Mapbox controls
 
 // Set Mapbox token - must check if mapboxgl is loaded
 if (typeof mapboxgl !== 'undefined' && mapboxgl) {
@@ -161,8 +162,13 @@ const FarmBoundaryDrawer = ({
     draw.current = new MapboxDraw({
       displayControlsDefault: false,
       controls: {
-        polygon: true,
-        trash: true
+        // Disable all default controls - we use our custom toolbar instead
+        polygon: false,
+        trash: false,
+        point: false,
+        line_string: false,
+        combine_features: false,
+        uncombine_features: false
       },
       defaultMode: 'simple_select',
       styles: [
@@ -234,6 +240,27 @@ const FarmBoundaryDrawer = ({
       console.log('Map load event fired - map fully loaded');
       map.current.addControl(draw.current);
       setMapLoaded(true);
+      
+      // FORCEFULLY REMOVE MAPBOX DRAW DEFAULT BUTTONS
+      setTimeout(() => {
+        // Remove all Mapbox Draw control buttons from DOM
+        const drawButtons = document.querySelectorAll('.mapbox-gl-draw_ctrl-draw-btn');
+        drawButtons.forEach(btn => btn.remove());
+        
+        // Remove control groups if empty
+        const controlGroups = document.querySelectorAll('.mapboxgl-ctrl-group');
+        controlGroups.forEach(group => {
+          if (!group.children.length || group.querySelector('.mapbox-gl-draw_ctrl-draw-btn')) {
+            group.remove();
+          }
+        });
+        
+        // Remove any draw control containers
+        const drawControls = document.querySelectorAll('.mapbox-gl-draw_ctrl');
+        drawControls.forEach(ctrl => ctrl.remove());
+        
+        console.log('Removed Mapbox Draw default controls from DOM');
+      }, 100); // Small delay to ensure controls are rendered first
 
       // Load initial boundary if exists
       if (initialBoundary) {

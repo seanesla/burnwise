@@ -56,15 +56,11 @@ router.get('/current', asyncHandler(async (req, res) => {
       f.farm_id,
       f.farm_name,
       f.owner_name,
-      f.contact_email,
       f.address,
       f.latitude,
       f.longitude,
-      f.farm_size_acres,
-      f.primary_crops,
-      f.boundary,
-      f.calculated_acreage,
-      f.onboarding_completed
+      f.total_acreage,
+      f.is_demo
     FROM farms f
     WHERE f.farm_id = ?
     LIMIT 1
@@ -85,14 +81,14 @@ router.get('/current', asyncHandler(async (req, res) => {
       id: farm.farm_id,
       name: farm.farm_name,
       ownerName: farm.owner_name,
-      email: farm.contact_email,
+      email: null, // Not in database
       address: farm.address,
       latitude: farm.latitude,
       longitude: farm.longitude,
-      acreage: farm.calculated_acreage || farm.farm_size_acres,
-      crops: farm.primary_crops,
-      boundary: farm.boundary,
-      onboardingCompleted: farm.onboarding_completed
+      acreage: farm.total_acreage,
+      crops: [], // Not in database
+      boundary: null, // Not in database
+      onboardingCompleted: true // Demo farms are always onboarded
     }
   });
 }));
@@ -197,7 +193,7 @@ router.get('/', asyncHandler(async (req, res) => {
         f.farm_id as id,
         f.farm_name as name,
         f.owner_name,
-        f.contact_email as email,
+        NULL as email,
         f.address,
         f.longitude as lon,
         f.latitude as lat,
@@ -286,7 +282,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
         f.farm_id as id,
         f.farm_name as name,
         f.owner_name,
-        f.contact_email as email,
+        NULL as email,
         f.address,
         f.longitude as lon,
         f.latitude as lat,
@@ -438,16 +434,15 @@ router.post('/', asyncHandler(async (req, res) => {
     // Create farm
     const result = await query(`
       INSERT INTO farms (
-        farm_name, owner_name, contact_email, address,
+        farm_name, owner_name, address,
         latitude, longitude, total_acreage,
         created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
+        ?, ?, ?, ?, ?, ?, NOW(), NOW()
       )
     `, [
       farmData.name,
       farmData.owner_name,
-      farmData.email || null,
       farmData.address,
       farmData.location.lat,
       farmData.location.lon,
@@ -562,7 +557,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
         f.farm_id as id,
         f.farm_name as name,
         f.owner_name,
-        f.contact_email as email,
+        NULL as email,
         f.address,
         f.longitude as lon,
         f.latitude as lat,
@@ -839,7 +834,7 @@ router.get('/nearby/:lat/:lon', asyncHandler(async (req, res) => {
     
     if (include_details === 'true') {
       selectFields += `,
-        f.contact_email as email,
+        NULL as email,
         f.address,
         NULL as primary_crops,
         NULL as certification_number

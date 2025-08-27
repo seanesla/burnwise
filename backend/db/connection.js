@@ -70,16 +70,22 @@ class DatabaseConnection {
         ssl: {
           rejectUnauthorized: false  // TiDB Serverless doesn't need cert validation
         },
-        connectionLimit: 30, // Increased from 10 for better concurrency
-        connectTimeout: 30000, // Reduced from 60000 for faster failure detection
+        connectionLimit: 50, // Increased for better concurrency
+        connectTimeout: 20000, // Reduced for faster failure detection
         waitForConnections: true,
-        queueLimit: 100, // Set limit to prevent memory issues
+        queueLimit: 200, // Increased queue limit
         charset: 'utf8mb4',
         timezone: 'Z',
         // Performance optimizations
         enableKeepAlive: true,
         keepAliveInitialDelay: 0,
-        maxPreparedStatements: 200, // Cache prepared statements
+        maxPreparedStatements: 500, // More cached prepared statements
+        rowsAsArray: false,
+        supportBigNumbers: true,
+        bigNumberStrings: false,
+        dateStrings: false,
+        trace: false,
+        multipleStatements: false,
         flags: ['-FOUND_ROWS'] // Optimize for COUNT queries
       });
 

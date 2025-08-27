@@ -13,8 +13,9 @@ class QueryCache {
     this.ttlTimers = new Map();
     this.hits = 0;
     this.misses = 0;
-    this.maxSize = 1000; // Maximum number of cached items
-    this.defaultTTL = 60000; // 1 minute default TTL
+    this.maxSize = 2000; // Increased cache size
+    this.defaultTTL = 120000; // 2 minute default TTL
+    this.accessTimes = new Map(); // Track access patterns for smart eviction
     
     // Start metrics logging
     setInterval(() => this.logMetrics(), 300000); // Log every 5 minutes
@@ -37,7 +38,12 @@ class QueryCache {
     
     if (cached) {
       this.hits++;
-      logger.debug('Cache hit', { key: key.substring(0, 50) });
+      // Update access time for LRU
+      this.accessTimes.set(key, Date.now());
+      // Only log cache hits in development
+      if (process.env.NODE_ENV === 'development') {
+        logger.debug('Cache hit', { key: key.substring(0, 50) });
+      }
       return cached.data;
     }
     
@@ -51,10 +57,21 @@ class QueryCache {
   set(query, params, data, ttl = this.defaultTTL) {
     const key = this.generateKey(query, params);
     
-    // Implement LRU eviction if cache is full
+    // Implement smart LRU eviction if cache is full
     if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      this.delete(firstKey);
+      // Find least recently used key
+      let lruKey = null;
+      let lruTime = Date.now();
+      for (const [k, _] of this.cache) {
+        const accessTime = this.accessTimes.get(k) || 0;
+        if (accessTime < lruTime) {
+          lruTime = accessTime;
+          lruKey = k;
+        }
+      }
+      if (lruKey) {
+        this.delete(lruKey);
+      }
     }
     
     // Clear existing timer if any
@@ -74,12 +91,16 @@ class QueryCache {
     }, ttl);
     
     this.ttlTimers.set(key, timer);
+    this.accessTimes.set(key, Date.now());
     
-    logger.debug('Cache set', { 
-      key: key.substring(0, 50), 
-      ttl,
-      size: this.cache.size 
-    });
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('Cache set', { 
+        key: key.substring(0, 50), 
+        ttl,
+        size: this.cache.size 
+      });
+    }
   }
 
   /**
@@ -87,6 +108,7 @@ class QueryCache {
    */
   delete(key) {
     this.cache.delete(key);
+    this.accessTimes.delete(key);
     
     if (this.ttlTimers.has(key)) {
       clearTimeout(this.ttlTimers.get(key));
@@ -105,6 +127,7 @@ class QueryCache {
     
     this.cache.clear();
     this.ttlTimers.clear();
+    this.accessTimes.clear();
     this.hits = 0;
     this.misses = 0;
     

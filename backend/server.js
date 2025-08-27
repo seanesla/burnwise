@@ -20,6 +20,19 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { initializeDatabase, query } = require('./db/connection');
 const { smartCache, conditionalRequests } = require('./middleware/cacheHeaders');
 const { authenticateToken, optionalAuth } = require('./middleware/auth');
+// Check if performance optimizations exist
+let performanceMiddleware = {};
+try {
+  performanceMiddleware = require('./middleware/performanceOptimizations');
+} catch (err) {
+  console.log('Performance optimizations not found, using defaults');
+}
+const { 
+  responseCacheMiddleware = (ttl) => (req, res, next) => next(), 
+  optimizeQueryParams = (req, res, next) => next(), 
+  deduplicateRequests = () => (req, res, next) => next(),
+  monitorMemoryUsage = () => {} 
+} = performanceMiddleware;
 console.log('Database module loaded');
 
 // Import API routes
@@ -65,8 +78,20 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  // Performance optimizations
+  transports: ['websocket', 'polling'], // Prefer websocket
+  perMessageDeflate: {
+    threshold: 1024 // Compress messages > 1kb
+  },
+  httpCompression: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 10000,
+  maxHttpBufferSize: 1e6, // 1MB
+  allowEIO3: true // Allow older clients
 });
 
 // Make io globally accessible for logger and queryCache
@@ -150,10 +175,23 @@ console.log('Setting up morgan logging...');
 app.use(morgan('combined', { stream: logger.stream }));
 console.log('Morgan configured');
 
-// Body parsing with size limits for security
+// Body parsing with optimized limits
 console.log('Setting up body parsing...');
-app.use(express.json({ limit: '1mb' })); // Reduced limit for security
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.json({ 
+  limit: '2mb',
+  strict: true,
+  type: ['application/json', 'text/plain'] // Accept text/plain for compatibility
+}));
+app.use(express.urlencoded({ 
+  extended: true,
+  limit: '2mb',
+  parameterLimit: 1000 
+}));
+
+// Add performance middleware
+app.use(optimizeQueryParams);
+app.use(responseCacheMiddleware(120)); // 2 minute default cache
+app.use(deduplicateRequests());
 
 // Trust proxy for accurate IP addresses
 app.set('trust proxy', 1);

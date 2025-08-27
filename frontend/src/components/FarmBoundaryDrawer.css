@@ -121,10 +121,36 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* REMOVED MAPBOX CONTROL HIDING */
-/* .farm-boundary-drawer .mapboxgl-ctrl-group:empty { display: none !important; } */
-/* .farm-boundary-drawer .mapbox-gl-draw_ctrl-draw-btn { display: none !important; } */
-/* .farm-boundary-drawer .mapboxgl-ctrl-top-right > div:not(.area-display) { display: none !important; } */
+/* HIDE ALL MAPBOX DRAW DEFAULT CONTROLS - WE USE CUSTOM TOOLBAR */
+.farm-boundary-drawer .mapboxgl-ctrl-group {
+  display: none !important;
+}
+
+.farm-boundary-drawer .mapbox-gl-draw_ctrl-draw-btn {
+  display: none !important;
+}
+
+.farm-boundary-drawer .mapbox-gl-draw_polygon {
+  display: none !important;
+}
+
+.farm-boundary-drawer .mapbox-gl-draw_trash {
+  display: none !important;
+}
+
+.farm-boundary-drawer .mapbox-gl-draw_ctrl {
+  display: none !important;
+}
+
+/* Hide ALL Mapbox control groups */
+.farm-boundary-drawer .mapboxgl-ctrl-top-right .mapboxgl-ctrl {
+  display: none !important;
+}
+
+/* But keep our custom area display visible */
+.farm-boundary-drawer .area-display {
+  display: flex !important;
+}
 
 .area-display svg {
   color: #ff6b35;

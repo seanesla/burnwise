@@ -1,8 +1,8 @@
 /**
  * HandoffDiagram.js - Visual Agent Delegation Flow
- * Shows real agent handoffs using OpenAI Agents SDK patterns
+ * Shows simplified agent coordination workflow
  * Visualizes the 5-agent system delegation hierarchy
- * NO MOCKS - Real agent handoff visualization
+ * Simplified visualization for core agents
  */
 
 import React, { useState, useEffect } from 'react';
@@ -12,7 +12,7 @@ import './HandoffDiagram.css';
 const HandoffDiagram = ({ activeAgent = 'BurnwiseOrchestrator', recentHandoffs = [] }) => {
   const [animatingHandoff, setAnimatingHandoff] = useState(null);
 
-  // Real agent definitions matching backend agents-sdk/
+  // Agent definitions matching backend agents/
   const agents = {
     'BurnwiseOrchestrator': {
       name: 'Burnwise Orchestrator',

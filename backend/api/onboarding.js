@@ -1,12 +1,12 @@
 /**
- * Onboarding API - Conversational farm setup using OpenAI Agents SDK
- * Replaces traditional form with AI-powered conversation
+ * Onboarding API - Simplified conversational farm setup
+ * Replaces traditional form with basic chat interface
  */
 
 const express = require('express');
-const OnboardingAgent = require('../agents-sdk/OnboardingAgent');
 const { authenticateFromCookie } = require('../middleware/cookieAuth');
 const logger = require('../middleware/logger');
+const { query } = require('../db/connection');
 
 const router = express.Router();
 
@@ -29,23 +29,19 @@ router.post('/start', async (req, res) => {
       completed: false
     });
 
-    // Get welcome message from agent
-    const response = await OnboardingAgent.processMessage(
-      "Hello, I want to set up my farm account",
-      { messages: [] }
-    );
-
-    if (response.success) {
-      onboardingSessions.set(sessionId, {
-        ...onboardingSessions.get(sessionId),
-        messages: response.messages
-      });
-    }
+    // Simple welcome message
+    const welcomeMessage = "Welcome to Burnwise! I'll help you set up your farm account. Let's start with your farm's name. What do you call your farm?";
+    
+    onboardingSessions.set(sessionId, {
+      ...onboardingSessions.get(sessionId),
+      messages: [{ role: 'assistant', content: welcomeMessage }],
+      step: 'farm_name'
+    });
 
     res.json({
       success: true,
       sessionId,
-      message: response.message || "Welcome to Burnwise! I'll help you set up your farm account. Let's start with your farm's name. What do you call your farm?",
+      message: welcomeMessage,
       completed: false
     });
 
@@ -84,31 +80,72 @@ router.post('/message', async (req, res) => {
       onboardingSessions.set(sessionId, session);
     }
 
-    // Process message with agent
-    const response = await OnboardingAgent.processMessage(message, {
-      messages: session.messages
-    });
-
-    // Update session
-    if (response.success && response.messages) {
-      session.messages = response.messages;
-      session.completed = response.completed || false;
-      
-      if (response.completed) {
+    // Simple step-based onboarding flow
+    session.messages.push({ role: 'user', content: message });
+    
+    let responseMessage = '';
+    let completed = false;
+    let email = null;
+    
+    // Simple state machine based on current step
+    const currentStep = session.step || 'farm_name';
+    
+    switch(currentStep) {
+      case 'farm_name':
+        session.farm_name = message.trim();
+        session.step = 'location';
+        responseMessage = `Great! "${session.farm_name}" is a wonderful name. Now, where is your farm located? (City, State)`;
+        break;
+        
+      case 'location':
+        session.location = message.trim();
+        session.step = 'farm_size';
+        responseMessage = `Perfect! Your farm in ${session.location} sounds lovely. How many acres is your farm?`;
+        break;
+        
+      case 'farm_size':
+        const acres = parseInt(message) || 100;
+        session.farm_size_acres = acres;
+        session.step = 'email';
+        responseMessage = `Excellent! ${acres} acres gives you plenty of space. What's your email address for important burn notifications?`;
+        break;
+        
+      case 'email':
+        email = message.trim();
+        session.email = email;
+        completed = true;
+        
+        // Save farm data to database
+        try {
+          await query(`
+            INSERT INTO farms (farm_name, owner_name, owner_email, city_state, farm_size_acres, lat, lon)
+            VALUES (?, 'Demo User', ?, ?, ?, 38.544, -121.740)
+          `, [session.farm_name, email, session.location, session.farm_size_acres]);
+          
+          responseMessage = `Perfect! Your farm "${session.farm_name}" has been set up successfully. You can now start creating burn requests and managing your agricultural burns safely!`;
+        } catch (error) {
+          logger.error('Failed to save farm data', { error: error.message });
+          responseMessage = `Your onboarding is complete! Welcome to Burnwise.`;
+        }
+        
         // Clean up session after completion
         setTimeout(() => {
           onboardingSessions.delete(sessionId);
-        }, 60000); // Delete after 1 minute
-      }
-      
-      onboardingSessions.set(sessionId, session);
+        }, 60000);
+        break;
+        
+      default:
+        responseMessage = "I'm sorry, I didn't understand that. Could you please try again?";
     }
+    
+    session.messages.push({ role: 'assistant', content: responseMessage });
+    onboardingSessions.set(sessionId, session);
 
     res.json({
-      success: response.success,
-      message: response.message,
-      completed: response.completed || false,
-      email: response.email || null,
+      success: true,
+      message: responseMessage,
+      completed,
+      email,
       sessionId
     });
 

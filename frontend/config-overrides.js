@@ -22,7 +22,9 @@ module.exports = {
                 name: 'vendor',
                 chunks: 'all',
                 test: /node_modules/,
-                priority: 20
+                priority: 20,
+                enforce: true,
+                reuseExistingChunk: true
               },
               // Common components
               common: {
@@ -35,16 +37,18 @@ module.exports = {
               },
               // Separate large libraries
               mapbox: {
-                test: /[\\/]node_modules[\\/]mapbox-gl/,
+                test: /[\\/]node_modules[\\/](mapbox-gl|@mapbox)/,
                 name: 'mapbox',
                 priority: 30,
-                chunks: 'all'
+                chunks: 'all',
+                enforce: true
               },
               three: {
-                test: /[\\/]node_modules[\\/]three/,
+                test: /[\\/]node_modules[\\/](three|@react-three|cannon-es)/,
                 name: 'three',
                 priority: 30,
-                chunks: 'all'
+                chunks: 'all',
+                enforce: true
               },
               particles: {
                 test: /[\\/]node_modules[\\/]@?tsparticles/,
@@ -56,7 +60,24 @@ module.exports = {
                 test: /[\\/]node_modules[\\/]framer-motion/,
                 name: 'framer',
                 priority: 30,
-                chunks: 'all'
+                chunks: 'all',
+                enforce: true
+              },
+              // Separate React and core libraries
+              react: {
+                test: /[\\/]node_modules[\\/](react|react-dom|react-router)/,
+                name: 'react',
+                priority: 40,
+                chunks: 'all',
+                enforce: true
+              },
+              // Separate heavy utilities
+              utils: {
+                test: /[\\/]node_modules[\\/](lodash|@turf|axios|crypto-js)/,
+                name: 'utils',
+                priority: 25,
+                chunks: 'all',
+                enforce: true
               }
             }
           },
@@ -74,7 +95,10 @@ module.exports = {
                   inline: 2,
                   drop_console: true,
                   drop_debugger: true,
-                  pure_funcs: ['console.log', 'console.info', 'console.debug']
+                  pure_funcs: ['console.log', 'console.info', 'console.debug'],
+                  passes: 3,
+                  dead_code: true,
+                  unused: true
                 },
                 mangle: {
                   safari10: true
@@ -94,9 +118,20 @@ module.exports = {
         config.plugins.push(
           new CompressionPlugin({
             algorithm: 'gzip',
-            test: /\.(js|css|html|svg)$/,
-            threshold: 8192,
-            minRatio: 0.8
+            test: /\.(js|css|html|svg|json)$/,
+            threshold: 4096, // Lower threshold for more compression
+            minRatio: 0.7,
+            deleteOriginalAssets: false,
+            filename: '[path][base].gz'
+          }),
+          // Add Brotli compression for better compression ratio
+          new CompressionPlugin({
+            algorithm: 'brotliCompress',
+            test: /\.(js|css|html|svg|json)$/,
+            threshold: 4096,
+            minRatio: 0.7,
+            deleteOriginalAssets: false,
+            filename: '[path][base].br'
           })
         );
 
@@ -126,13 +161,20 @@ module.exports = {
 
       // Add performance hints
       config.performance = {
-        hints: 'warning',
-        maxEntrypointSize: 512000,
+        hints: process.env.NODE_ENV === 'production' ? 'warning' : false,
+        maxEntrypointSize: 768000, // Increased slightly for complex app
         maxAssetSize: 512000,
         assetFilter: function(assetFilename) {
           return assetFilename.endsWith('.js') || assetFilename.endsWith('.css');
         }
       };
+
+      // Enable tree shaking
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
+      
+      // Add module concatenation for smaller bundles
+      config.optimization.concatenateModules = true;
 
       return config;
     }
