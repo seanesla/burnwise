@@ -275,9 +275,9 @@ const HybridOnboarding = () => {
           
           completeOnboarding(onboardingData);
           
-          // Navigate to demo spatial interface
+          // Navigate to spatial interface (dashboard)
           setTimeout(() => {
-            navigate('/demo/spatial', {
+            navigate('/spatial', {
               state: {
                 isDemo: true,
                 demoMode: 'blank',
