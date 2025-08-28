@@ -172,7 +172,7 @@ router.post('/initialize', async (req, res) => {
       is_demo: true
     };
 
-    // Insert farm and get the ID (removed contact_email - column doesn't exist)
+    // Insert farm and get the ID
     const farmResult = await db.query(
       'INSERT INTO farms (farm_name, owner_name, latitude, longitude, total_acreage, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
       [farmData.farm_name, farmData.owner_name, farmData.latitude, farmData.longitude, farmData.total_acreage, farmData.is_demo]
@@ -280,11 +280,10 @@ async function createSampleData(farmId, sessionId) {
   const nearbyFarmIds = [];
   for (const farm of nearbyFarms) {
     const farmResult = await db.query(
-      'INSERT INTO farms (farm_name, owner_name, contact_email, total_acreage, latitude, longitude, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      'INSERT INTO farms (farm_name, owner_name, total_acreage, latitude, longitude, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
       [
         farm.name,
         farm.owner,
-        `${farm.name.toLowerCase().replace(/\s+/g, '')}@demo.burnwise.local`,
         farm.acres,
         farm.lat,
         farm.lon,

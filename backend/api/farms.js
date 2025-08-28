@@ -131,137 +131,22 @@ router.get('/', asyncHandler(async (req, res) => {
       LIMIT 10
     `);
     
-    // Crop type filtering
-    if (crop_type) {
-      whereConditions.push('JSON_SEARCH(f.primary_crops, "one", ?) IS NOT NULL');
-      queryParams.push(crop_type);
-    }
-    
-    // Farm size filtering
-    if (min_size) {
-      whereConditions.push('f.farm_size_acres >= ?');
-      queryParams.push(parseFloat(min_size));
-    }
-    
-    if (max_size) {
-      whereConditions.push('f.farm_size_acres <= ?');
-      queryParams.push(parseFloat(max_size));
-    }
-    
-    // Geographic proximity filtering
-    let distanceSelect = '';
-    let distanceOrderBy = '';
-    let distanceSelectParams = [];
-    if (near_lat && near_lon) {
-      whereConditions.push('1000 <= ?');
-      queryParams.push(parseFloat(near_lon), parseFloat(near_lat), parseFloat(radius_km) * 1000);
-      distanceSelect = ', 1000 as distance_meters';
-      distanceSelectParams = [parseFloat(near_lon), parseFloat(near_lat)];
-      
-      if (sort_by === 'distance') {
-        distanceOrderBy = 'ORDER BY distance_meters ASC';
-      }
-    }
-    
-    const whereClause = whereConditions.length > 0 ? 
-      `WHERE ${whereConditions.join(' AND ')}` : '';
-    
-    // Get total count
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM farms f
-      ${whereClause}
-    `;
-    
-    const [{ total }] = await query(countQuery, [...queryParams]);
-    
-    // Calculate pagination
-    const offset = (page - 1) * limit;
-    const totalPages = Math.ceil(total / limit);
-    
-    // Build main query
-    const orderBy = distanceOrderBy || `ORDER BY f.${sort_by} ${sort_order}`;
-    
-    // Sanitize LIMIT and OFFSET values
-    const limitValue = parseInt(limit) || 10;
-    const offsetValue = offset || 0;
-    
-    const farmsQuery = `
-      SELECT 
-        f.farm_id as id,
-        f.farm_name as name,
-        f.owner_name,
-        NULL as email,
-        f.address,
-        f.longitude as lon,
-        f.latitude as lat,
-        f.total_acreage as farm_size_acres,
-        NULL as primary_crops,
-        NULL as certification_number,
-        NULL as emergency_contact,
-        f.created_at,
-        f.updated_at
-        ${distanceSelect}
-      FROM farms f
-      ${whereClause}
-      ${orderBy}
-      LIMIT ${limitValue} OFFSET ${offsetValue}
-    `;
-    
-    // Combine all parameters in the correct order (no LIMIT/OFFSET params needed)
-    const finalQueryParams = [...distanceSelectParams, ...queryParams];
-    const farms = await query(farmsQuery, finalQueryParams);
-    
-    // Process results
-    farms.forEach(farm => {
-      // Parse JSON fields
-      if (farm.primary_crops) {
-        try {
-          farm.primary_crops = JSON.parse(farm.primary_crops);
-        } catch (e) {
-          farm.primary_crops = [];
-        }
-      }
-      
-      if (farm.emergency_contact) {
-        try {
-          farm.emergency_contact = JSON.parse(farm.emergency_contact);
-        } catch (e) {
-          farm.emergency_contact = null;
-        }
-      }
-      
-      // Format distance if available
-      if (farm.distance_meters !== undefined) {
-        farm.distance_km = (farm.distance_meters / 1000).toFixed(2);
-      }
-    });
-    
-    res.json({
+    return res.json({
       success: true,
-      data: farms,
+      farms: farms,
       pagination: {
-        current_page: parseInt(page),
-        total_pages: totalPages,
-        total_items: total,
-        items_per_page: parseInt(limit),
-        has_next: page < totalPages,
-        has_prev: page > 1
-      },
-      filters_applied: {
-        search,
-        crop_type,
-        size_range: { min: min_size, max: max_size },
-        proximity: near_lat && near_lon ? {
-          center: { lat: parseFloat(near_lat), lon: parseFloat(near_lon) },
-          radius_km: parseFloat(radius_km)
-        } : null
+        total: farms.length,
+        page: 1,
+        limit: 20,
+        totalPages: 1
       }
     });
-    
   } catch (error) {
-    logger.error('Farms retrieval failed', { error: error.message });
-    throw new DatabaseError('Failed to retrieve farms', error);
+    console.error('[FARMS] Error getting farms:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve farms'
+    });
   }
 }));
 
