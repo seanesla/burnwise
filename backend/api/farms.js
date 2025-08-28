@@ -60,6 +60,7 @@ router.get('/current', asyncHandler(async (req, res) => {
       f.latitude,
       f.longitude,
       f.total_acreage,
+      f.boundary,
       f.is_demo
     FROM farms f
     WHERE f.farm_id = ?

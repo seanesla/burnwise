@@ -35,10 +35,10 @@ const Analytics = () => {
       
       // Fetch multiple analytics endpoints in parallel
       const [trends, weather, conflicts, performance] = await Promise.all([
-        axios.get(`/api/analytics/burn-trends?range=${timeRange}`),
-        axios.get(`/api/analytics/weather-patterns?range=${timeRange}`),
-        axios.get(`/api/analytics/conflict-analysis?range=${timeRange}`),
-        axios.get(`/api/analytics/farm-performance?range=${timeRange}`)
+        axios.get(`/api/analytics/burn-trends?range=${timeRange}`, { withCredentials: true }),
+        axios.get(`/api/analytics/weather-patterns?range=${timeRange}`, { withCredentials: true }),
+        axios.get(`/api/analytics/conflict-analysis?range=${timeRange}`, { withCredentials: true }),
+        axios.get(`/api/analytics/farm-performance?range=${timeRange}`, { withCredentials: true })
       ]);
 
       setAnalyticsData({

@@ -641,7 +641,7 @@ const ImmersiveBurnRequest = () => {
 
   const fetchFarms = async () => {
     try {
-      const response = await axios.get('/api/farms');
+      const response = await axios.get('/api/farms', { withCredentials: true });
       setFarms(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch farms:', error);
@@ -653,7 +653,7 @@ const ImmersiveBurnRequest = () => {
   const fetchWeatherData = async () => {
     // Fetch real weather data from API
     try {
-      const response = await fetch('http://localhost:5001/api/weather/current');
+      const response = await fetch('http://localhost:5001/api/weather/current', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {

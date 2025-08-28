@@ -166,8 +166,8 @@ router.post('/initialize', async (req, res) => {
     const farmData = {
       farm_name: mode === 'blank' ? 'Your Demo Farm' : 'Golden Valley Demo Farm',
       owner_name: 'Demo User',
-      latitude: 32.7157, // San Diego area for demo
-      longitude: -117.1611,
+      latitude: null, // No default location - user will set via boundary
+      longitude: null, // No default location - user will set via boundary
       total_acreage: mode === 'blank' ? 500 : 750,
       is_demo: true
     };
@@ -237,28 +237,43 @@ router.post('/initialize', async (req, res) => {
 async function createSampleData(farmId, sessionId) {
   console.log(`[DEMO] Creating sample data for farm ${farmId}`);
 
+  // Get the farm's actual location from the database
+  const farmLocation = await db.query(
+    'SELECT latitude, longitude FROM farms WHERE farm_id = ?',
+    [farmId]
+  );
+  
+  // Only create nearby farms if farm has location set
+  if (!farmLocation[0].latitude || !farmLocation[0].longitude) {
+    console.log('[DEMO] No location set for farm, skipping nearby farm creation');
+    return;
+  }
+  
+  const baseLat = farmLocation[0].latitude;
+  const baseLon = farmLocation[0].longitude;
+  
   // Create nearby demo farms for realistic scenarios
   const nearbyFarms = [
     { 
       name: 'Sunset Ranch', 
       owner: 'Jane Demo Smith', 
       acres: 450,
-      lat: 32.7157 + (Math.random() - 0.5) * 0.1,
-      lon: -117.1611 + (Math.random() - 0.5) * 0.1
+      lat: baseLat + (Math.random() - 0.5) * 0.1,
+      lon: baseLon + (Math.random() - 0.5) * 0.1
     },
     { 
       name: 'Valley View Farm', 
       owner: 'Mike Demo Johnson', 
       acres: 320,
-      lat: 32.7157 + (Math.random() - 0.5) * 0.1,
-      lon: -117.1611 + (Math.random() - 0.5) * 0.1
+      lat: baseLat + (Math.random() - 0.5) * 0.1,
+      lon: baseLon + (Math.random() - 0.5) * 0.1
     },
     { 
       name: 'Hillside Acres', 
       owner: 'Sarah Demo Brown', 
       acres: 280,
-      lat: 32.7157 + (Math.random() - 0.5) * 0.1,
-      lon: -117.1611 + (Math.random() - 0.5) * 0.1
+      lat: baseLat + (Math.random() - 0.5) * 0.1,
+      lon: baseLon + (Math.random() - 0.5) * 0.1
     }
   ];
 
@@ -382,12 +397,12 @@ async function createSampleData(farmId, sessionId) {
     );
   }
 
-  // Create sample weather data
+  // Create sample weather data at the farm's location
   await db.query(
     'INSERT INTO weather_data (location_lat, location_lon, temperature, humidity, wind_speed, wind_direction, pressure, visibility, weather_condition, timestamp, is_demo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)',
     [
-      32.7157,
-      -117.1611,
+      baseLat,
+      baseLon,
       75,
       50,
       8,
@@ -422,7 +437,7 @@ async function createSampleData(farmId, sessionId) {
       farm_id: farmId,
       agent_type: 'weather_analyst',
       request: JSON.stringify({
-        location: { lat: 32.7157, lon: -117.1611 },
+        location: { lat: baseLat, lon: baseLon },
         date: new Date()
       }),
       response: JSON.stringify({

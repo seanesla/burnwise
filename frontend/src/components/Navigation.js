@@ -22,7 +22,7 @@ const Navigation = () => {
 
   const loadFarmData = async () => {
     try {
-      const response = await axios.get('/api/farms');
+      const response = await axios.get('/api/farms', { withCredentials: true });
       const userFarm = response.data.farms.find(farm => farm.id === user.farmId);
       setFarmData(userFarm);
     } catch (error) {

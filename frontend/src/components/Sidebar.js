@@ -81,12 +81,12 @@ const Sidebar = ({ onPanelChange }) => {
       
       if (!isDemo && user && user.farmId) {
         // Get farm details for real users
-        const farmsResponse = await axios.get('/api/farms');
+        const farmsResponse = await axios.get('/api/farms', { withCredentials: true });
         const userFarm = farmsResponse.data.farms.find(farm => farm.id === user.farmId);
         setFarmData(userFarm);
 
         // Get active burns count
-        const burnsResponse = await axios.get('/api/burn-requests');
+        const burnsResponse = await axios.get('/api/burn-requests', { withCredentials: true });
         const activeBurns = burnsResponse.data.requests.filter(
           burn => burn.farm_id === user.farmId && 
           ['pending', 'approved', 'in_progress'].includes(burn.status)
@@ -106,7 +106,8 @@ const Sidebar = ({ onPanelChange }) => {
         params: {
           lat: currentLocation.lat,
           lon: currentLocation.lng
-        }
+        },
+        withCredentials: true
       });
       
       if (weatherResponse.data?.data?.weather) {

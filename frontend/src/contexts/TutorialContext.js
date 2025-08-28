@@ -242,7 +242,7 @@ export const TutorialProvider = ({ children }) => {
       
       // Get REAL farms data from API
       try {
-        const farmsResponse = await axios.get('http://localhost:5001/api/farms');
+        const farmsResponse = await axios.get('http://localhost:5001/api/farms', { withCredentials: true });
         if (farmsResponse.data?.data) {
           // API returns data array, not farms
           data.farmCount = farmsResponse.data.data.length;
@@ -262,7 +262,8 @@ export const TutorialProvider = ({ children }) => {
       // Get REAL weather data from OpenWeatherMap API
       try {
         const weatherResponse = await axios.get('http://localhost:5001/api/weather/current', {
-          params: { lat: 38.544, lon: -121.740 }
+          params: { lat: 38.544, lon: -121.740 },
+          withCredentials: true
         });
         if (weatherResponse.data?.data) {
           // Use the correct data structure from the API response
@@ -277,7 +278,7 @@ export const TutorialProvider = ({ children }) => {
       
       // Get REAL burn requests data
       try {
-        const burnsResponse = await axios.get('http://localhost:5001/api/burn-requests');
+        const burnsResponse = await axios.get('http://localhost:5001/api/burn-requests', { withCredentials: true });
         if (burnsResponse.data?.requests) {
           data.activeBurns = burnsResponse.data.requests.filter(b => b.status === 'in_progress').length;
           data.pendingBurns = burnsResponse.data.requests.filter(b => b.status === 'pending').length;

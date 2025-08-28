@@ -266,7 +266,7 @@ const ImprovedBurnRequestForm = () => {
 
   const fetchFarms = async () => {
     try {
-      const response = await axios.get('/api/farms');
+      const response = await axios.get('/api/farms', { withCredentials: true });
       setFarms(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch farms:', error);
@@ -290,7 +290,8 @@ const ImprovedBurnRequestForm = () => {
           lat: farm.lat,
           lon: farm.lon,
           date: formData.burn_date
-        }
+        },
+        withCredentials: true
       });
 
       setWeatherData(response.data.data);
@@ -358,7 +359,7 @@ const ImprovedBurnRequestForm = () => {
         farm_id: parseInt(formData.farm_id),
         acres: parseFloat(formData.acres),
         estimated_duration: parseInt(formData.estimated_duration)
-      });
+      }, { withCredentials: true });
       
       toast.success('Burn request submitted successfully!');
       

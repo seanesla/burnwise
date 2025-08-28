@@ -38,7 +38,7 @@ const OnboardingChat = () => {
   const startConversation = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.post('/api/onboarding/start');
+      const response = await axios.post('/api/onboarding/start', {}, { withCredentials: true });
       
       if (response.data.success) {
         setSessionId(response.data.sessionId);
@@ -86,7 +86,7 @@ const OnboardingChat = () => {
       const response = await axios.post('/api/onboarding/message', {
         message: userMessage,
         sessionId
-      });
+      }, { withCredentials: true });
 
       if (response.data.success) {
         // Add assistant response
