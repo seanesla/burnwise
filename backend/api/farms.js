@@ -11,7 +11,7 @@ const farmCreationSchema = Joi.object({
   name: Joi.string().min(1).max(200).required(),
   owner_name: Joi.string().min(1).max(100).required(),
   email: Joi.string().email().required(),
-  address: Joi.string().min(1).max(500).required(),
+  address: Joi.string().min(1).max(500).optional().allow(null, ''),
   location: Joi.object({
     lat: Joi.number().min(-90).max(90).required(),
     lon: Joi.number().min(-180).max(180).required()
@@ -26,7 +26,7 @@ const farmUpdateSchema = Joi.object({
   name: Joi.string().min(1).max(200).optional(),
   owner_name: Joi.string().min(1).max(100).optional(),
   email: Joi.string().email().optional(),
-  address: Joi.string().min(1).max(500).optional(),
+  address: Joi.string().min(1).max(500).optional().allow(null, ''),
   location: Joi.object({
     lat: Joi.number().min(-90).max(90).required(),
     lon: Joi.number().min(-180).max(180).required()
@@ -57,7 +57,7 @@ router.get('/current', asyncHandler(async (req, res) => {
       f.farm_id,
       f.farm_name,
       f.owner_name,
-      f.address,
+      NULL AS address,
       f.latitude,
       f.longitude,
       f.total_acreage,
@@ -166,7 +166,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
         f.farm_name as name,
         f.owner_name,
         NULL as email,
-        f.address,
+        NULL AS address,
         f.longitude as lon,
         f.latitude as lat,
         f.total_acreage as farm_size_acres,
@@ -317,16 +317,15 @@ router.post('/', asyncHandler(async (req, res) => {
     // Create farm
     const result = await query(`
       INSERT INTO farms (
-        farm_name, owner_name, address,
+        farm_name, owner_name,
         latitude, longitude, total_acreage,
         created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, NOW(), NOW()
+        ?, ?, ?, ?, ?, NOW(), NOW()
       )
     `, [
       farmData.name,
       farmData.owner_name,
-      farmData.address,
       farmData.location.lat,
       farmData.location.lon,
       farmData.farm_size_acres
@@ -442,7 +441,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
         f.farm_name as name,
         f.owner_name,
         NULL as email,
-        f.address,
+        NULL AS address,
         f.longitude as lon,
         f.latitude as lat,
         f.total_acreage as farm_size_acres,
@@ -719,7 +718,7 @@ router.get('/nearby/:lat/:lon', asyncHandler(async (req, res) => {
     if (include_details === 'true') {
       selectFields += `,
         NULL as email,
-        f.address,
+        NULL AS address,
         NULL as primary_crops,
         NULL as certification_number
       `;
