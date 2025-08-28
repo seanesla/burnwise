@@ -295,8 +295,9 @@ const FarmBoundaryDrawer = ({
   // Reverse geocode coordinates to get location
   const reverseGeocode = useCallback(async (lng, lat) => {
     try {
+      // Use full backend URL to ensure proper routing
       const response = await fetch(
-        `/api/geocoding/reverse?lat=${lat}&lng=${lng}`
+        `http://localhost:5001/api/geocoding/reverse?lat=${lat}&lng=${lng}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -309,6 +310,8 @@ const FarmBoundaryDrawer = ({
                               `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
           return locationName;
         }
+      } else {
+        console.error('Reverse geocoding failed with status:', response.status);
       }
     } catch (error) {
       console.error('Reverse geocoding failed:', error);
@@ -321,6 +324,8 @@ const FarmBoundaryDrawer = ({
     if (!draw.current) return;
     
     const data = draw.current.getAll();
+    console.log('Calculating area for', data.features.length, 'features, skipGeocode:', skipGeocode);
+    
     let totalArea = 0;
     const parcelList = [];
     let centroidForGeocode = null;
@@ -330,6 +335,7 @@ const FarmBoundaryDrawer = ({
         // Store original polygon if this is the first calculation
         if (!originalPolygon.current && index === 0) {
           originalPolygon.current = JSON.parse(JSON.stringify(feature));
+          console.log('Stored original polygon for consistent area calculation');
         }
         
         // Use original polygon for area calculation if available (preserves area during drag)
@@ -339,6 +345,8 @@ const FarmBoundaryDrawer = ({
         const areaM2 = turf.area(polygonForArea);
         // Convert to acres (1 acre = 4046.86 m²)
         const areaAcres = areaM2 / 4046.86;
+        
+        console.log(`Polygon ${index}: ${areaAcres.toFixed(2)} acres`);
         
         totalArea += areaAcres;
         parcelList.push({
@@ -362,10 +370,14 @@ const FarmBoundaryDrawer = ({
     let location = detectedLocation;
     if (centroidForGeocode && !skipGeocode && !detectedLocation) {
       const [lng, lat] = centroidForGeocode;
+      console.log(`Performing reverse geocoding for centroid: ${lng.toFixed(6)}, ${lat.toFixed(6)}`);
       const geocodedLocation = await reverseGeocode(lng, lat);
       if (geocodedLocation) {
+        console.log('Reverse geocoding successful:', geocodedLocation);
         setDetectedLocation(geocodedLocation);
         location = geocodedLocation;
+      } else {
+        console.log('Reverse geocoding returned no results');
       }
     }
     
@@ -414,19 +426,26 @@ const FarmBoundaryDrawer = ({
 
   // Handle draw create
   const handleDrawCreate = useCallback((e) => {
+    console.log('Draw create event:', e);
     const feature = e.features[0];
     if (feature && feature.geometry.type === 'Polygon') {
-      // Validate the polygon has at least 3 points
+      // Validate the polygon has at least 3 points (4 including closing point)
       if (feature.geometry.coordinates[0] && feature.geometry.coordinates[0].length >= 4) {
+        console.log('Valid polygon created with', feature.geometry.coordinates[0].length - 1, 'vertices');
+        // Store as original polygon for consistent area during drag
+        originalPolygon.current = JSON.parse(JSON.stringify(feature));
         calculateArea();
-        // Don't automatically exit drawing mode - let user decide
-        // setIsDrawing(false);
+        setIsDrawing(false);
+        setCurrentPoints(0);
+      } else {
+        console.warn('Invalid polygon - not enough points');
       }
     }
   }, [calculateArea]);
 
   // Handle draw update
   const handleDrawUpdate = useCallback((e) => {
+    console.log('Draw update event - feature count:', e.features.length);
     // Debounce area calculation to prevent rapid updates during drag
     if (e.features.length > 0) {
       // Clear existing timeout
@@ -434,19 +453,28 @@ const FarmBoundaryDrawer = ({
         clearTimeout(dragTimeout.current);
       }
       
-      // Calculate immediately but skip geocoding during drag
-      calculateArea(true); // Skip geocoding during drag
+      // Only update if we don't have an original polygon stored yet
+      if (!originalPolygon.current && e.features[0]) {
+        originalPolygon.current = JSON.parse(JSON.stringify(e.features[0]));
+      }
+      
+      // Calculate area immediately but skip geocoding during active drag
+      calculateArea(true); // Skip geocoding during drag for performance
       
       // Set timeout for final calculation with geocoding after drag ends
       dragTimeout.current = setTimeout(() => {
-        calculateArea(false); // Do geocoding after drag ends
+        console.log('Drag ended, performing final calculation with geocoding');
+        calculateArea(false); // Do full calculation with geocoding after drag ends
         dragTimeout.current = null;
-      }, 500); // Wait 500ms after last update
+      }, 800); // Wait 800ms after last update to ensure drag is complete
     }
   }, [calculateArea]);
 
   // Handle draw delete
   const handleDrawDelete = useCallback((e) => {
+    console.log('Draw delete event');
+    originalPolygon.current = null; // Clear stored original polygon
+    setDetectedLocation(null); // Clear detected location
     calculateArea();
   }, [calculateArea]);
 
