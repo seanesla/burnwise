@@ -51,6 +51,7 @@ const FarmBoundaryDrawer = ({
   const [currentPoints, setCurrentPoints] = useState(0);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState(null); // Auto-detected location
+  const [selectedCount, setSelectedCount] = useState(0); // Track number of selected features
 
   // Initialize map - ONLY ONCE to prevent flickering
   useEffect(() => {
@@ -175,6 +176,7 @@ const FarmBoundaryDrawer = ({
         uncombine_features: false
       },
       defaultMode: 'simple_select',
+      clickBuffer: 5,  // Make it easier to click on features
       styles: [
         // Style for polygon fill
         {
@@ -242,6 +244,9 @@ const FarmBoundaryDrawer = ({
       map.current.addControl(draw.current);
       setMapLoaded(true);
       
+      // Expose draw instance for debugging
+      window.farmDraw = draw.current;
+      
       // FORCEFULLY REMOVE MAPBOX DRAW DEFAULT BUTTONS
       setTimeout(() => {
         // Remove Mapbox Draw control buttons except trash from DOM
@@ -276,6 +281,7 @@ const FarmBoundaryDrawer = ({
       map.current.on('draw.update', handleDrawUpdate);
       map.current.on('draw.delete', handleDrawDelete);
       map.current.on('draw.modechange', handleModeChange);
+      map.current.on('draw.selectionchange', handleSelectionChange);
       
       // Track points being added during drawing
       map.current.on('click', (e) => {
@@ -487,6 +493,14 @@ const FarmBoundaryDrawer = ({
     setIsDrawing(prev => prev !== newIsDrawing ? newIsDrawing : prev);
   }, []);
 
+  // Handle selection change
+  const handleSelectionChange = useCallback((e) => {
+    if (draw.current) {
+      const selected = draw.current.getSelected();
+      setSelectedCount(selected.features.length);
+    }
+  }, []);
+
   // Start drawing
   const startDrawing = () => {
     if (draw.current && mapLoaded && !isDrawing) {
@@ -556,16 +570,40 @@ const FarmBoundaryDrawer = ({
     }
   };
 
-  // Clear all drawings
+  // Clear selected or all drawings
   const clearAll = () => {
     if (draw.current) {
-      draw.current.deleteAll();
-      setCurrentArea(0);
-      setParcels([]);
-      setDetectedLocation(null);
-      originalPolygon.current = null; // Clear stored original polygon
-      if (onBoundaryComplete) {
-        onBoundaryComplete(null);
+      const selected = draw.current.getSelected();
+      
+      if (selected.features.length > 0) {
+        // Delete only selected features
+        const selectedIds = draw.current.getSelectedIds();
+        draw.current.delete(selectedIds);
+        
+        // Check if any features remain
+        const remaining = draw.current.getAll();
+        if (remaining.features.length === 0) {
+          setCurrentArea(0);
+          setParcels([]);
+          setDetectedLocation(null);
+          originalPolygon.current = null;
+          if (onBoundaryComplete) {
+            onBoundaryComplete(null);
+          }
+        } else {
+          // Recalculate area for remaining features
+          calculateArea();
+        }
+      } else {
+        // No selection - delete everything as before
+        draw.current.deleteAll();
+        setCurrentArea(0);
+        setParcels([]);
+        setDetectedLocation(null);
+        originalPolygon.current = null;
+        if (onBoundaryComplete) {
+          onBoundaryComplete(null);
+        }
       }
     }
   };
@@ -618,6 +656,9 @@ const FarmBoundaryDrawer = ({
           
           const bbox = turf.bbox(geojson);
           map.current.fitBounds(bbox, { padding: 50 });
+          
+          // Switch to simple_select mode to allow selection
+          draw.current.changeMode('simple_select');
         }
       } catch (error) {
         console.error('Import failed:', error);
@@ -679,7 +720,13 @@ const FarmBoundaryDrawer = ({
             <button
               className="tool-btn"
               onClick={clearAll}
-              title="Clear Boundary"
+              title={
+                currentArea === 0 
+                  ? "No boundaries to clear" 
+                  : selectedCount > 0 
+                    ? `Delete ${selectedCount} selected boundary${selectedCount > 1 ? 'ies' : ''}`
+                    : "Clear all boundaries"
+              }
               disabled={currentArea === 0}
             >
               <FaTrash />
@@ -752,6 +799,29 @@ const FarmBoundaryDrawer = ({
           </span>
         )}
       </div>
+
+      {/* Selection Hint */}
+      {currentArea > 0 && !isDrawing && (
+        <div className="selection-hint" style={{
+          position: 'absolute',
+          bottom: '70px',
+          right: '20px',
+          background: 'rgba(255, 255, 255, 0.95)',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          color: '#666',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <FaInfoCircle style={{ color: '#ff8c42' }} />
+          {selectedCount > 0 
+            ? `${selectedCount} boundary${selectedCount > 1 ? 'ies' : ''} selected - Click trash to delete`
+            : 'Click on a boundary to select it for deletion'}
+        </div>
+      )}
 
       {/* Drawing Mode Indicator */}
       {isDrawing && (
