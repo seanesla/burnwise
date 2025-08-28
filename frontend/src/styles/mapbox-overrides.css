@@ -6,28 +6,29 @@
   display: none !important;
 }
 
-/* Hide trash button */
-.mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
+/* Allow trash button for individual polygon deletion */
+/* .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
+  display: none !important;
+} */
+
+/* Hide control buttons except trash */
+.mapbox-gl-draw_ctrl-draw-btn:not(.mapbox-gl-draw_trash) {
   display: none !important;
 }
 
-/* Hide ALL control buttons */
-.mapbox-gl-draw_ctrl-draw-btn {
+/* Show control group to allow trash button */
+/* .mapbox-gl-draw_ctrl {
   display: none !important;
-}
+} */
 
-/* Hide the entire control group */
-.mapbox-gl-draw_ctrl {
+/* Allow control group for trash button */
+/* .mapboxgl-ctrl-group {
   display: none !important;
-}
-
-/* Hide the entire control group */
-.mapboxgl-ctrl-group {
-  display: none !important;
-}
+} */
 
 /* Only hide in FarmBoundaryDrawer component to not affect other maps */
-.farm-boundary-drawer .mapboxgl-ctrl {
+/* Commented out to allow MapboxDraw trash control */
+/* .farm-boundary-drawer .mapboxgl-ctrl {
   display: none !important;
 }
 
@@ -36,11 +37,11 @@
 .farm-boundary-drawer .mapboxgl-ctrl-bottom-right,
 .farm-boundary-drawer .mapboxgl-ctrl-bottom-left {
   display: none !important;
-}
+} */
 
-/* Alternative: Hide only Draw-specific controls globally */
+/* Alternative: Hide only Draw-specific controls globally except trash */
 .mapbox-gl-draw_ctrl-draw-btn,
-.mapbox-gl-draw_trash,
+/* .mapbox-gl-draw_trash, */
 .mapbox-gl-draw_polygon,
 .mapbox-gl-draw_point,
 .mapbox-gl-draw_line,

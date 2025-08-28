@@ -166,9 +166,9 @@ const FarmBoundaryDrawer = ({
     draw.current = new MapboxDraw({
       displayControlsDefault: false,
       controls: {
-        // Disable all default controls - we use our custom toolbar instead
+        // Enable trash for individual polygon deletion
         polygon: false,
-        trash: false,
+        trash: true,
         point: false,
         line_string: false,
         combine_features: false,
@@ -244,23 +244,25 @@ const FarmBoundaryDrawer = ({
       
       // FORCEFULLY REMOVE MAPBOX DRAW DEFAULT BUTTONS
       setTimeout(() => {
-        // Remove all Mapbox Draw control buttons from DOM
-        const drawButtons = document.querySelectorAll('.mapbox-gl-draw_ctrl-draw-btn');
+        // Remove Mapbox Draw control buttons except trash from DOM
+        const drawButtons = document.querySelectorAll('.mapbox-gl-draw_ctrl-draw-btn:not(.mapbox-gl-draw_trash)');
         drawButtons.forEach(btn => btn.remove());
         
-        // Remove control groups if empty
+        // Remove control groups if empty, but keep trash button
         const controlGroups = document.querySelectorAll('.mapboxgl-ctrl-group');
         controlGroups.forEach(group => {
-          if (!group.children.length || group.querySelector('.mapbox-gl-draw_ctrl-draw-btn')) {
+          // Keep the group if it contains the trash button
+          const hasTrash = group.querySelector('.mapbox-gl-draw_trash');
+          if (!hasTrash && (!group.children.length || group.querySelector('.mapbox-gl-draw_ctrl-draw-btn'))) {
             group.remove();
           }
         });
         
-        // Remove any draw control containers
-        const drawControls = document.querySelectorAll('.mapbox-gl-draw_ctrl');
+        // Remove draw controls except trash
+        const drawControls = document.querySelectorAll('.mapbox-gl-draw_ctrl-draw-btn:not(.mapbox-gl-draw_trash)');
         drawControls.forEach(ctrl => ctrl.remove());
         
-        console.log('Removed Mapbox Draw default controls from DOM');
+        console.log('Removed Mapbox Draw default controls from DOM (kept trash)');
       }, 100); // Small delay to ensure controls are rendered first
 
       // Load initial boundary if exists
