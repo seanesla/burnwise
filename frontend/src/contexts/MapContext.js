@@ -4,6 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const MapContext = createContext();
 
@@ -16,6 +17,8 @@ export const useMap = () => {
 };
 
 export const MapProvider = ({ children }) => {
+  const { isAuthenticated, user, loading } = useAuth();
+  
   // Default to California Central Valley
   const [mapCenter, setMapCenter] = useState({
     lat: 38.544,
@@ -58,14 +61,14 @@ export const MapProvider = ({ children }) => {
   useEffect(() => {
     const loadFarmLocation = async () => {
       try {
-        // Check if demo session exists in sessionStorage
-        // Note: httpOnly cookies can't be checked from JavaScript
-        const sessionId = sessionStorage.getItem('demo_session_id');
-        const sessionData = sessionStorage.getItem('demo_session_data');
+        // Only fetch if authenticated (AuthContext has validated the session)
+        if (loading) {
+          console.log('Auth still loading, waiting...');
+          return;
+        }
         
-        // Only fetch if we have a session
-        if (!sessionId || !sessionData) {
-          console.log('No demo session found, skipping farm location fetch');
+        if (!isAuthenticated || !user) {
+          console.log('Not authenticated, skipping farm location fetch');
           return;
         }
         
@@ -114,7 +117,7 @@ export const MapProvider = ({ children }) => {
     };
     
     loadFarmLocation();
-  }, []);
+  }, [isAuthenticated, user, loading]); // Re-run when authentication state changes
   
   const value = {
     mapCenter,

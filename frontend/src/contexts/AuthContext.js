@@ -37,31 +37,56 @@ export const AuthProvider = ({ children }) => {
         const existingDemoData = sessionStorage.getItem('demo_session_data');
         
         if (existingDemoId && existingDemoData) {
-          // Restore existing demo session
-          if (existingDemoData) {
-            const demoData = JSON.parse(existingDemoData);
-            setUser(demoData);
-            setIsAuthenticated(true);
-            
-            // Check onboarding status
-            const onboardingKey = `demo_onboarding_${existingDemoId}`;
-            const hasOnboarded = localStorage.getItem(onboardingKey) === 'true';
-            setOnboardingComplete(hasOnboarded);
-            
-            if (hasOnboarded) {
-              const onboardingDataKey = `demo_onboarding_data_${existingDemoId}`;
-              const savedData = localStorage.getItem(onboardingDataKey);
-              if (savedData) {
-                setOnboardingData(JSON.parse(savedData));
+          // Try to validate the session by making a test request
+          console.log('Found existing session, validating...', existingDemoId);
+          try {
+            const testResponse = await axios.get(`${API_BASE}/api/farms/current`, {
+              withCredentials: true,
+              validateStatus: function (status) {
+                // Accept any status code to handle it manually
+                return true;
               }
+            });
+            
+            if (testResponse.status === 200) {
+              console.log('Session validated successfully');
+              // Session is valid, restore it
+              const demoData = JSON.parse(existingDemoData);
+              setUser(demoData);
+              setIsAuthenticated(true);
+              
+              // Check onboarding status
+              const onboardingKey = `demo_onboarding_${existingDemoId}`;
+              const hasOnboarded = localStorage.getItem(onboardingKey) === 'true';
+              setOnboardingComplete(hasOnboarded);
+              
+              if (hasOnboarded) {
+                const onboardingDataKey = `demo_onboarding_data_${existingDemoId}`;
+                const savedData = localStorage.getItem(onboardingDataKey);
+                if (savedData) {
+                  setOnboardingData(JSON.parse(savedData));
+                }
+              }
+              return; // Session is valid, we're done
+            } else {
+              // Session is invalid (401 or other non-200 status)
+              console.log(`Session invalid (status ${testResponse.status}), clearing old data...`);
+              sessionStorage.removeItem('demo_session_id');
+              sessionStorage.removeItem('demo_session_data');
             }
+          } catch (error) {
+            // Network error or other unexpected error
+            console.error('Session validation failed with error:', error.message);
+            sessionStorage.removeItem('demo_session_id');
+            sessionStorage.removeItem('demo_session_data');
           }
-        } else {
-          // Auto-create demo session since none exists
-          console.log('No demo session found, auto-creating one...');
-          const response = await axios.post(`${API_BASE}/api/demo/session`, {}, {
-            withCredentials: true
-          });
+        }
+        
+        // Auto-create demo session since none exists or old one is invalid
+        console.log('Creating new demo session...');
+        const response = await axios.post(`${API_BASE}/api/demo/session`, {}, {
+          withCredentials: true
+        });
           
           if (response.data.success) {
             const demoUser = {
@@ -81,7 +106,6 @@ export const AuthProvider = ({ children }) => {
             setIsAuthenticated(true);
             setOnboardingComplete(false); // New demos need onboarding
           }
-        }
       } catch (err) {
         console.error('Failed to initialize session:', err);
       } finally {
