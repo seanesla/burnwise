@@ -82,7 +82,16 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
         Object.entries(data.data.timeline).forEach(([timeSlot, slotData]) => {
           slotData.burns.forEach(burn => {
             // Parse the scheduled time properly
-            const [startHour, startMin] = burn.scheduled_start.split(':');
+            if (!burn.scheduled_start) {
+              console.warn('Burn missing scheduled_start:', burn);
+              return;
+            }
+            const timeParts = burn.scheduled_start.split(':');
+            if (timeParts.length < 2) {
+              console.warn('Invalid scheduled_start format:', burn.scheduled_start);
+              return;
+            }
+            const [startHour, startMin] = timeParts;
             const burnTime = new Date(currentTime);
             burnTime.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
             

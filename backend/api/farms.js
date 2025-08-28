@@ -41,13 +41,14 @@ const farmUpdateSchema = Joi.object({
  * Get current user's farm data
  */
 router.get('/current', asyncHandler(async (req, res) => {
-  // Get farmId from authenticated user (from JWT)
-  const farmId = req.user?.farmId;
+  // Get demo session from cookies (set by /api/demo/session)
+  const sessionId = req.cookies?.demo_session_id;
+  const farmId = req.cookies?.demo_farm_id;
   
-  if (!farmId) {
+  if (!sessionId || !farmId) {
     return res.status(401).json({
       success: false,
-      error: 'No farm associated with user'
+      error: 'No demo session found. Please start from the landing page.'
     });
   }
   
@@ -99,40 +100,36 @@ router.get('/current', asyncHandler(async (req, res) => {
  * Get farms with filtering, searching, and pagination
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const {
-    search,
-    crop_type,
-    min_size,
-    max_size,
-    near_lat,
-    near_lon,
-    radius_km = 50,
-    page = 1,
-    limit = 20,
-    sort_by = 'name',
-    sort_order = 'ASC'
-  } = req.query;
+  // For demo mode, return the user's demo farm and nearby demo farms
+  const farmId = req.cookies?.demo_farm_id;
+  
+  if (!farmId) {
+    return res.json({
+      success: true,
+      farms: [],
+      pagination: {
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 0
+      }
+    });
+  }
   
   try {
-    // Build dynamic query
-    let whereConditions = [];
-    let queryParams = [];
-    
-    // ALWAYS exclude test data - no test/mock farms in production
-    whereConditions.push(`(
-      f.farm_name NOT LIKE '%Test%' 
-      AND f.farm_name NOT LIKE '%Load%' 
-      AND f.farm_name NOT LIKE '%Stress%' 
-      AND f.farm_name NOT LIKE '%Concurrent%'
-      AND f.farm_name NOT LIKE '%DROP TABLE%'
-    )`);
-    
-    // Text search
-    if (search) {
-      whereConditions.push('(f.farm_name LIKE ? OR f.owner_name LIKE ? OR f.owner_name LIKE ?)');
-      const searchTerm = `%${search}%`;
-      queryParams.push(searchTerm, searchTerm, searchTerm);
-    }
+    // Get the user's demo farm and any nearby demo farms
+    const farms = await query(`
+      SELECT 
+        farm_id as id,
+        farm_name as name,
+        owner_name,
+        latitude,
+        longitude,
+        total_acreage as farm_size_acres
+      FROM farms 
+      WHERE is_demo = 1
+      LIMIT 10
+    `);
     
     // Crop type filtering
     if (crop_type) {

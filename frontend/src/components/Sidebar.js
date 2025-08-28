@@ -77,24 +77,37 @@ const Sidebar = ({ onPanelChange }) => {
     setLoading(true);
     try {
       // In demo mode, skip farm-specific data
-      const isDemo = location.pathname.startsWith('/demo');
+      // Demo mode is permanent - all users are demo users
+      const farmId = user?.farmId || user?.id;
       
-      if (!isDemo && user && user.farmId) {
-        // Get farm details for real users
+      // Get farm details
+      try {
         const farmsResponse = await axios.get('/api/farms', { withCredentials: true });
-        const userFarm = farmsResponse.data.farms.find(farm => farm.id === user.farmId);
-        setFarmData(userFarm);
-
-        // Get active burns count
-        const burnsResponse = await axios.get('/api/burn-requests', { withCredentials: true });
-        const activeBurns = burnsResponse.data.requests.filter(
-          burn => burn.farm_id === user.farmId && 
-          ['pending', 'approved', 'in_progress'].includes(burn.status)
-        );
-        setActiveBurnsCount(activeBurns.length);
-      } else if (isDemo) {
-        // Set demo farm data
+        if (farmsResponse.data.farms && farmsResponse.data.farms.length > 0) {
+          const userFarm = farmId 
+            ? farmsResponse.data.farms.find(farm => farm.id === farmId) || farmsResponse.data.farms[0]
+            : farmsResponse.data.farms[0];
+          setFarmData(userFarm || { name: 'Demo Farm' });
+        }
+      } catch (err) {
+        console.error('Error loading farms:', err);
         setFarmData({ name: 'Demo Farm' });
+      }
+
+      // Get active burns count
+      try {
+        const burnsResponse = await axios.get('/api/burn-requests', { withCredentials: true });
+        if (burnsResponse.data.requests) {
+          const activeBurns = farmId 
+            ? burnsResponse.data.requests.filter(
+                burn => burn.farm_id === farmId && 
+                ['pending', 'approved', 'in_progress'].includes(burn.status)
+              )
+            : [];
+          setActiveBurnsCount(activeBurns.length);
+        }
+      } catch (err) {
+        console.error('Error loading burns:', err);
         setActiveBurnsCount(0);
       }
 
