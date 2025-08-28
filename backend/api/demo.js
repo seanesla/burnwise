@@ -36,6 +36,18 @@ router.post('/session', async (req, res) => {
     
     console.log(`[DEMO] Created auto demo session ${sessionId} with farm ${farmId}`);
     
+    // Set HTTP cookies for authentication (real session management, not hardcoded)
+    const cookieOptions = {
+      httpOnly: true, // Prevents XSS attacks
+      secure: false, // Set to true with HTTPS in production
+      sameSite: 'lax', // CSRF protection
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours matching session expiry in DB
+    };
+    
+    // These cookies link browser to the real TiDB session record
+    res.cookie('demo_session_id', sessionId, cookieOptions);
+    res.cookie('demo_farm_id', farmId.toString(), cookieOptions);
+    
     return res.json({
       success: true,
       sessionId,

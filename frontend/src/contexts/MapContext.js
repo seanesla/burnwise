@@ -58,6 +58,17 @@ export const MapProvider = ({ children }) => {
   useEffect(() => {
     const loadFarmLocation = async () => {
       try {
+        // Check if demo session exists in sessionStorage
+        // Note: httpOnly cookies can't be checked from JavaScript
+        const sessionId = sessionStorage.getItem('demo_session_id');
+        const sessionData = sessionStorage.getItem('demo_session_data');
+        
+        // Only fetch if we have a session
+        if (!sessionId || !sessionData) {
+          console.log('No demo session found, skipping farm location fetch');
+          return;
+        }
+        
         // Get current user's farm data
         const response = await fetch('http://localhost:5001/api/farms/current', {
           credentials: 'include'

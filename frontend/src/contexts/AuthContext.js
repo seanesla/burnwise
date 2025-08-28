@@ -27,42 +27,69 @@ export const AuthProvider = ({ children }) => {
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [onboardingData, setOnboardingData] = useState(null);
 
-  // Check for existing session on mount (but don't create new one)
+  // Check for existing session on mount and auto-create if needed
   useEffect(() => {
-    const checkExistingSession = async () => {
+    const initializeSession = async () => {
       try {
-        // Check for existing demo session
+        // Check sessionStorage for existing session
+        // Note: httpOnly cookies can't be read by JavaScript for security
         const existingDemoId = sessionStorage.getItem('demo_session_id');
         const existingDemoData = sessionStorage.getItem('demo_session_data');
         
         if (existingDemoId && existingDemoData) {
           // Restore existing demo session
-          const demoData = JSON.parse(existingDemoData);
-          setUser(demoData);
-          setIsAuthenticated(true);
-          
-          // Check onboarding status
-          const onboardingKey = `demo_onboarding_${existingDemoId}`;
-          const hasOnboarded = localStorage.getItem(onboardingKey) === 'true';
-          setOnboardingComplete(hasOnboarded);
-          
-          if (hasOnboarded) {
-            const onboardingDataKey = `demo_onboarding_data_${existingDemoId}`;
-            const savedData = localStorage.getItem(onboardingDataKey);
-            if (savedData) {
-              setOnboardingData(JSON.parse(savedData));
+          if (existingDemoData) {
+            const demoData = JSON.parse(existingDemoData);
+            setUser(demoData);
+            setIsAuthenticated(true);
+            
+            // Check onboarding status
+            const onboardingKey = `demo_onboarding_${existingDemoId}`;
+            const hasOnboarded = localStorage.getItem(onboardingKey) === 'true';
+            setOnboardingComplete(hasOnboarded);
+            
+            if (hasOnboarded) {
+              const onboardingDataKey = `demo_onboarding_data_${existingDemoId}`;
+              const savedData = localStorage.getItem(onboardingDataKey);
+              if (savedData) {
+                setOnboardingData(JSON.parse(savedData));
+              }
             }
           }
+        } else {
+          // Auto-create demo session since none exists
+          console.log('No demo session found, auto-creating one...');
+          const response = await axios.post(`${API_BASE}/api/demo/session`, {}, {
+            withCredentials: true
+          });
+          
+          if (response.data.success) {
+            const demoUser = {
+              id: response.data.sessionId,
+              farmId: response.data.farmId,
+              email: 'demo@burnwise.local',
+              name: 'Demo User',
+              isDemo: true,
+              expiresAt: response.data.expiresAt
+            };
+            
+            // Store demo session
+            sessionStorage.setItem('demo_session_id', response.data.sessionId);
+            sessionStorage.setItem('demo_session_data', JSON.stringify(demoUser));
+            
+            setUser(demoUser);
+            setIsAuthenticated(true);
+            setOnboardingComplete(false); // New demos need onboarding
+          }
         }
-        // Don't create new session automatically - let Landing page do it
       } catch (err) {
-        console.error('Failed to check existing session:', err);
+        console.error('Failed to initialize session:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    checkExistingSession();
+    initializeSession();
   }, []);
 
   // Create demo session (called from Landing page)
