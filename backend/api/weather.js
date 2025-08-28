@@ -51,6 +51,11 @@ router.get('/current', asyncHandler(async (req, res) => {
       });
     }
     
+    // Initialize weatherAgent if not already initialized
+    if (!weatherAgent.initialized) {
+      await weatherAgent.initialize();
+    }
+    
     const location = { lat: latitude, lng: longitude };
     const currentWeather = await weatherAgent.fetchCurrentWeather(location);
     
