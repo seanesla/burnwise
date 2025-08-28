@@ -480,10 +480,24 @@ const FarmBoundaryDrawer = ({
 
   // Handle draw delete
   const handleDrawDelete = useCallback((e) => {
-    console.log('Draw delete event');
+    console.log('Draw delete event', e);
     originalPolygon.current = null; // Clear stored original polygon
     setDetectedLocation(null); // Clear detected location
-    calculateArea();
+    
+    // Force map to update by triggering a repaint
+    if (map.current) {
+      map.current.triggerRepaint();
+    }
+    
+    // Recalculate area after a short delay to ensure deletion is complete
+    setTimeout(() => {
+      calculateArea();
+      // Update selection count after deletion
+      if (draw.current) {
+        const selected = draw.current.getSelected();
+        setSelectedCount(selected.features.length);
+      }
+    }, 50);
   }, [calculateArea]);
 
   // Handle mode change
@@ -576,37 +590,55 @@ const FarmBoundaryDrawer = ({
       const selected = draw.current.getSelected();
       
       if (selected.features.length > 0) {
-        // Delete only selected features
-        const selectedIds = draw.current.getSelectedIds();
-        draw.current.delete(selectedIds);
+        // Use trash() for selected features - it handles visual updates better
+        draw.current.trash();
         
-        // Check if any features remain
+        // Ensure we're in the correct mode after deletion
+        if (draw.current.getMode() !== 'simple_select') {
+          draw.current.changeMode('simple_select');
+        }
+      } else {
+        // No selection - delete everything
+        draw.current.deleteAll();
+      }
+      
+      // Force a render update and check remaining features after a delay
+      setTimeout(() => {
         const remaining = draw.current.getAll();
         if (remaining.features.length === 0) {
           setCurrentArea(0);
           setParcels([]);
           setDetectedLocation(null);
           originalPolygon.current = null;
+          setSelectedCount(0);
           if (onBoundaryComplete) {
             onBoundaryComplete(null);
           }
         } else {
           // Recalculate area for remaining features
           calculateArea();
+          // Update selection count
+          const stillSelected = draw.current.getSelected();
+          setSelectedCount(stillSelected.features.length);
         }
-      } else {
-        // No selection - delete everything as before
-        draw.current.deleteAll();
-        setCurrentArea(0);
-        setParcels([]);
-        setDetectedLocation(null);
-        originalPolygon.current = null;
-        if (onBoundaryComplete) {
-          onBoundaryComplete(null);
-        }
-      }
+      }, 100);
     }
   };
+
+  // Manual selection helper for debugging
+  const selectFeature = (featureId) => {
+    if (draw.current) {
+      draw.current.changeMode('simple_select', { featureIds: [featureId] });
+      setSelectedCount(1);
+      console.log('Selected feature:', featureId);
+    }
+  };
+
+  // Expose helper functions for debugging
+  useEffect(() => {
+    window.selectFeature = selectFeature;
+    window.farmDraw = draw.current;
+  }, [draw.current]);
 
   // Toggle map style
   const toggleMapStyle = () => {
