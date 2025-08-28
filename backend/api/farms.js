@@ -407,6 +407,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
             break;
           case 'primary_crops':
           case 'emergency_contact':
+          case 'boundary':
             updateFields.push(`${key} = ?`);
             updateParams.push(JSON.stringify(updateData[key]));
             break;

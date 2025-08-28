@@ -127,8 +127,9 @@ const HybridOnboarding = () => {
         ...prev,
         farmBoundary: boundaryData,
         acreage: boundaryData.properties?.totalAcres?.toFixed(2) || '',
-        // NOW set the location since boundary is drawn
-        location: selectedLocationCoords?.searchedAddress || 
+        // Use auto-detected location from reverse geocoding, or fall back to searched address
+        location: boundaryData.properties?.detectedLocation || 
+                  selectedLocationCoords?.searchedAddress || 
                   prev.location || 
                   'Farm boundary defined'
       }));

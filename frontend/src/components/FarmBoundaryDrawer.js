@@ -37,6 +37,8 @@ const FarmBoundaryDrawer = ({
   const map = useRef(null);
   const draw = useRef(null);
   const fileInputRef = useRef(null);
+  const originalPolygon = useRef(null); // Store original polygon for consistent area
+  const dragTimeout = useRef(null); // Debounce drag updates
   
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentArea, setCurrentArea] = useState(0);
@@ -48,6 +50,7 @@ const FarmBoundaryDrawer = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [currentPoints, setCurrentPoints] = useState(0);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
+  const [detectedLocation, setDetectedLocation] = useState(null); // Auto-detected location
 
   // Initialize map - ONLY ONCE to prevent flickering
   useEffect(() => {
@@ -289,18 +292,51 @@ const FarmBoundaryDrawer = ({
     };
   }, []); // Empty dependency array - initialize only once
 
+  // Reverse geocode coordinates to get location
+  const reverseGeocode = useCallback(async (lng, lat) => {
+    try {
+      const response = await fetch(
+        `/api/geocoding/reverse?lat=${lat}&lng=${lng}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          // Get the most relevant result (usually first one)
+          const place = data.features[0];
+          const locationName = place.properties?.full_address || 
+                              place.properties?.name || 
+                              place.properties?.place_formatted ||
+                              `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          return locationName;
+        }
+      }
+    } catch (error) {
+      console.error('Reverse geocoding failed:', error);
+    }
+    return null;
+  }, []);
+
   // Calculate area from drawn features - MUST BE DEFINED BEFORE USE
-  const calculateArea = useCallback(() => {
+  const calculateArea = useCallback(async (skipGeocode = false) => {
     if (!draw.current) return;
     
     const data = draw.current.getAll();
     let totalArea = 0;
     const parcelList = [];
+    let centroidForGeocode = null;
 
     data.features.forEach((feature, index) => {
       if (feature.geometry.type === 'Polygon') {
+        // Store original polygon if this is the first calculation
+        if (!originalPolygon.current && index === 0) {
+          originalPolygon.current = JSON.parse(JSON.stringify(feature));
+        }
+        
+        // Use original polygon for area calculation if available (preserves area during drag)
+        const polygonForArea = originalPolygon.current || feature;
+        
         // Calculate area in square meters
-        const areaM2 = turf.area(feature);
+        const areaM2 = turf.area(polygonForArea);
         // Convert to acres (1 acre = 4046.86 m²)
         const areaAcres = areaM2 / 4046.86;
         
@@ -310,11 +346,28 @@ const FarmBoundaryDrawer = ({
           area: areaAcres,
           geometry: feature.geometry
         });
+        
+        // Get centroid for reverse geocoding (only for first polygon)
+        if (index === 0 && !skipGeocode) {
+          const centroid = turf.centroid(feature);
+          centroidForGeocode = centroid.geometry.coordinates;
+        }
       }
     });
 
     setCurrentArea(totalArea);
     setParcels(parcelList);
+    
+    // Reverse geocode to get location if we have a centroid
+    let location = detectedLocation;
+    if (centroidForGeocode && !skipGeocode && !detectedLocation) {
+      const [lng, lat] = centroidForGeocode;
+      const geocodedLocation = await reverseGeocode(lng, lat);
+      if (geocodedLocation) {
+        setDetectedLocation(geocodedLocation);
+        location = geocodedLocation;
+      }
+    }
     
     // Notify parent component
     if (onBoundaryComplete && totalArea > 0) {
@@ -323,11 +376,12 @@ const FarmBoundaryDrawer = ({
         features: data.features,
         properties: {
           totalAcres: totalArea,
-          parcelCount: parcelList.length
+          parcelCount: parcelList.length,
+          detectedLocation: location // Include auto-detected location
         }
       });
     }
-  }, [onBoundaryComplete]);
+  }, [onBoundaryComplete, detectedLocation, reverseGeocode]);
 
   // Handle boundary updates after initial load
   useEffect(() => {
@@ -373,9 +427,21 @@ const FarmBoundaryDrawer = ({
 
   // Handle draw update
   const handleDrawUpdate = useCallback((e) => {
-    // Debounce area calculation to prevent rapid updates
+    // Debounce area calculation to prevent rapid updates during drag
     if (e.features.length > 0) {
-      calculateArea();
+      // Clear existing timeout
+      if (dragTimeout.current) {
+        clearTimeout(dragTimeout.current);
+      }
+      
+      // Calculate immediately but skip geocoding during drag
+      calculateArea(true); // Skip geocoding during drag
+      
+      // Set timeout for final calculation with geocoding after drag ends
+      dragTimeout.current = setTimeout(() => {
+        calculateArea(false); // Do geocoding after drag ends
+        dragTimeout.current = null;
+      }, 500); // Wait 500ms after last update
     }
   }, [calculateArea]);
 
@@ -466,6 +532,8 @@ const FarmBoundaryDrawer = ({
       draw.current.deleteAll();
       setCurrentArea(0);
       setParcels([]);
+      setDetectedLocation(null);
+      originalPolygon.current = null; // Clear stored original polygon
       if (onBoundaryComplete) {
         onBoundaryComplete(null);
       }
