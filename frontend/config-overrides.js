@@ -187,6 +187,13 @@ module.exports = {
       // Enable serving index.html for all non-file routes (required for React Router)
       config.historyApiFallback = true;
       
+      // Ensure proxy is properly configured
+      // The setupProxy.js file should be loaded automatically by react-scripts
+      // but we need to ensure the proxy parameter is passed correctly
+      if (proxy) {
+        config.proxy = proxy;
+      }
+      
       return config;
     };
   }
