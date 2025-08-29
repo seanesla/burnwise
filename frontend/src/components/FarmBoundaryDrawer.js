@@ -328,7 +328,7 @@ const FarmBoundaryDrawer = ({
   }, []);
 
   // Calculate area from drawn features - MUST BE DEFINED BEFORE USE
-  const calculateArea = useCallback(async (skipGeocode = false) => {
+  const calculateArea = useCallback(async (skipGeocode = false, skipNotification = false) => {
     if (!draw.current) return;
     
     const data = draw.current.getAll();
@@ -389,8 +389,8 @@ const FarmBoundaryDrawer = ({
       }
     }
     
-    // Notify parent component
-    if (onBoundaryComplete && totalArea > 0) {
+    // Notify parent component (unless we're deleting/clearing)
+    if (onBoundaryComplete && totalArea > 0 && !skipNotification) {
       onBoundaryComplete({
         type: 'FeatureCollection',
         features: data.features,
@@ -404,16 +404,17 @@ const FarmBoundaryDrawer = ({
   }, [onBoundaryComplete, detectedLocation, reverseGeocode]);
 
   // Handle boundary updates after initial load
-  useEffect(() => {
-    if (!mapLoaded || !draw.current || !initialBoundary) return;
-    
-    // Only update if the boundary actually changed
-    const currentFeatures = draw.current.getAll();
-    if (currentFeatures.features.length === 0) {
-      draw.current.add(initialBoundary);
-      calculateArea();
-    }
-  }, [initialBoundary, mapLoaded, calculateArea]);
+  // DISABLED: This was causing deleted boundaries to be re-added automatically
+  // useEffect(() => {
+  //   if (!mapLoaded || !draw.current || !initialBoundary) return;
+  //   
+  //   // Only update if the boundary actually changed
+  //   const currentFeatures = draw.current.getAll();
+  //   if (currentFeatures.features.length === 0) {
+  //     draw.current.add(initialBoundary);
+  //     calculateArea();
+  //   }
+  // }, [initialBoundary, mapLoaded, calculateArea]);
 
   // Handle flyTo animation when location is selected from search
   useEffect(() => {
@@ -491,7 +492,7 @@ const FarmBoundaryDrawer = ({
     
     // Recalculate area after a short delay to ensure deletion is complete
     setTimeout(() => {
-      calculateArea();
+      calculateArea(false, true); // Skip notification during deletion
       // Update selection count after deletion
       if (draw.current) {
         const selected = draw.current.getSelected();
@@ -611,12 +612,10 @@ const FarmBoundaryDrawer = ({
           setDetectedLocation(null);
           originalPolygon.current = null;
           setSelectedCount(0);
-          if (onBoundaryComplete) {
-            onBoundaryComplete(null);
-          }
+          // DON'T call onBoundaryComplete when clearing - user should stay on onboarding
         } else {
           // Recalculate area for remaining features
-          calculateArea();
+          calculateArea(false, true); // Skip notification during deletion
           // Update selection count
           const stillSelected = draw.current.getSelected();
           setSelectedCount(stillSelected.features.length);
@@ -741,6 +740,7 @@ const FarmBoundaryDrawer = ({
         {!isDrawing ? (
           <>
             <button
+              type="button"
               className="tool-btn"
               onClick={startDrawing}
               title={mapLoaded ? "Draw Farm Boundary" : "Map loading..."}
@@ -750,6 +750,7 @@ const FarmBoundaryDrawer = ({
             </button>
             
             <button
+              type="button"
               className="tool-btn"
               onClick={clearAll}
               title={
@@ -767,6 +768,7 @@ const FarmBoundaryDrawer = ({
         ) : (
           <>
             <button
+              type="button"
               className="tool-btn complete-btn"
               onClick={completeDrawing}
               title="Complete Boundary"
@@ -775,6 +777,7 @@ const FarmBoundaryDrawer = ({
             </button>
             
             <button
+              type="button"
               className="tool-btn cancel-btn"
               onClick={cancelDrawing}
               title="Cancel Drawing"
@@ -785,6 +788,7 @@ const FarmBoundaryDrawer = ({
         )}
 
         <button
+          type="button"
           className="tool-btn"
           onClick={toggleMapStyle}
           title="Toggle Satellite/Street View"
@@ -793,6 +797,7 @@ const FarmBoundaryDrawer = ({
         </button>
 
         <button
+          type="button"
           className="tool-btn"
           onClick={() => fileInputRef.current?.click()}
           title="Import GeoJSON/KML"
@@ -801,6 +806,7 @@ const FarmBoundaryDrawer = ({
         </button>
         
         <button
+          type="button"
           className="tool-btn"
           onClick={handleExport}
           title="Export as GeoJSON"
@@ -876,6 +882,7 @@ const FarmBoundaryDrawer = ({
               </span>
             </div>
             <button 
+              type="button"
               className="btn-complete-drawing"
               onClick={completeDrawing}
             >
