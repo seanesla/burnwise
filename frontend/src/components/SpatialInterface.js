@@ -220,6 +220,23 @@ const SpatialInterface = () => {
       updateMapCenter(newLat, newLng, newZoom);
     });
     
+    // Emit event when map stops moving for weather updates
+    map.current.on('moveend', () => {
+      const center = map.current.getCenter();
+      const zoom = map.current.getZoom();
+      
+      // Only trigger weather update when zoomed in enough (~2 mile view)
+      if (zoom >= 14) {
+        window.dispatchEvent(new CustomEvent('mapViewChanged', {
+          detail: { 
+            lat: center.lat, 
+            lng: center.lng, 
+            zoom: zoom 
+          }
+        }));
+      }
+    });
+    
     // Handle window resize
     const handleResize = () => {
       if (map.current) {

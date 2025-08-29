@@ -23,6 +23,7 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 **frontend/src/components/**: SpatialInterface | FloatingAI | DockNavigation (5 icons) | TimelineScrubber | AgentChat | HandoffDiagram | ApprovalModal | InteractiveTutorial | OnboardingChat | BackendMetrics
 **Design**: Bloomberg Terminal × Google Earth | 3D terrain+fog | Glass morphism | Spring physics | NO traditional navigation
 **Backend Visibility**: Real-time metrics panel shows TiDB queries, cache performance, operations via Socket.io
+**Dynamic Weather**: Weather updates based on map center when zoom >= 14 (~2 miles). Real OpenWeatherMap API only. 500ms debounce.
 
 ### Stack & Setup
 **Tech**: TiDB+circuit breaker | Mapbox GL | Framer Motion | Socket.io | OpenAI SDK | GPT-5-mini/nano

@@ -139,6 +139,41 @@ const Sidebar = ({ onPanelChange }) => {
     setLoading(false);
   };
 
+  // Listen for map view changes to update weather dynamically
+  useEffect(() => {
+    let debounceTimer;
+    
+    const handleMapViewChange = (event) => {
+      clearTimeout(debounceTimer);
+      setWeatherStatus({ condition: 'Loading...', temperature: null });
+      
+      debounceTimer = setTimeout(async () => {
+        const { lat, lng } = event.detail;
+        
+        try {
+          const weatherResponse = await fetch(
+            `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/weather/current?lat=${lat}&lon=${lng}`,
+            { credentials: 'include' }
+          );
+          const weatherData = await weatherResponse.json();
+          
+          if (weatherData?.data?.weather) {
+            setWeatherStatus(weatherData.data.weather);
+          }
+        } catch (err) {
+          console.error('Error loading map weather:', err);
+          setWeatherStatus({ condition: 'Unavailable', temperature: null });
+        }
+      }, 500); // Half second debounce
+    };
+    
+    window.addEventListener('mapViewChanged', handleMapViewChange);
+    return () => {
+      window.removeEventListener('mapViewChanged', handleMapViewChange);
+      clearTimeout(debounceTimer);
+    };
+  }, []);
+
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
   };
