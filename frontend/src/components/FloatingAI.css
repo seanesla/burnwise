@@ -204,22 +204,29 @@
   display: flex;
   gap: 10px;
   padding: 15px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  background: white;
+  border-top: 1px solid rgba(255, 107, 53, 0.1);
+  background: rgba(30, 30, 30, 0.95);
 }
 
 .ai-input-field {
   flex: 1;
   padding: 10px 15px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid rgba(255, 107, 53, 0.3);
   border-radius: 25px;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  background: rgba(20, 20, 20, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-input-field::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .ai-input-field:focus {
   border-color: #FF6B35;
+  background: rgba(25, 25, 25, 0.9);
 }
 
 .ai-send-btn {

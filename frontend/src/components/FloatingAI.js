@@ -95,9 +95,11 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       
       const data = await response.json();
       
+      // Handle both success and failure responses
+      let formattedResponse = data.response;
+      
       if (data.success) {
         // Parse the response if it's JSON
-        let formattedResponse = data.response;
         try {
           const parsed = JSON.parse(data.response);
           
@@ -172,15 +174,25 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
           console.log('Response is not JSON:', data.response);
         }
         
-        setMessages(prev => [...prev, {
-          id: Date.now() + 1,
-          type: 'ai',
-          content: formattedResponse,
-          timestamp: new Date()
-        }]);
       }
+      
+      // Always add the response message (success or failure)
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: formattedResponse || 'I apologize, but I am currently unable to process your request. Please try again later.',
+        timestamp: new Date()
+      }]);
+      
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Add error message to chat
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: 'I apologize, but I encountered an error connecting to the server. Please check your connection and try again.',
+        timestamp: new Date()
+      }]);
     } finally {
       setIsLoading(false);
     }
