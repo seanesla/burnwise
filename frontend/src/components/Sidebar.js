@@ -80,12 +80,15 @@ const Sidebar = ({ onPanelChange }) => {
     
     // Get farm details
     try {
-      const farmsResponse = await axios.get('/api/farms', { withCredentials: true });
+      const farmsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/farms`, { 
+        credentials: 'include' 
+      });
+      const farmsData = await farmsResponse.json();
       const farmId = user?.farmId || user?.id;
-      if (farmsResponse.data.farms && farmsResponse.data.farms.length > 0) {
+      if (farmsData.farms && farmsData.farms.length > 0) {
         const userFarm = farmId 
-          ? farmsResponse.data.farms.find(farm => farm.id === farmId) || farmsResponse.data.farms[0]
-          : farmsResponse.data.farms[0];
+          ? farmsData.farms.find(farm => farm.id === farmId) || farmsData.farms[0]
+          : farmsData.farms[0];
         setFarmData(userFarm || { name: 'Demo Farm' });
       }
     } catch (err) {
@@ -95,11 +98,14 @@ const Sidebar = ({ onPanelChange }) => {
 
     // Get active burns count
     try {
-      const burnsResponse = await axios.get('/api/burn-requests', { withCredentials: true });
+      const burnsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests`, { 
+        credentials: 'include' 
+      });
+      const burnsData = await burnsResponse.json();
       const farmId = user?.farmId || user?.id;
-      if (burnsResponse.data.requests) {
+      if (burnsData.requests) {
         const activeBurns = farmId 
-          ? burnsResponse.data.requests.filter(
+          ? burnsData.requests.filter(
               burn => burn.farm_id === farmId && 
               ['pending', 'approved', 'in_progress'].includes(burn.status)
             )
@@ -115,16 +121,13 @@ const Sidebar = ({ onPanelChange }) => {
     try {
       const currentLocation = getCurrentLocation ? getCurrentLocation() : { lat: 38.544, lng: -121.740 };
       
-      const weatherResponse = await axios.get('/api/weather/current', {
-        params: {
-          lat: currentLocation.lat,
-          lon: currentLocation.lng
-        },
-        withCredentials: true
+      const weatherResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/weather/current?lat=${currentLocation.lat}&lon=${currentLocation.lng}`, {
+        credentials: 'include'
       });
+      const weatherData = await weatherResponse.json();
       
-      if (weatherResponse.data?.data?.weather) {
-        setWeatherStatus(weatherResponse.data.data.weather);
+      if (weatherData?.data?.weather) {
+        setWeatherStatus(weatherData.data.weather);
       } else {
         setWeatherStatus({ condition: 'Unknown', temperature: null });
       }

@@ -182,17 +182,15 @@ module.exports = {
   // Dev server configuration for SPA routing
   devServer: function(configFunction) {
     return function(proxy, allowedHost) {
+      // Call the original config function with proxy and allowedHost
+      // This ensures setupProxy.js is properly applied
       const config = configFunction(proxy, allowedHost);
       
       // Enable serving index.html for all non-file routes (required for React Router)
       config.historyApiFallback = true;
       
-      // Ensure proxy is properly configured
-      // The setupProxy.js file should be loaded automatically by react-scripts
-      // but we need to ensure the proxy parameter is passed correctly
-      if (proxy) {
-        config.proxy = proxy;
-      }
+      // Don't override the proxy - it's already configured by setupProxy.js
+      // The configFunction handles loading setupProxy.js internally
       
       return config;
     };
