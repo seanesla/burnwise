@@ -109,7 +109,7 @@ async function cleanupSingleSession(session) {
     // Delete weather_vectors that belong to demo weather_data
     const weatherVectorsResult = await query(
       `DELETE wv FROM weather_vectors wv 
-       JOIN weather_data wd ON wv.weather_id = wd.weather_id 
+       JOIN weather_data wd ON wv.weather_id = wd.id 
        WHERE wd.is_demo = true`,
       []
     );

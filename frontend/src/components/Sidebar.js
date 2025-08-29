@@ -75,44 +75,44 @@ const Sidebar = ({ onPanelChange }) => {
 
   const loadFarmData = async () => {
     setLoading(true);
+    
+    // Load each piece of data independently so one failure doesn't affect the others
+    
+    // Get farm details
     try {
-      // In demo mode, skip farm-specific data
-      // Demo mode is permanent - all users are demo users
+      const farmsResponse = await axios.get('/api/farms', { withCredentials: true });
       const farmId = user?.farmId || user?.id;
-      
-      // Get farm details
-      try {
-        const farmsResponse = await axios.get('/api/farms', { withCredentials: true });
-        if (farmsResponse.data.farms && farmsResponse.data.farms.length > 0) {
-          const userFarm = farmId 
-            ? farmsResponse.data.farms.find(farm => farm.id === farmId) || farmsResponse.data.farms[0]
-            : farmsResponse.data.farms[0];
-          setFarmData(userFarm || { name: 'Demo Farm' });
-        }
-      } catch (err) {
-        console.error('Error loading farms:', err);
-        setFarmData({ name: 'Demo Farm' });
+      if (farmsResponse.data.farms && farmsResponse.data.farms.length > 0) {
+        const userFarm = farmId 
+          ? farmsResponse.data.farms.find(farm => farm.id === farmId) || farmsResponse.data.farms[0]
+          : farmsResponse.data.farms[0];
+        setFarmData(userFarm || { name: 'Demo Farm' });
       }
+    } catch (err) {
+      console.error('Error loading farms:', err);
+      setFarmData({ name: 'Demo Farm' });
+    }
 
-      // Get active burns count
-      try {
-        const burnsResponse = await axios.get('/api/burn-requests', { withCredentials: true });
-        if (burnsResponse.data.requests) {
-          const activeBurns = farmId 
-            ? burnsResponse.data.requests.filter(
-                burn => burn.farm_id === farmId && 
-                ['pending', 'approved', 'in_progress'].includes(burn.status)
-              )
-            : [];
-          setActiveBurnsCount(activeBurns.length);
-        }
-      } catch (err) {
-        console.error('Error loading burns:', err);
-        setActiveBurnsCount(0);
+    // Get active burns count
+    try {
+      const burnsResponse = await axios.get('/api/burn-requests', { withCredentials: true });
+      const farmId = user?.farmId || user?.id;
+      if (burnsResponse.data.requests) {
+        const activeBurns = farmId 
+          ? burnsResponse.data.requests.filter(
+              burn => burn.farm_id === farmId && 
+              ['pending', 'approved', 'in_progress'].includes(burn.status)
+            )
+          : [];
+        setActiveBurnsCount(activeBurns.length);
       }
+    } catch (err) {
+      console.error('Error loading burns:', err);
+      setActiveBurnsCount(0);
+    }
 
-      // Get weather status (works for both demo and real users)
-      // Use current map center or selected farm location
+    // Get weather status - completely independent
+    try {
       const currentLocation = getCurrentLocation ? getCurrentLocation() : { lat: 38.544, lng: -121.740 };
       
       const weatherResponse = await axios.get('/api/weather/current', {
@@ -128,17 +128,12 @@ const Sidebar = ({ onPanelChange }) => {
       } else {
         setWeatherStatus({ condition: 'Unknown', temperature: null });
       }
-
-
-    } catch (error) {
-      console.error('Failed to load farm data:', error);
-      // Set fallback data
-      setFarmData({ name: 'Your Farm' });
-      setActiveBurnsCount(0);
-      setWeatherStatus({ condition: 'Unknown' });
-    } finally {
-      setLoading(false);
+    } catch (weatherErr) {
+      console.error('Error loading weather:', weatherErr);
+      setWeatherStatus({ condition: 'Unknown', temperature: null });
     }
+
+    setLoading(false);
   };
 
   const toggleSidebar = () => {

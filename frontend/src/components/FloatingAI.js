@@ -310,6 +310,47 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     return null;
   }
   
+  // Render minimized bubble
+  if (isMinimized) {
+    return (
+      <motion.div
+        className="floating-ai-bubble"
+        drag
+        dragControls={dragControls}
+        dragMomentum={false}
+        dragElastic={0.2}
+        dragConstraints={{
+          top: 0,
+          left: 0,
+          right: windowSize.width - 60,
+          bottom: windowSize.height - 60
+        }}
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        style={{ 
+          x: position.x, 
+          y: position.y,
+          zIndex: 300
+        }}
+        onClick={() => setIsMinimized(false)}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          dragControls.start(e);
+        }}
+      >
+        <AnimatedFlameLogo size={24} animated={true} />
+        {messages.filter(m => m.type === 'ai').length > 0 && (
+          <span className="bubble-badge">
+            {messages.filter(m => m.type === 'ai').length}
+          </span>
+        )}
+      </motion.div>
+    );
+  }
+  
+  // Render expanded view
   return (
     <motion.div
       ref={constraintsRef}
@@ -327,10 +368,10 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ 
         opacity: 1, 
-        scale: isMinimized ? 0.3 : 1,
+        scale: 1,
         y: 0,
-        width: isMinimized ? 80 : Math.min(360, windowSize.width - 30),
-        height: isMinimized ? 80 : Math.min(500, windowSize.height - 100)
+        width: Math.min(360, windowSize.width - 30),
+        height: Math.min(500, windowSize.height - 100)
       }}
       exit={{ opacity: 0, scale: 0.8, y: 20 }}
       transition={{ type: "spring", stiffness: 100, damping: 30, restDelta: 0.001 }}
@@ -367,8 +408,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         </div>
       </motion.div>
       
-      {!isMinimized && (
-        <>
+      {/* Messages and controls */}
           {/* Messages area */}
           <div className="floating-ai-messages">
             {messages.map(message => (
@@ -437,8 +477,6 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
               )}
             </button>
           </div>
-        </>
-      )}
     </motion.div>
   );
 };
