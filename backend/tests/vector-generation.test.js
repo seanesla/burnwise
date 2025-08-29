@@ -5,7 +5,7 @@
  * This ensures mathematical robustness and prevents NaN/Infinity values in production.
  */
 
-const BurnRequestCoordinator = require('../agents/coordinatorFixed5Agent');
+const BurnRequestCoordinator = require('../agents/coordinator');
 const WeatherAgent = require('../agents/weather');
 const SmokeOverlapPredictor = require('../agents/predictor');
 

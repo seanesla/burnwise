@@ -438,7 +438,7 @@ router.get('/types', asyncHandler(async (req, res) => {
         total_types: alertTypesWithStats.length,
         agent_status: {
           initialized: agentStatus.initialized,
-          twilio_configured: agentStatus.twilioConfigured
+          stub: true
         }
       }
     });

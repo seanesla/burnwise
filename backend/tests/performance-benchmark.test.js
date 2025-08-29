@@ -8,7 +8,7 @@
 const request = require('supertest');
 const { performance } = require('perf_hooks');
 const { initializeDatabase, query, closePool } = require('../db/connection');
-const BurnRequestCoordinator = require('../agents/coordinatorFixed5Agent');
+const BurnRequestCoordinator = require('../agents/coordinator');
 
 describe('Performance Benchmarking Suite', () => {
   let app;

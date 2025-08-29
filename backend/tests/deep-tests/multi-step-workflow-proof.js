@@ -131,10 +131,10 @@ async function demonstrateMultiStepWorkflow() {
       console.log('      ✅ Real-time weather data available');
     }
     
-    // Check Twilio configuration
-    console.log('   📱 Twilio SMS Service:');
-    if (process.env.TWILIO_ACCOUNT_SID) {
-      console.log('      ✅ Account SID configured');
+    // Alerts are stub only - no SMS functionality
+    console.log('   📱 Alert Service:');
+    if (true) {
+      console.log('      ✅ Alert stub configured');
       console.log('      ✅ SMS alerts ready');
     }
     
@@ -238,7 +238,7 @@ async function demonstrateMultiStepWorkflow() {
     );
     
     console.log('      ✅ Alert generated');
-    console.log('      ✅ SMS notification ready (Twilio)');
+    console.log('      ✅ Alert stub called (no actual notification)');
     console.log('      ✅ Dashboard updated\n');
     
     // =================================================================
@@ -253,7 +253,7 @@ async function demonstrateMultiStepWorkflow() {
       vectorTypes: 4,
       vectorDimensions: '128 + 64 + 32 + 2',
       tidbFeatures: ['VECTOR type', 'VEC_COSINE_DISTANCE', 'HNSW index', 'Hybrid queries'],
-      externalAPIs: ['OpenWeatherMap', 'Twilio', 'Mapbox', 'OpenAI'],
+      externalAPIs: ['OpenWeatherMap', 'Mapbox', 'OpenAI'],
       physicsModels: ['Gaussian Plume', 'Simulated Annealing']
     };
     

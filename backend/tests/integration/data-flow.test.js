@@ -1,6 +1,6 @@
 const { describe, test, expect, beforeAll, afterAll, beforeEach } = require('@jest/globals');
 const { initializeDatabase, query, pool, getConnection } = require('../../db/connection');
-const CoordinatorAgent = require('../../agents/coordinatorFixed5Agent');
+const CoordinatorAgent = require('../../agents/coordinator');
 const WeatherAgent = require('../../agents/weather');
 const SmokeOverlapPredictor = require('../../agents/predictor');
 const ScheduleOptimizer = require('../../agents/optimizer');

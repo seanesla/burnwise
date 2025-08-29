@@ -8,7 +8,7 @@
  * 2. Weather - Fetches OpenWeatherMap data, stores weather vectors (128-dim)
  * 3. Predictor - Gaussian plume model for smoke dispersion, conflict detection
  * 4. Optimizer - Simulated annealing for schedule optimization
- * 5. Alerts - Alert system with SMS via Twilio
+ * 5. Alerts - Alert system (stub only - no functionality)
  * 
  * CRITICAL RULES:
  * - Test ACTUAL agent interactions - no shortcuts

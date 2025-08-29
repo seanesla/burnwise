@@ -7,7 +7,7 @@
 
 const request = require('supertest');
 const { initializeDatabase, query, getConnection, closePool } = require('../db/connection');
-const BurnRequestCoordinator = require('../agents/coordinatorFixed5Agent');
+const BurnRequestCoordinator = require('../agents/coordinator');
 
 describe('Edge Case Testing Suite', () => {
   let app;

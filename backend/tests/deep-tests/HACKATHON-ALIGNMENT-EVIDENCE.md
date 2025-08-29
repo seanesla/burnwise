@@ -46,7 +46,7 @@ async optimizeSchedule(requests) {
 
 // Agent 5: alerts.js
 async generateAlerts(conflicts) {
-  // SMS via Twilio
+  // Alert stub (no SMS functionality)
   // Email notifications
   // Dashboard updates
 }
@@ -107,11 +107,10 @@ if (this.openaiClient) {
 // weather.js - OpenWeatherMap API
 await axios.get(`https://api.openweathermap.org/data/2.5/weather`)
 
-// alerts.js - Twilio SMS
-await twilioClient.messages.create({
-  body: alertMessage,
-  from: process.env.TWILIO_PHONE,
-  to: farmPhone
+// alerts.js - Alert stub
+await alertsAgent.sendAlert('burn_schedule', {
+  message: alertMessage,
+  farmId: farmId
 })
 
 // Map.js - Mapbox integration
@@ -304,7 +303,7 @@ npm run dev
 Step 1: Ingest burn requests + weather data → TiDB vectors
 Step 2: Search similar patterns → VEC_COSINE_DISTANCE  
 Step 3: LLM enhancement → OpenAI embeddings
-Step 4: External APIs → OpenWeatherMap + Twilio
+Step 4: External APIs → OpenWeatherMap
 Step 5: Automated workflow → 5 agents chain together
 ```
 

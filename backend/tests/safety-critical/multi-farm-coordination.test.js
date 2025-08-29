@@ -1,5 +1,5 @@
 const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
-const BurnRequestCoordinator = require('../../agents/coordinatorFixed5Agent');
+const BurnRequestCoordinator = require('../../agents/coordinator');
 const SmokeOverlapPredictor = require('../../agents/predictor');
 const ScheduleOptimizer = require('../../agents/optimizer');
 const AlertAgent = require('../../agents/alerts');

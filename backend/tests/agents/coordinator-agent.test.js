@@ -1,5 +1,5 @@
 const { describe, test, expect, beforeAll, afterAll, beforeEach } = require('@jest/globals');
-const BurnRequestCoordinator = require('../../agents/coordinatorFixed5Agent');
+const BurnRequestCoordinator = require('../../agents/coordinator');
 const { query, initializeDatabase, closePool } = require('../../db/connection');
 
 describe('Coordinator Agent Tests - 5-Agent Workflow Orchestration', () => {

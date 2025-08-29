@@ -1,6 +1,6 @@
 const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
 const { initializeDatabase, query, pool, vectorSearch } = require('../../db/connection');
-const CoordinatorAgent = require('../../agents/coordinatorFixed5Agent');
+const CoordinatorAgent = require('../../agents/coordinator');
 
 describe('Terrain Vector Tests - 32-Dimensional Terrain Encoding', () => {
   let coordinator;
