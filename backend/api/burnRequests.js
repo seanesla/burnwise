@@ -87,7 +87,7 @@ router.get('/', asyncHandler(async (req, res) => {
         br.status,
         br.created_at,
         br.updated_at,
-        sp.affected_area_km2 as max_dispersion_radius,
+        sp.max_dispersion_radius,
         sp.confidence_score as prediction_confidence
       FROM burn_requests br
       JOIN farms f ON br.farm_id = f.farm_id

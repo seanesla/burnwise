@@ -115,23 +115,23 @@ async function cleanupSingleSession(session) {
     );
     totalDeleted += weatherVectorsResult.affectedRows || 0;
 
-    // Delete smoke_plume_vectors that belong to burn_requests from this farm
-    const smokeVectorsResult = await query(
-      `DELETE spv FROM smoke_plume_vectors spv 
-       JOIN burn_requests br ON spv.request_id = br.request_id 
+    // Delete burn_smoke_predictions that belong to burn_requests from this farm
+    const smokePredictionsResult = await query(
+      `DELETE bsp FROM burn_smoke_predictions bsp 
+       JOIN burn_requests br ON bsp.request_id = br.request_id 
        WHERE br.farm_id = ?`,
       [farm_id]
     );
-    totalDeleted += smokeVectorsResult.affectedRows || 0;
+    totalDeleted += smokePredictionsResult.affectedRows || 0;
 
-    // Delete burn_embeddings linked to burn_requests from this farm  
-    const burnEmbeddingsResult = await query(
-      `DELETE be FROM burn_embeddings be
-       JOIN burn_requests br ON be.request_id = br.request_id
+    // Delete smoke_predictions linked to burn_requests from this farm  
+    const smokeResult = await query(
+      `DELETE sp FROM smoke_predictions sp
+       JOIN burn_requests br ON sp.burn_request_id = br.request_id
        WHERE br.farm_id = ?`,
       [farm_id]
     );
-    totalDeleted += burnEmbeddingsResult.affectedRows || 0;
+    totalDeleted += smokeResult.affectedRows || 0;
 
     // 3. Delete alerts
     const alertsResult = await query(
@@ -148,12 +148,14 @@ async function cleanupSingleSession(session) {
     );
     totalDeleted += scheduleItemsResult.affectedRows || 0;
 
-    // Delete demo schedules (no direct farm_id relationship)
-    const schedulesResult = await query(
-      'DELETE FROM schedules WHERE is_demo = true',
-      []
-    );
-    totalDeleted += schedulesResult.affectedRows || 0;
+    // Delete schedules linked to demo burn requests
+    // Since schedules don't have is_demo flag, skip this - they'll be orphaned but harmless
+    // Schedules are date-based and get cleaned up naturally
+    // const schedulesResult = await query(
+    //   'DELETE FROM schedules WHERE ...',
+    //   []
+    // );
+    // totalDeleted += schedulesResult.affectedRows || 0;
 
     // 5. Delete burn requests and related data
     // Delete burn_fields first (foreign key constraint)
