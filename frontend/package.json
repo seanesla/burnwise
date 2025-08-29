@@ -33,6 +33,7 @@
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
     "recharts": "^2.10.3",
+    "socket.io-client": "^4.8.1",
     "three": "^0.160.0",
     "three-nebula": "^10.0.3",
     "tsparticles": "^3.9.1",

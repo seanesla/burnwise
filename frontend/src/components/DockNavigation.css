@@ -216,3 +216,11 @@
     height: 20px;
   }
 }
+
+/* Notification Button Wrapper */
+.dock-notification-wrapper {
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+}

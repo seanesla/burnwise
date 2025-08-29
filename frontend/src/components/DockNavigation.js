@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import NotificationButton from './NotificationButton';
 import './DockNavigation.css';
 import { springPresets, animationVariants } from '../styles/animations';
 
@@ -162,6 +163,11 @@ const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
             )}
           </motion.div>
         ))}
+        
+        {/* Notification Button - separate from dock items */}
+        <div className="dock-notification-wrapper">
+          <NotificationButton />
+        </div>
       </div>
       
       {/* Dock reflection effect */}

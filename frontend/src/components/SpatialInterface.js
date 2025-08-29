@@ -11,6 +11,7 @@ import { useLocation } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMap } from '../contexts/MapContext';
+import { AlertsProvider } from '../contexts/AlertsContext';
 import FloatingAI from './FloatingAI';
 import DockNavigation from './DockNavigation';
 import TimelineScrubber from './TimelineScrubber';
@@ -782,9 +783,10 @@ const SpatialInterface = () => {
   };
   
   return (
-    <div className="spatial-interface">
-      {/* Ember particle background - only show when not in map view */}
-      {!isMapView && <EmberBackground intensity={0.7} blur={false} />}
+    <AlertsProvider>
+      <div className="spatial-interface">
+        {/* Ember particle background - only show when not in map view */}
+        {!isMapView && <EmberBackground intensity={0.7} blur={false} />}
       
       {/* Demo Session Banner - only show in demo mode */}
       {isDemo && <DemoSessionBanner />}
@@ -1560,6 +1562,7 @@ const SpatialInterface = () => {
       {/* Tutorial Overlay - Dynamic walkthrough */}
       {/* <TutorialOverlay /> */}
     </div>
+    </AlertsProvider>
   );
 };
 

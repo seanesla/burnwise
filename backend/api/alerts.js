@@ -1017,4 +1017,32 @@ function generateStatusTimeline(alertInfo, deliveryDetails) {
   return timeline;
 }
 
+/**
+ * POST /api/alerts/test
+ * Test endpoint to trigger a Socket.io notification
+ */
+router.post('/test', asyncHandler(async (req, res) => {
+  const alertsAgent = require('../agents/alerts');
+  
+  const testData = {
+    type: 'test',
+    message: req.body.message || 'This is a test notification',
+    severity: req.body.severity || 'low',
+    farmName: 'Demo Farm',
+    fieldName: 'Test Field',
+    timestamp: new Date().toISOString()
+  };
+  
+  // Send via Socket.io
+  await alertsAgent.sendAlert('test', testData);
+  
+  logger.info('Test alert sent via Socket.io', testData);
+  
+  res.json({
+    success: true,
+    message: 'Test alert sent via Socket.io',
+    data: testData
+  });
+}));
+
 module.exports = router;

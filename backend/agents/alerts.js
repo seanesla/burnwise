@@ -1,7 +1,7 @@
 /**
- * Alerts Agent - Stub Implementation
+ * Alerts Agent - Stub Implementation with Socket.io
  * As per CLAUDE.md: "alerts (stub only - no functionality)"
- * This module exists to satisfy test requirements but provides no actual functionality
+ * Emits Socket.io events for frontend notifications but no actual SMS/email
  */
 
 const logger = require('../middleware/logger');
@@ -9,17 +9,47 @@ const logger = require('../middleware/logger');
 class AlertsAgent {
   constructor() {
     this.initialized = false;
-    logger.info('[ALERTS] Stub alerts agent initialized (no functionality)');
+    this.io = null;
+    logger.info('[ALERTS] Stub alerts agent initialized (Socket.io only)');
   }
 
   /**
-   * Stub method - no real implementation
+   * Initialize with Socket.io instance
+   */
+  initialize(io) {
+    this.io = io;
+    this.initialized = true;
+    logger.info('[ALERTS] Alerts agent initialized with Socket.io');
+  }
+
+  /**
+   * Emit alert via Socket.io (stub - no actual SMS/email)
    */
   async sendAlert(type, data) {
-    logger.debug('[ALERTS] Stub sendAlert called', { type, data });
+    logger.debug('[ALERTS] Sending alert via Socket.io', { type, data });
+    
+    // Emit to Socket.io if available
+    if (this.io) {
+      const alertData = {
+        type,
+        ...data,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Emit to all connected clients
+      this.io.emit('alert', alertData);
+      
+      // Emit to farm-specific room if farmId provided
+      if (data.farmId || data.farm_id) {
+        const farmId = data.farmId || data.farm_id;
+        this.io.to(`farm-${farmId}`).emit('farm-alert', alertData);
+        logger.info(`[ALERTS] Emitted alert to farm-${farmId}`, { type });
+      }
+    }
+    
     return { 
       success: true, 
-      message: 'Alert stub - no actual alert sent',
+      message: 'Alert emitted via Socket.io (stub - no SMS/email)',
       stub: true 
     };
   }

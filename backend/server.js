@@ -88,6 +88,10 @@ queryCache.setIO(io);
 const { setIO: setDBIO } = require('./db/connection');
 setDBIO(io);
 
+// Initialize alerts agent with Socket.io for real-time notifications
+const alertsAgent = require('./agents/alerts');
+alertsAgent.initialize(io);
+
 const PORT = process.env.PORT || 5001;
 
 console.log('Express app created');
