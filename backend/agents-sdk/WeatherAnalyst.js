@@ -194,7 +194,7 @@ const weatherAnalyst = new Agent({
     Provide clear explanations for your decisions. When MARGINAL, explain specific concerns.
     Always err on the side of safety - when in doubt, flag for human review.`,
   
-  model: 'gpt-5-nano', // Cost-optimized model
+  model: 'gpt-5-mini', // Standardized model per CLAUDE.md
   
   tools: [fetchWeatherData, analyzeBurnSafety, storeWeatherAnalysis]
 });

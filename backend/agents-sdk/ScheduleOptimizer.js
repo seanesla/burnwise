@@ -349,7 +349,7 @@ const scheduleOptimizer = new Agent({
     - Critical burns delayed more than 2 days
     - Optimization improvement < 20%`,
   
-  model: 'gpt-5-nano', // Cost-effective for optimization guidance
+  model: 'gpt-5-mini', // Standardized model per CLAUDE.md
   
   tools: [runSimulatedAnnealing, evaluateSchedule, saveOptimizedSchedule]
 });

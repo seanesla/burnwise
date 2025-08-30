@@ -365,7 +365,7 @@ const proactiveMonitor = new Agent({
     
     Provide clear, actionable alerts with specific recommendations.`,
   
-  model: 'gpt-5-nano', // Cost-effective for 24/7 operation
+  model: 'gpt-5-mini', // Standardized model per CLAUDE.md
   
   tools: [
     monitorWeatherChanges,
