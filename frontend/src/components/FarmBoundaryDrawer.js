@@ -273,7 +273,16 @@ const FarmBoundaryDrawer = ({
       // Load initial boundary if exists
       if (initialBoundary) {
         draw.current.add(initialBoundary);
-        calculateArea();
+        // Don't call calculateArea here - it will notify parent about boundary they already know
+        // Just calculate area locally for display
+        const areaM2 = turf.area(initialBoundary);
+        const areaAcres = areaM2 / 4046.86;
+        setCurrentArea(areaAcres);
+        setParcels([{
+          id: initialBoundary.id || 'initial',
+          area: areaAcres,
+          geometry: initialBoundary.geometry || initialBoundary
+        }]);
       }
 
       // Event handlers
