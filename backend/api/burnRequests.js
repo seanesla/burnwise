@@ -304,11 +304,11 @@ router.post('/', asyncHandler(async (req, res) => {
     );
     
     // Step 3: Predictor Agent - Calculate smoke dispersion
-    // Weather agent returns 'current' not 'currentWeather'
+    // Weather agent returns 'currentWeather' not 'current'
     const predictionResult = await predictorAgent.predictSmokeDispersion(
       burnRequestId,
       transformedRequest,
-      weatherResult.current
+      weatherResult.currentWeather
     );
     
     // Step 4: Check if immediate scheduling is needed
@@ -327,7 +327,7 @@ router.post('/', asyncHandler(async (req, res) => {
       optimizationResult = await optimizerAgent.optimizeSchedule(
         transformedRequest.burn_date,
         allBurnRequests,
-        weatherResult.current,  // Fixed: use 'current' not 'currentWeather'
+        weatherResult.currentWeather,  // Fixed: use 'currentWeather' not 'current'
         [predictionResult]
       );
     }

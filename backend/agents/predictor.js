@@ -824,7 +824,7 @@ class PredictorAgent {
       // Find burns with similar plume characteristics using vector search
       const vectorConflicts = await vectorSimilaritySearch(
         'burn_smoke_predictions',
-        'plume_vector',
+        'smoke_vector',
         plumeVector,
         5
       );
@@ -1075,17 +1075,13 @@ MANDATORY: End response with:
     try {
       const result = await query(`
         INSERT INTO burn_smoke_predictions (
-          request_id, prediction_time, smoke_density,
-          affected_area_km2, max_concentration_pm25, 
-          wind_adjusted, confidence_score, created_at
-        ) VALUES (?, NOW(), ?, ?, ?, ?, ?, NOW())
+          request_id, max_dispersion_radius, confidence_score, smoke_vector
+        ) VALUES (?, ?, ?, ?)
       `, [
         data.burnRequestId,
-        JSON.stringify(data.affectedArea || {}),
-        (data.maxDispersionRadius / 1000) * Math.PI * (data.maxDispersionRadius / 1000), // Area in km²
-        data.maxConcentration || 0,
-        1, // wind_adjusted = true
-        data.confidenceScore
+        data.maxDispersionRadius || 0,
+        data.confidenceScore || 0.5,
+        JSON.stringify(data.plumeVector || [])
       ]);
       
       return result.insertId;
