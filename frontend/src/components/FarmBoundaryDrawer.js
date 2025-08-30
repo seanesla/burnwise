@@ -401,7 +401,7 @@ const FarmBoundaryDrawer = ({
         }
       });
     }
-  }, [onBoundaryComplete, detectedLocation, reverseGeocode]);
+  }, [onBoundaryComplete, reverseGeocode]); // Remove detectedLocation to prevent circular dependency
 
   // Handle boundary updates after initial load
   // DISABLED: This was causing deleted boundaries to be re-added automatically
@@ -637,7 +637,7 @@ const FarmBoundaryDrawer = ({
   useEffect(() => {
     window.selectFeature = selectFeature;
     window.farmDraw = draw.current;
-  }, [draw.current]);
+  }, [selectFeature]); // Remove draw.current from deps - refs don't trigger re-renders
 
   // Toggle map style
   const toggleMapStyle = () => {
