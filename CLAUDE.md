@@ -16,7 +16,7 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 
 ### 5-Agent System (OpenAI Agents SDK)
 **backend/agents-sdk/**: orchestrator | BurnRequestAgent (mini) | WeatherAnalyst (nano) | ConflictResolver (mini) | ScheduleOptimizer (nano) | ProactiveMonitor (nano) | OnboardingAgent (mini)
-**backend/agents/**: coordinator | weather | predictor | optimizer | alerts (stub only - no functionality)
+**backend/agents/**: coordinator | weather | predictor | optimizer | alerts (GPT-5-mini AI + Socket.io)
 **Features**: Real handoffs | Human-in-loop (`needsApproval`) | Natural language | Proactive monitoring | NO EMOJIS
 
 ### Spatial UI (Map IS Application)
@@ -44,10 +44,10 @@ Multi-farm burn coordination. 5-agent workflow + TiDB vectors prevent smoke conf
 **Monitoring**: Real-time Socket.io events for queries, cache, performance | BackendMetrics panel in UI
 
 ## GPT-5 Cost & Usage
-**Pricing/1M**: mini $0.25/$2.00 | nano $0.05/$0.40 | embedding $0.065
-**CRITICAL**: nano INCOMPATIBLE with JSON (uses all tokens for reasoning)
-**Usage**: mini for JSON tasks | nano for text only | Cache aggressively | Mock in dev
-**Budgets**: BurnRequest 1000 (mini) | Weather 1500 (nano) | Conflict 1000 (mini) | Schedule 1500 (nano) | Monitor 1000 (nano)
+**Pricing/1M**: mini $0.25/$2.00 | embedding $0.065
+**SIMPLIFIED**: All agents use gpt-5-mini for consistency and JSON compatibility
+**Usage**: gpt-5-mini for all agents | Cache aggressively | Mock in dev
+**Budgets**: All agents 1000 tokens (mini) | Coordinator/Predictor/Alerts handle JSON | Weather/Optimizer handle text
 
 ## E2E Test Pattern
 ```javascript

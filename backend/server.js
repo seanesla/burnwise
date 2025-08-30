@@ -88,9 +88,7 @@ queryCache.setIO(io);
 const { setIO: setDBIO } = require('./db/connection');
 setDBIO(io);
 
-// Initialize alerts agent with Socket.io for real-time notifications
-const alertsAgent = require('./agents/alerts');
-alertsAgent.initialize(io);
+// Alerts agent will be initialized in async function with other agents
 
 const PORT = process.env.PORT || 5001;
 
@@ -459,6 +457,17 @@ async function startServer() {
     } catch (error) {
       logger.error('CRITICAL: Optimizer agent initialization failed', { error: error.message });
       throw error; // Stop server if optimizer fails - NO FALLBACKS
+    }
+    
+    // Initialize alerts agent - GPT-5-mini + Socket.io for intelligent alerts
+    try {
+      const alertsAgent = require('./agents/alerts');
+      await alertsAgent.initialize(io);
+      console.log('✓ Alerts agent initialized - GPT-5-mini + Socket.io ready');
+      logger.info('Alerts agent initialization successful');
+    } catch (error) {
+      logger.error('CRITICAL: Alerts agent initialization failed', { error: error.message });
+      throw error; // Stop server if alerts fails - NO FALLBACKS
     }
     
     // OpenAI Agents SDK agents are loaded on-demand - no initialization needed
