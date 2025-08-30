@@ -414,6 +414,53 @@ async function startServer() {
     console.log('Database initialized');
     logger.info('Database initialized successfully');
     
+    // Initialize all 5 agents in the workflow system
+    console.log('Initializing 5-agent workflow system...');
+    
+    // Initialize coordinator agent - handles burn request validation and OpenAI embeddings
+    try {
+      const coordinatorAgent = require('./agents/coordinator');
+      await coordinatorAgent.initialize();
+      console.log('✓ Coordinator agent initialized - OpenAI embeddings ready');
+      logger.info('Coordinator agent initialization successful');
+    } catch (error) {
+      logger.error('CRITICAL: Coordinator agent initialization failed', { error: error.message });
+      throw error; // Stop server if coordinator fails - NO FALLBACKS
+    }
+    
+    // Initialize weather agent - fetches real OpenWeatherMap data
+    try {
+      const weatherAgent = require('./agents/weather');
+      await weatherAgent.initialize();
+      console.log('✓ Weather agent initialized - OpenWeatherMap API verified');
+      logger.info('Weather agent initialization successful');
+    } catch (error) {
+      logger.error('CRITICAL: Weather agent initialization failed', { error: error.message });
+      throw error; // Stop server if weather fails - NO FALLBACKS
+    }
+    
+    // Initialize predictor agent - Gaussian plume calculations
+    try {
+      const predictorAgent = require('./agents/predictor');
+      await predictorAgent.initialize();
+      console.log('✓ Predictor agent initialized - Gaussian plume model ready');
+      logger.info('Predictor agent initialization successful');
+    } catch (error) {
+      logger.error('CRITICAL: Predictor agent initialization failed', { error: error.message });
+      throw error; // Stop server if predictor fails - NO FALLBACKS
+    }
+    
+    // Initialize optimizer agent - simulated annealing
+    try {
+      const optimizerAgent = require('./agents/optimizer');
+      await optimizerAgent.initialize();
+      console.log('✓ Optimizer agent initialized - Simulated annealing ready');
+      logger.info('Optimizer agent initialization successful');
+    } catch (error) {
+      logger.error('CRITICAL: Optimizer agent initialization failed', { error: error.message });
+      throw error; // Stop server if optimizer fails - NO FALLBACKS
+    }
+    
     // OpenAI Agents SDK agents are loaded on-demand - no initialization needed
     console.log('OpenAI Agents SDK 5-Agent System Ready:');
     console.log('- BurnRequestAgent: Natural language processing');
