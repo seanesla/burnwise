@@ -208,9 +208,21 @@ const generateRecommendations = tool({
   name: 'generate_recommendations',
   description: 'Generate proactive recommendations based on monitoring',
   parameters: z.object({
-    weatherAlerts: z.array(z.any()),
-    conflicts: z.array(z.any()),
-    airQualityAlerts: z.array(z.any())
+    weatherAlerts: z.array(z.object({
+      type: z.string(),
+      severity: z.string(),
+      message: z.string()
+    })),
+    conflicts: z.array(z.object({
+      id: z.number(),
+      type: z.string(),
+      description: z.string()
+    })),
+    airQualityAlerts: z.array(z.object({
+      aqi: z.number(),
+      level: z.string(),
+      location: z.string()
+    }))
   }),
   execute: async (input) => {
     const recommendations = [];

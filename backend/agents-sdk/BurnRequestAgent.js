@@ -109,7 +109,7 @@ const burnRequestAgent = new Agent({
     
     Always extract and validate:
     - farm_id: Use 2034691 for Demo Farm (required)
-    - field_id: Use 1 as default field (required)
+    - field_id: Use 1987924 for Demo Farm Field 1 (required)
     - acreage: Number of acres to burn (required)
     - crop_type: wheat, rice, corn, etc. (required)
     - requested_date: Date in YYYY-MM-DD format (required)
