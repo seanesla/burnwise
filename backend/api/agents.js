@@ -90,9 +90,11 @@ async function startMonitoring(io) {
     } catch (error) {
       logger.error('Monitoring check failed', error);
     }
-  }, 15 * 60 * 1000); // 15 minutes
+  }, parseInt(process.env.MONITORING_INTERVAL_MS) || 900000); // 15 minutes default
   
-  return { message: 'Monitoring started', interval: '15 minutes' };
+  const intervalMs = parseInt(process.env.MONITORING_INTERVAL_MS) || 900000;
+  const intervalMins = Math.round(intervalMs / 60000);
+  return { message: 'Monitoring started', interval: `${intervalMins} minutes` };
 }
 
 // Helper function to stop monitoring
@@ -112,7 +114,7 @@ function getMonitoringStatus() {
     isRunning: monitoringState.isRunning,
     lastCheck: monitoringState.lastCheck,
     nextCheck: monitoringState.isRunning && monitoringState.lastCheck
-      ? new Date(monitoringState.lastCheck.getTime() + 15 * 60 * 1000)
+      ? new Date(monitoringState.lastCheck.getTime() + (parseInt(process.env.MONITORING_INTERVAL_MS) || 900000))
       : null
   };
 }
