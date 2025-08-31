@@ -112,7 +112,7 @@ const AgentChat = () => {
 
   useEffect(() => {
     // Initialize Socket.io connection
-    const newSocket = io('http://localhost:5001');
+    const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:5001');
     setSocket(newSocket);
 
     // Listen for agent events
@@ -229,7 +229,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
 
     try {
       // Send to real agent system
-      const response = await fetch('http://localhost:5001/api/agents/chat', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/agents/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

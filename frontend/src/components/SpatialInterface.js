@@ -269,7 +269,7 @@ const SpatialInterface = () => {
   // Load farms data
   const loadFarms = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/farms');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/farms`);
       const data = await response.json();
       if (data.success) {
         setFarms(data.data);
@@ -283,7 +283,7 @@ const SpatialInterface = () => {
   // Load burns data
   const loadBurns = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/burn-requests');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests`);
       const data = await response.json();
       if (data.success) {
         // Add test data if empty for demonstration
@@ -335,7 +335,7 @@ const SpatialInterface = () => {
       const center = map.current ? map.current.getCenter() : { lat: 34.0522, lng: -118.2437 };
       const lat = center.lat;
       const lon = center.lng;
-      const response = await fetch(`http://localhost:5001/api/weather/current?lat=${lat}&lon=${lon}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/weather/current?lat=${lat}&lon=${lon}`);
       const data = await response.json();
       if (data.success) {
         setWeatherData(data.data);
@@ -358,7 +358,7 @@ const SpatialInterface = () => {
       
       console.log('🔬 FRONTEND: Requesting professional NFDRS4 analysis...');
       
-      const response = await fetch('http://localhost:5001/api/agents/weather-analysis', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/agents/weather-analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
