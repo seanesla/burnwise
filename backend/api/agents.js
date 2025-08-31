@@ -235,36 +235,195 @@ router.post('/chat', async (req, res) => {
         }
       });
       
-      // Extract agent handoffs and tools used from the result
+      // Extract tools used and check for routing actions
       const toolsUsed = [];
       const agentsInvolved = ['BurnwiseOrchestrator'];
+      let finalResponse = result.finalOutput || 'Request processed successfully';
       
+      // Debug logging
+      logger.info(`Agent result structure: ${JSON.stringify({
+        finalOutput: result.finalOutput,
+        runItemsCount: result.runItems ? result.runItems.length : 0,
+        runItemsTypes: result.runItems ? result.runItems.map(item => item.type) : []
+      })}`);
+      
+      // Check if finalOutput contains a handoff action (when toolUseBehavior stops early)
+      let handoffAction = null;
+      if (!result.runItems || result.runItems.length === 0) {
+        try {
+          const parsedOutput = JSON.parse(result.finalOutput || '{}');
+          if (parsedOutput.action === 'handoff') {
+            handoffAction = parsedOutput;
+            toolsUsed.push('routing_tool'); // Generic name since we don't have the exact tool name
+          }
+        } catch (e) {
+          // finalOutput is not JSON, continue normally
+        }
+      }
+
+      // Process routing tools and execute handoffs
       if (result.runItems) {
-        result.runItems.forEach(item => {
+        for (const item of result.runItems) {
           if (item.type === 'tool_call') {
             toolsUsed.push(item.name);
+            
+            // Check if this is a routing tool that requires handoff
+            if (item.result && item.result.action === 'handoff') {
+              const targetAgent = item.result.targetAgent;
+              const targetMessage = item.result.message;
+              
+              // Emit handoff event
+              if (io) {
+                io.emit('agent.handoff', {
+                  from: 'BurnwiseOrchestrator',
+                  to: targetAgent,
+                  reason: `Routing ${item.name.replace('route_to_', '').replace('_agent', '')} request to ${targetAgent}`,
+                  userId,
+                  conversationId
+                });
+              }
+              
+              // Execute the actual agent
+              let targetAgentResult;
+              try {
+                let targetAgentModule;
+                switch (targetAgent) {
+                  case 'BurnRequestAgent':
+                    targetAgentModule = burnRequestAgent;
+                    break;
+                  case 'WeatherAnalyst':
+                    targetAgentModule = weatherAnalyst;
+                    break;
+                  case 'ConflictResolver':
+                    targetAgentModule = conflictResolver;
+                    break;
+                  case 'ScheduleOptimizer':
+                    targetAgentModule = scheduleOptimizer;
+                    break;
+                  case 'ProactiveMonitor':
+                    targetAgentModule = proactiveMonitor;
+                    break;
+                  default:
+                    throw new Error(`Unknown target agent: ${targetAgent}`);
+                }
+                
+                // Run the specialist agent
+                targetAgentResult = await run(targetAgentModule, targetMessage, {
+                  context: {
+                    userId,
+                    conversationId,
+                    farmId: req.session?.demoFarmId || 1,
+                    sessionId: req.sessionID
+                  }
+                });
+                
+                agentsInvolved.push(targetAgent);
+                finalResponse = targetAgentResult.finalOutput || `${targetAgent} processed the request`;
+                
+                // Add tools used by the specialist agent
+                if (targetAgentResult.runItems) {
+                  targetAgentResult.runItems.forEach(subItem => {
+                    if (subItem.type === 'tool_call') {
+                      toolsUsed.push(`${targetAgent}.${subItem.name}`);
+                    }
+                  });
+                }
+                
+              } catch (agentError) {
+                logger.warn(`${targetAgent} execution failed`, { error: agentError.message });
+                finalResponse = `${targetAgent} encountered an issue: ${agentError.message}`;
+              }
+            }
           } else if (item.type === 'handoff_call') {
             agentsInvolved.push(item.name);
             
-            // Emit handoff event
+            // Emit handoff event for SDK handoffs
             if (io) {
               io.emit('agent.handoff', {
                 from: agentsInvolved[agentsInvolved.length - 2] || 'BurnwiseOrchestrator',
                 to: item.name,
-                reason: `Delegating to ${item.name}`,
+                reason: `SDK handoff to ${item.name}`,
                 userId,
                 conversationId
               });
             }
           }
-        });
+        }
+      }
+      
+      // Process handoff action from finalOutput (when toolUseBehavior stopped early)
+      if (handoffAction) {
+        const targetAgent = handoffAction.targetAgent;
+        const targetMessage = handoffAction.message;
+        
+        // Emit handoff event
+        if (io) {
+          io.emit('agent.handoff', {
+            from: 'BurnwiseOrchestrator',
+            to: targetAgent,
+            reason: `Routing request to ${targetAgent}`,
+            userId,
+            conversationId
+          });
+        }
+        
+        // Execute the actual agent
+        let targetAgentResult;
+        try {
+          let targetAgentModule;
+          switch (targetAgent) {
+            case 'BurnRequestAgent':
+              targetAgentModule = burnRequestAgent;
+              break;
+            case 'WeatherAnalyst':
+              targetAgentModule = weatherAnalyst;
+              break;
+            case 'ConflictResolver':
+              targetAgentModule = conflictResolver;
+              break;
+            case 'ScheduleOptimizer':
+              targetAgentModule = scheduleOptimizer;
+              break;
+            case 'ProactiveMonitor':
+              targetAgentModule = proactiveMonitor;
+              break;
+            default:
+              throw new Error(`Unknown target agent: ${targetAgent}`);
+          }
+          
+          // Run the specialist agent
+          targetAgentResult = await run(targetAgentModule, targetMessage, {
+            context: {
+              userId,
+              conversationId,
+              farmId: req.session?.demoFarmId || 1,
+              sessionId: req.sessionID
+            }
+          });
+          
+          agentsInvolved.push(targetAgent);
+          finalResponse = targetAgentResult.finalOutput || `${targetAgent} processed the request`;
+          
+          // Add tools used by the specialist agent
+          if (targetAgentResult.runItems) {
+            targetAgentResult.runItems.forEach(subItem => {
+              if (subItem.type === 'tool_call') {
+                toolsUsed.push(`${targetAgent}.${subItem.name}`);
+              }
+            });
+          }
+          
+        } catch (agentError) {
+          logger.warn(`${targetAgent} execution failed`, { error: agentError.message });
+          finalResponse = `${targetAgent} encountered an issue: ${agentError.message}`;
+        }
       }
       
       // Emit completion event
       if (io) {
         io.emit('agent.completed', {
           agent: agentsInvolved[agentsInvolved.length - 1] || 'BurnwiseOrchestrator',
-          result: result.finalOutput || 'Request processed successfully',
+          result: finalResponse,
           toolsUsed,
           agentsInvolved,
           handoffs: agentsInvolved.length - 1,
@@ -276,12 +435,12 @@ router.post('/chat', async (req, res) => {
       
       res.json({
         success: true,
-        response: result.finalOutput || 'Request processed successfully',
+        response: finalResponse,
         toolsUsed,
         agentsInvolved,
         conversationId,
         duration: Date.now() - startTime,
-        handoffs: agentsInvolved.length - 1 // Number of agent handoffs
+        handoffs: agentsInvolved.length - 1
       });
       
     } catch (agentError) {

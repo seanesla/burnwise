@@ -4,7 +4,8 @@
  * TiDB AgentX Hackathon 2025
  */
 
-const { Agent } = require('@openai/agents');
+const { Agent, tool, run } = require('@openai/agents');
+const { z } = require('zod');
 const burnRequestAgent = require('./BurnRequestAgent');
 const weatherAnalyst = require('./WeatherAnalyst');
 const conflictResolver = require('./ConflictResolver');
@@ -13,35 +14,112 @@ const proactiveMonitor = require('./ProactiveMonitor');
 
 /**
  * Main Orchestrator Agent
- * Routes requests to specialized agents based on intent
+ * Routes requests to specialized agents with direct execution
  */
 const orchestrator = new Agent({
   name: 'BurnwiseOrchestrator',
-  instructions: `You are the Burnwise Orchestrator. Your job is to route requests to specialist agents using handoffs.
+  instructions: `You are the Burnwise Orchestrator. You route requests to specialist agents using the appropriate tools.
 
-    For each type of request, transfer immediately:
-    - Burn requests → transfer_to_burnrequestagent
-    - Weather analysis → transfer_to_weatheranalyst  
-    - Conflict resolution → transfer_to_conflictresolver
-    - Schedule optimization → transfer_to_scheduleoptimizer
-    - Monitoring → transfer_to_proactivemonitor
+    Use these tools for routing:
+    - route_to_burn_agent: For burn requests, scheduling, or field management
+    - route_to_weather_agent: For weather analysis, forecasting, or conditions
+    - route_to_conflict_agent: For conflict detection or resolution
+    - route_to_schedule_agent: For optimization or timing questions
+    - route_to_monitor_agent: For monitoring or alert setup
     
-    Always transfer to the appropriate specialist. Do not attempt to handle specialized tasks yourself.`,
+    Always use the appropriate routing tool. Do not attempt to answer directly.`,
   
   model: 'gpt-5-mini',
   
-  // Force tool usage (handoffs) - LLM must use transfer tools
+  // Force tool usage - must route through specialist agents
   modelSettings: {
     tool_choice: 'required'
   },
+
+  // Stop after the first tool call (routing tool)
+  toolUseBehavior: 'stop_on_first_tool',
   
-  // Real agent handoffs using OpenAI SDK
-  handoffs: [
-    burnRequestAgent,
-    weatherAnalyst,
-    conflictResolver,
-    scheduleOptimizer,
-    proactiveMonitor
+  tools: [
+    tool({
+      name: 'route_to_burn_agent',
+      description: 'Route burn requests to BurnRequestAgent',
+      parameters: z.object({
+        request: z.string().describe('The burn request to process')
+      }),
+      execute: async (input, context) => {
+        // This will be handled by the API layer to trigger handoff events
+        return {
+          action: 'handoff',
+          targetAgent: 'BurnRequestAgent',
+          message: input.request,
+          context: context
+        };
+      }
+    }),
+    
+    tool({
+      name: 'route_to_weather_agent',
+      description: 'Route weather analysis to WeatherAnalyst',
+      parameters: z.object({
+        request: z.string().describe('The weather analysis request')
+      }),
+      execute: async (input, context) => {
+        return {
+          action: 'handoff',
+          targetAgent: 'WeatherAnalyst', 
+          message: input.request,
+          context: context
+        };
+      }
+    }),
+    
+    tool({
+      name: 'route_to_conflict_agent',
+      description: 'Route conflict resolution to ConflictResolver',
+      parameters: z.object({
+        request: z.string().describe('The conflict resolution request')
+      }),
+      execute: async (input, context) => {
+        return {
+          action: 'handoff',
+          targetAgent: 'ConflictResolver',
+          message: input.request,
+          context: context
+        };
+      }
+    }),
+    
+    tool({
+      name: 'route_to_schedule_agent',
+      description: 'Route schedule optimization to ScheduleOptimizer',
+      parameters: z.object({
+        request: z.string().describe('The schedule optimization request')
+      }),
+      execute: async (input, context) => {
+        return {
+          action: 'handoff',
+          targetAgent: 'ScheduleOptimizer',
+          message: input.request,
+          context: context
+        };
+      }
+    }),
+    
+    tool({
+      name: 'route_to_monitor_agent',
+      description: 'Route monitoring setup to ProactiveMonitor',
+      parameters: z.object({
+        request: z.string().describe('The monitoring request')
+      }),
+      execute: async (input, context) => {
+        return {
+          action: 'handoff',
+          targetAgent: 'ProactiveMonitor',
+          message: input.request,
+          context: context
+        };
+      }
+    })
   ]
 });
 
