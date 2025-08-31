@@ -323,18 +323,8 @@ const SpatialInterface = () => {
       }
     } catch (error) {
       console.error('Failed to load burns:', error);
-      // Set test data on error too
-      const fallbackBurns = [
-        {
-          id: 1,
-          status: 'active',
-          farm_name: 'Test Farm',
-          acres: 100,
-          longitude: -121.74,
-          latitude: 38.54
-        }
-      ];
-      setBurns(fallbackBurns);
+      setBurns([]);
+      // No fallback data - show proper error state instead
     }
   };
   
