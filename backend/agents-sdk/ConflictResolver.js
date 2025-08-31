@@ -165,7 +165,8 @@ const detectConflicts = tool({
     try {
       // Query burns scheduled for the same date
       const sql = `
-        SELECT br.*, f.name as farm_name, f.latitude, f.longitude
+        SELECT br.*, f.name as farm_name, 
+               ST_X(f.location) as latitude, ST_Y(f.location) as longitude
         FROM burn_requests br
         JOIN farms f ON br.farm_id = f.id
         WHERE br.burn_date = ?

@@ -10,6 +10,7 @@ import io from 'socket.io-client';
 import ApprovalModal from './ApprovalModal';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import EmberBackground from './backgrounds/EmberBackground';
+import WeatherAnalysisCard from './WeatherAnalysisCard';
 import './AgentChat.css';
 
 const AgentChat = () => {
@@ -21,6 +22,72 @@ const AgentChat = () => {
   const [conversationId] = useState(() => Date.now().toString());
   const [approvalModal, setApprovalModal] = useState({ isOpen: false, request: null });
   const messagesEndRef = useRef(null);
+
+  // ULTRA-MICRO F1.1: Parse and validate NFDRS4 Burning Index from WeatherAnalyst responses
+  const parseNFDRS4Data = (content) => {
+    try {
+      let parsedContent;
+      if (typeof content === 'string') {
+        // Try to extract JSON from string response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedContent = JSON.parse(jsonMatch[0]);
+        } else {
+          return null;
+        }
+      } else if (typeof content === 'object') {
+        parsedContent = content;
+      } else {
+        return null;
+      }
+
+      // Validate NFDRS4 analysis data exists
+      if (!parsedContent?.nfdrs4Analysis) {
+        return null;
+      }
+
+      const nfdrs4 = parsedContent.nfdrs4Analysis;
+      
+      // ULTRA-MICRO F1.1: Validate burningIndex is number between 0-99
+      const burningIndex = parseFloat(nfdrs4.burningIndex);
+      if (isNaN(burningIndex) || burningIndex < 0 || burningIndex > 99) {
+        console.error('Invalid NFDRS4 Burning Index:', nfdrs4.burningIndex);
+        return null;
+      }
+
+      // ULTRA-MICRO F1.2: Validate spreadComponent matches NFDRS4 formula output
+      const spreadComponent = parseFloat(nfdrs4.spreadComponent);
+      if (isNaN(spreadComponent) || spreadComponent < 0 || spreadComponent > 99) {
+        console.error('Invalid NFDRS4 Spread Component:', nfdrs4.spreadComponent);
+        return null;
+      }
+
+      // ULTRA-MICRO F1.3: Validate energyReleaseComponent ERC calculation accuracy
+      const energyReleaseComponent = parseFloat(nfdrs4.energyReleaseComponent);
+      if (isNaN(energyReleaseComponent) || energyReleaseComponent < 0 || energyReleaseComponent > 99) {
+        console.error('Invalid NFDRS4 Energy Release Component:', nfdrs4.energyReleaseComponent);
+        return null;
+      }
+
+      // ULTRA-MICRO F1.4: Validate equilibriumMoisture EMC formula calculation
+      const equilibriumMoisture = parseFloat(nfdrs4.equilibriumMoisture);
+      if (isNaN(equilibriumMoisture) || equilibriumMoisture < 0 || equilibriumMoisture > 50) {
+        console.error('Invalid NFDRS4 Equilibrium Moisture Content:', nfdrs4.equilibriumMoisture);
+        return null;
+      }
+
+      return {
+        burningIndex: Math.round(burningIndex),
+        spreadComponent: Math.round(spreadComponent),
+        energyReleaseComponent: Math.round(energyReleaseComponent),
+        equilibriumMoisture: parseFloat(equilibriumMoisture.toFixed(1)),
+        isValid: true
+      };
+    } catch (error) {
+      console.error('Error parsing NFDRS4 data:', error);
+      return null;
+    }
+  };
 
   // Real agent definitions from backend
   const agents = {
@@ -294,6 +361,15 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
                   : JSON.stringify(message.content, null, 2)
                 }
               </div>
+              {/* ULTRA-MICRO F8.6: Professional NFDRS4 Weather Analysis Display */}
+              {message.agent === 'WeatherAnalyst' && (() => {
+                const nfdrs4Data = parseNFDRS4Data(message.content);
+                return nfdrs4Data ? (
+                  <div className="professional-weather-analysis">
+                    <WeatherAnalysisCard nfdrs4Data={nfdrs4Data} compact={true} />
+                  </div>
+                ) : null;
+              })()}
               {message.toolsUsed && message.toolsUsed.length > 0 && (
                 <div className="tools-used">
                   <span className="tools-label">Tools used:</span>
