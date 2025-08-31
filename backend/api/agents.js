@@ -345,14 +345,45 @@ router.post('/weather-analysis', async (req, res) => {
     const analysisRequest = `Analyze weather conditions for a burn at latitude ${location.lat || 38.544}, longitude ${location.lng || -121.740} on ${burnDate}. Burn details: ${burnDetails.acres || 50} acres of ${burnDetails.crop_type || 'wheat'}.`;
     
     // Use WeatherAnalyst with OpenAI SDK
-    const result = await run(weatherAnalyst, analysisRequest, {
-      context: {
-        burnDate,
-        location,
-        burnDetails,
-        burnRequestId: burnDetails.id || null
+    let result;
+    try {
+      console.log('🔬 ABOUT TO CALL WEATHERANALYST:', { analysisRequest, context: { burnDate, location, burnDetails } });
+      
+      result = await run(weatherAnalyst, analysisRequest, {
+        context: {
+          burnDate,
+          location,
+          burnDetails,
+          burnRequestId: burnDetails.id || null
+        }
+      });
+      
+      console.log('🔬 FULL RESULT STRUCTURE DEBUG:', {
+        hasResult: !!result,
+        resultKeys: result ? Object.keys(result) : [],
+        hasRunItems: !!result.runItems,
+        runItemsLength: result.runItems ? result.runItems.length : 0,
+        finalOutput: result.finalOutput,
+        finalOutputType: typeof result.finalOutput,
+        hasState: !!result.state,
+        stateType: typeof result.state
+      });
+      
+      // Try to access the state to see if tool results are there
+      if (result.state) {
+        console.log('🔬 RESULT STATE DEBUG:', {
+          stateKeys: Object.keys(result.state),
+          stateContent: JSON.stringify(result.state, null, 2).substring(0, 500)
+        });
       }
-    });
+      
+      console.log('🔬 END OF TRY BLOCK - About to exit');
+    } catch (agentError) {
+      console.log('🔬 AGENT CALL FAILED:', agentError.message);
+      throw agentError;
+    }
+    
+    console.log('🔬 AFTER TRY-CATCH BLOCK - Continuing execution');
     
     // Extract decision and analysis from agent result
     let decision = 'MARGINAL';
@@ -360,15 +391,92 @@ router.post('/weather-analysis', async (req, res) => {
     let confidence = 75;
     let issues = [];
     
+    console.log('🔬 BEFORE CONFIDENCE PARSING - Variables initialized');
+    
+    // Enhanced: Parse confidence from finalOutput JSON structure (WeatherAnalyst returns structured JSON)
+    if (result.finalOutput) {
+      console.log('🔬 STARTING JSON CONFIDENCE PARSING...');
+      
+      try {
+        // Try to parse finalOutput as JSON first
+        const parsedOutput = JSON.parse(result.finalOutput);
+        
+        console.log('🔬 PARSED JSON STRUCTURE:', {
+          hasConfidence: 'confidence' in parsedOutput,
+          confidenceValue: parsedOutput.confidence,
+          confidenceType: typeof parsedOutput.confidence,
+          keys: Object.keys(parsedOutput)
+        });
+        
+        if (parsedOutput.confidence !== undefined) {
+          const extractedConfidence = parseFloat(parsedOutput.confidence);
+          if (!isNaN(extractedConfidence) && extractedConfidence >= 0 && extractedConfidence <= 10) {
+            confidence = extractedConfidence; // Professional NFDRS4 confidence (7.0-9.99 range)
+            console.log('🔬 CONFIDENCE EXTRACTED FROM JSON:', {
+              extractedValue: extractedConfidence,
+              finalConfidence: confidence
+            });
+          } else {
+            console.log('🔬 INVALID CONFIDENCE VALUE:', extractedConfidence);
+          }
+        } else {
+          console.log('🔬 NO CONFIDENCE FIELD IN JSON');
+        }
+        
+      } catch (jsonParseError) {
+        console.log('🔬 JSON PARSING FAILED, TRYING REGEX FALLBACK:', jsonParseError.message);
+        
+        // Fallback to regex patterns for non-JSON responses
+        const patterns = [
+          /confidence\s*:\s*(\d+\.?\d*)/i,         // "confidence: 8.84"
+          /"confidence"\s*:\s*(\d+\.?\d*)/i,       // "\"confidence\": 8.84"
+          /confidence\s+(\d+\.?\d*)/i              // "confidence 8.84"
+        ];
+        
+        for (const pattern of patterns) {
+          const match = result.finalOutput.match(pattern);
+          if (match) {
+            const extractedConfidence = parseFloat(match[1]);
+            if (!isNaN(extractedConfidence) && extractedConfidence >= 0 && extractedConfidence <= 10) {
+              confidence = extractedConfidence;
+              console.log('🔬 CONFIDENCE EXTRACTED FROM REGEX FALLBACK:', confidence);
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Legacy code for runItems (kept for compatibility but not used in OpenAI Agents SDK)
     if (result.runItems) {
+      console.log('🔬 ALL TOOL CALLS DEBUG:', result.runItems.map(item => ({
+        type: item.type,
+        name: item.name,
+        hasResult: !!item.result,
+        resultKeys: item.result ? Object.keys(item.result) : []
+      })));
+      
       result.runItems.forEach(item => {
         if (item.type === 'tool_call' && item.name === 'analyze_burn_safety') {
+          console.log('🔬 CONFIDENCE DEBUG - API AGENTS.JS:', {
+            itemType: item.type,
+            itemName: item.name,
+            hasResult: !!item.result,
+            resultKeys: item.result ? Object.keys(item.result) : [],
+            resultConfidence: item.result?.confidence,
+            resultConfidenceType: typeof item.result?.confidence
+          });
+          
           decision = item.result?.decision || 'MARGINAL';
           needsApproval = item.result?.needsApproval || false;
-          confidence = item.result?.confidence || 75;
+          confidence = item.result?.confidence || confidence; // Keep parsed confidence if runItems confidence not found
           issues = item.result?.issues || [];
+          
+          console.log('🔬 FINAL CONFIDENCE USED FROM RUNITEMS:', confidence);
         }
       });
+    } else {
+      console.log('🔬 NO RESULT.RUNITEMS FOUND - USING PARSED CONFIDENCE:', confidence);
     }
     
     res.json({

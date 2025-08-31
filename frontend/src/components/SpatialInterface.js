@@ -21,6 +21,7 @@ import DashboardView from './DashboardView';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import EmberBackground from './backgrounds/EmberBackground';
 import TutorialOverlay from './TutorialOverlay';
+import WeatherAnalysisCard from './WeatherAnalysisCard';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './SpatialInterface.css';
 
@@ -60,6 +61,7 @@ const SpatialInterface = () => {
   const [farms, setFarms] = useState([]);
   const [burns, setBurns] = useState([]);
   const [weatherData, setWeatherData] = useState(null);
+  const [nfdrs4Analysis, setNfdrs4Analysis] = useState(null);
   
   // Check if in demo mode
   useEffect(() => {
@@ -353,6 +355,50 @@ const SpatialInterface = () => {
       }
     } catch (error) {
       console.error('Failed to load weather:', error);
+    }
+  };
+  
+  // Load professional NFDRS4 weather analysis
+  const loadProfessionalWeatherAnalysis = async () => {
+    try {
+      const center = map.current ? map.current.getCenter() : { lat: 38.544, lng: -121.740 };
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const burnDate = tomorrow.toISOString().split('T')[0];
+      
+      console.log('🔬 FRONTEND: Requesting professional NFDRS4 analysis...');
+      
+      const response = await fetch('http://localhost:5001/api/agents/weather-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location: { lat: center.lat, lng: center.lng },
+          burnDate: burnDate,
+          burnDetails: { acres: 50, crop_type: 'wheat' }
+        })
+      });
+      
+      const data = await response.json();
+      console.log('🔬 FRONTEND: Professional analysis response:', data);
+      
+      if (data.success && data.analysis) {
+        try {
+          const analysisData = JSON.parse(data.analysis);
+          if (analysisData.nfdrs4Analysis) {
+            setNfdrs4Analysis({
+              ...analysisData.nfdrs4Analysis,
+              isValid: true,
+              confidence: data.confidence,
+              decision: data.decision
+            });
+            console.log('🔬 FRONTEND: NFDRS4 data set successfully:', analysisData.nfdrs4Analysis);
+          }
+        } catch (parseError) {
+          console.error('Failed to parse professional analysis:', parseError);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load professional weather analysis:', error);
     }
   };
   
@@ -1028,6 +1074,7 @@ const SpatialInterface = () => {
                 onClick={() => {
                   setActivePanel('weather');
                   loadWeatherData(); // Reload weather when panel opens
+                  loadProfessionalWeatherAnalysis(); // Load professional NFDRS4 analysis
                 }}
                 style={{
                   width: '100%',
@@ -1267,10 +1314,23 @@ const SpatialInterface = () => {
                       <div style={{ fontSize: '14px' }}>{Math.round(weatherData.pressure * 100) / 100 || '30.1'} in</div>
                     </div>
                   </div>
-                  <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(76, 175, 80, 0.2)', borderRadius: '6px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
-                    <div style={{ fontSize: '12px', color: '#4caf50', fontWeight: '600', marginBottom: '5px' }}>BURN CONDITIONS</div>
-                    <div style={{ fontSize: '14px' }}>Favorable - Low wind, good visibility</div>
-                  </div>
+                  {/* Professional NFDRS4 Weather Analysis */}
+                  {nfdrs4Analysis && (
+                    <div style={{ marginTop: '15px' }}>
+                      <WeatherAnalysisCard 
+                        nfdrs4Data={nfdrs4Analysis}
+                        compact={true}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Fallback for basic conditions if NFDRS4 not available */}
+                  {!nfdrs4Analysis && (
+                    <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(76, 175, 80, 0.2)', borderRadius: '6px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
+                      <div style={{ fontSize: '12px', color: '#4caf50', fontWeight: '600', marginBottom: '5px' }}>LOADING PROFESSIONAL ANALYSIS...</div>
+                      <div style={{ fontSize: '14px' }}>NFDRS4 meteorological analysis in progress</div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div style={{ textAlign: 'center', padding: '20px', opacity: 0.7 }}>
