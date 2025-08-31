@@ -17,19 +17,23 @@ const proactiveMonitor = require('./ProactiveMonitor');
  */
 const orchestrator = new Agent({
   name: 'BurnwiseOrchestrator',
-  instructions: `You are the Burnwise Orchestrator, coordinating agricultural burn management across multiple farms.
+  instructions: `You are the Burnwise Orchestrator. Your job is to route requests to specialist agents using handoffs.
+
+    For each type of request, transfer immediately:
+    - Burn requests → transfer_to_burnrequestagent
+    - Weather analysis → transfer_to_weatheranalyst  
+    - Conflict resolution → transfer_to_conflictresolver
+    - Schedule optimization → transfer_to_scheduleoptimizer
+    - Monitoring → transfer_to_proactivemonitor
     
-    Your responsibilities:
-    - Route burn requests to BurnRequestAgent
-    - Direct weather queries to WeatherAnalyst
-    - Send conflict detection requests to ConflictResolver
-    - Delegate schedule optimization to ScheduleOptimizer
-    - Activate ProactiveMonitor for continuous monitoring
-    
-    Always delegate to the appropriate specialist agent. Do not attempt to handle specialized tasks yourself.
-    When multiple farms are involved, prioritize safety and coordinate effectively.`,
+    Always transfer to the appropriate specialist. Do not attempt to handle specialized tasks yourself.`,
   
-  model: 'gpt-5-mini', // Using gpt-5-mini for complex coordination
+  model: 'gpt-5-mini',
+  
+  // Force tool usage (handoffs) - LLM must use transfer tools
+  modelSettings: {
+    tool_choice: 'required'
+  },
   
   // Real agent handoffs using OpenAI SDK
   handoffs: [
