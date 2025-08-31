@@ -209,6 +209,18 @@ router.post('/chat', async (req, res) => {
     
     logger.info('Agent chat request', { userId, conversationId, messageLength: message.length });
     const startTime = Date.now();
+    const io = req.app.get('io');
+    
+    // Emit agent thinking event
+    if (io) {
+      io.emit('agent.thinking', {
+        agent: 'BurnwiseOrchestrator',
+        thought: 'Processing your request...',
+        confidence: 0.9,
+        userId,
+        conversationId
+      });
+    }
     
     try {
       // Use OpenAI Agents SDK to run the orchestrator
@@ -231,7 +243,32 @@ router.post('/chat', async (req, res) => {
             toolsUsed.push(item.name);
           } else if (item.type === 'handoff_call') {
             agentsInvolved.push(item.name);
+            
+            // Emit handoff event
+            if (io) {
+              io.emit('agent.handoff', {
+                from: agentsInvolved[agentsInvolved.length - 2] || 'BurnwiseOrchestrator',
+                to: item.name,
+                reason: `Delegating to ${item.name}`,
+                userId,
+                conversationId
+              });
+            }
           }
+        });
+      }
+      
+      // Emit completion event
+      if (io) {
+        io.emit('agent.completed', {
+          agent: agentsInvolved[agentsInvolved.length - 1] || 'BurnwiseOrchestrator',
+          result: result.finalOutput || 'Request processed successfully',
+          toolsUsed,
+          agentsInvolved,
+          handoffs: agentsInvolved.length - 1,
+          duration: Date.now() - startTime,
+          userId,
+          conversationId
         });
       }
       
