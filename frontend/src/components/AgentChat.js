@@ -89,38 +89,16 @@ const AgentChat = () => {
     }
   };
 
-  // Real agent definitions from backend
-  const agents = {
-    'BurnwiseOrchestrator': {
-      name: 'Burnwise Orchestrator',
-      color: '#ff6b35',
-      description: 'Main coordinator - delegates to specialist agents'
-    },
-    'BurnRequestAgent': {
-      name: 'Burn Request Agent',
-      color: '#4CAF50',
-      description: 'Processes natural language burn requests'
-    },
-    'WeatherAnalyst': {
-      name: 'Weather Analyst',
-      color: '#2196F3',
-      description: 'Autonomous SAFE/UNSAFE/MARGINAL decisions'
-    },
-    'ConflictResolver': {
-      name: 'Conflict Resolver',
-      color: '#FF9800',
-      description: 'Multi-farm negotiation and mediation'
-    },
-    'ScheduleOptimizer': {
-      name: 'Schedule Optimizer',
-      color: '#9C27B0',
-      description: 'AI-enhanced simulated annealing'
-    },
-    'ProactiveMonitor': {
-      name: 'Proactive Monitor',
-      color: '#607D8B',
-      description: '24/7 autonomous monitoring'
-    }
+  // Generate agent metadata from agent names (no hardcoding)
+  const getAgentInfo = (agentName) => {
+    const colors = ['#ff6b35', '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+    const hash = agentName.split('').reduce((a, b) => (a * 33 + b.charCodeAt(0)) % colors.length, 0);
+    
+    return {
+      name: agentName.replace(/([A-Z])/g, ' $1').trim() || 'Unknown Agent',
+      color: colors[Math.abs(hash)],
+      description: `AI Agent: ${agentName}`
+    };
   };
 
   // Example prompts for farmers
@@ -266,11 +244,16 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
       const data = await response.json();
 
       if (data.success) {
+        // Use real agent data from backend response
+        const finalAgent = data.agentsInvolved ? data.agentsInvolved[data.agentsInvolved.length - 1] : currentAgent;
+        
         addMessage({
           type: 'agent_response',
-          agent: currentAgent,
+          agent: finalAgent,
           content: data.response,
           toolsUsed: data.toolsUsed,
+          agentsInvolved: data.agentsInvolved,
+          handoffs: data.handoffs,
           duration: data.duration,
           timestamp: new Date()
         });
@@ -347,7 +330,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
         );
 
       case 'agent_response':
-        const agent = agents[message.agent] || agents['BurnwiseOrchestrator'];
+        const agent = getAgentInfo(message.agent || 'BurnwiseOrchestrator');
         return (
           <div className="message agent-message">
             <div className="message-avatar" style={{ backgroundColor: agent.color }}>
@@ -393,8 +376,8 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
         );
 
       case 'handoff':
-        const fromAgent = agents[message.from] || agents['BurnwiseOrchestrator'];
-        const toAgent = agents[message.to] || agents['BurnwiseOrchestrator'];
+        const fromAgent = getAgentInfo(message.from || 'BurnwiseOrchestrator');
+        const toAgent = getAgentInfo(message.to || 'BurnwiseOrchestrator');
         return (
           <div className="message handoff-message">
             <div className="handoff-indicator">
@@ -414,7 +397,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
         );
 
       case 'thinking':
-        const thinkingAgent = agents[message.agent] || agents['BurnwiseOrchestrator'];
+        const thinkingAgent = getAgentInfo(message.agent || 'BurnwiseOrchestrator');
         return (
           <div className="message thinking-message">
             <div className="thinking-indicator">
@@ -455,7 +438,7 @@ Try saying something like: "I need to burn 100 acres of wheat tomorrow morning"`
   };
 
   const getCurrentAgentInfo = () => {
-    return agents[currentAgent] || agents['BurnwiseOrchestrator'];
+    return getAgentInfo(currentAgent || 'BurnwiseOrchestrator');
   };
 
   return (
