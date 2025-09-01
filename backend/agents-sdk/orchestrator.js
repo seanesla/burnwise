@@ -4,8 +4,11 @@
  * TiDB AgentX Hackathon 2025
  */
 
-const { Agent, tool, run } = require('@openai/agents');
+const { Agent, tool, run, setDefaultOpenAIKey } = require('@openai/agents');
 const { z } = require('zod');
+
+// Configure OpenAI API key for real agent execution
+setDefaultOpenAIKey(process.env.OPENAI_API_KEY);
 const burnRequestAgent = require('./BurnRequestAgent');
 const weatherAnalyst = require('./WeatherAnalyst');
 const conflictResolver = require('./ConflictResolver');

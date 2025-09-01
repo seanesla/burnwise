@@ -4,11 +4,14 @@
  * Proactively alerts about weather changes and conflicts
  */
 
-const { Agent, tool } = require('@openai/agents');
+const { Agent, tool, setDefaultOpenAIKey } = require('@openai/agents');
 const { z } = require('zod');
 const { query } = require('../db/connection');
 const axios = require('axios');
 const logger = require('../middleware/logger');
+
+// Configure OpenAI API key for real agent execution
+setDefaultOpenAIKey(process.env.OPENAI_API_KEY);
 
 // Tool to monitor weather changes
 const monitorWeatherChanges = tool({

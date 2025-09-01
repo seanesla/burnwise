@@ -4,11 +4,14 @@
  * Real OpenWeatherMap API integration
  */
 
-const { Agent, tool } = require('@openai/agents');
+const { Agent, tool, setDefaultOpenAIKey } = require('@openai/agents');
 const { z } = require('zod');
 const axios = require('axios');
 const { query, vectorSimilaritySearch } = require('../db/connection');
 const logger = require('../middleware/logger');
+
+// Configure OpenAI API key for real agent execution
+setDefaultOpenAIKey(process.env.OPENAI_API_KEY);
 
 // NFDRS4 Professional Meteorological Calculation Functions
 // Based on US National Fire Danger Rating System v4.0

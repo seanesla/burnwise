@@ -4,10 +4,13 @@
  * Implements Gaussian plume model for smoke prediction
  */
 
-const { Agent, tool } = require('@openai/agents');
+const { Agent, tool, setDefaultOpenAIKey } = require('@openai/agents');
 const { z } = require('zod');
 const { query, spatialQuery } = require('../db/connection');
 const logger = require('../middleware/logger');
+
+// Configure OpenAI API key for real agent execution
+setDefaultOpenAIKey(process.env.OPENAI_API_KEY);
 
 // Professional Atmospheric Dispersion Functions
 // Based on MPTRAC Lagrangian particle dispersion model

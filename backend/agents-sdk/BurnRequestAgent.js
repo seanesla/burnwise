@@ -4,10 +4,13 @@
  * Part of 5-Agent System for TiDB AgentX Hackathon 2025
  */
 
-const { Agent, tool } = require('@openai/agents');
+const { Agent, tool, setDefaultOpenAIKey } = require('@openai/agents');
 const { z } = require('zod');
 const { query } = require('../db/connection');
 const logger = require('../middleware/logger');
+
+// Configure OpenAI API key for real agent execution
+setDefaultOpenAIKey(process.env.OPENAI_API_KEY);
 
 // Tool to store burn request in TiDB
 const storeBurnRequest = tool({
