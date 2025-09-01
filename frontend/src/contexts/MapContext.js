@@ -74,7 +74,7 @@ export const MapProvider = ({ children }) => {
         }
         
         // Get current user's farm data
-        const response = await fetch('http://localhost:5001/api/farms/current', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/farms/current`, {
           credentials: 'include'
         });
         

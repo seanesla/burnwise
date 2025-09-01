@@ -29,7 +29,7 @@ const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOStr
 
   const fetchFarms = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/farms');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/farms`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -44,7 +44,7 @@ const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOStr
 
   const fetchBurnRequests = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/burn-requests?date=${selectedDate}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests?date=${selectedDate}`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -254,7 +254,7 @@ const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOStr
         const coordinates = e.lngLat;
 
         const conflictsRes = await fetch(
-          `http://localhost:5001/api/burn-requests/${properties.id}/conflicts`,
+          `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests/${properties.id}/conflicts`,
           { method: 'POST' }
         );
         const conflicts = await conflictsRes.json();
@@ -302,7 +302,7 @@ const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOStr
 
         const center = calculateCenter(burn.geometry);
         const response = await fetch(
-          `http://localhost:5001/api/weather/smoke-dispersion?lat=${center[1]}&lon=${center[0]}&areaHectares=${burn.area_hectares}`
+          `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/weather/smoke-dispersion?lat=${center[1]}&lon=${center[0]}&areaHectares=${burn.area_hectares}`
         );
         
         if (response.ok) {
@@ -432,7 +432,7 @@ const Map = ({ farms = [], burnRequests = [], selectedDate = new Date().toISOStr
 
   const detectConflicts = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/burn-requests/detect-conflicts', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests/detect-conflicts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: selectedDate })

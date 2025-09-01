@@ -30,7 +30,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   
   useEffect(() => {
     // Initialize socket connection
-    socket.current = io('http://localhost:5001');
+    socket.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5001');
     
     // Add welcome message
     setMessages([{
@@ -83,7 +83,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     setInputMessage('');
     
     try {
-      const response = await fetch('http://localhost:5001/api/agents/chat', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/agents/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -228,7 +228,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     setInputMessage(''); // Clear input
     
     try {
-      const response = await fetch('http://localhost:5001/api/agents/chat', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/agents/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
