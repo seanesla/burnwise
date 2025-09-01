@@ -561,6 +561,11 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     return null;
   }
   
+  // Don't render until position is properly initialized to prevent spawning at (0,0)
+  if (!isPositionInitialized) {
+    return null;
+  }
+  
   // Render minimized bubble
   if (isMinimized) {
     const sidebarWidth = isSidebarExpanded ? 250 : 70;
