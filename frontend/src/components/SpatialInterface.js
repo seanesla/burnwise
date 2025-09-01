@@ -1674,7 +1674,6 @@ const SpatialInterface = () => {
       <DockNavigation 
         onAction={handleAction}
         activePanel={activePanel}
-        activeBurnsCount={burns.filter(b => b.status === 'active' || b.status === 'in_progress').length}
       />
       
       {/* Timeline Scrubber - Only show in map view for spatial-temporal context */}

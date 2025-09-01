@@ -9,12 +9,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FaFire } from 'react-icons/fa';
 import NotificationButton from './NotificationButton';
 import './DockNavigation.css';
 import { springPresets, animationVariants } from '../styles/animations';
 
-const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
+const DockNavigation = ({ onAction, activePanel }) => {
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const navigate = useNavigate();
   
@@ -30,13 +29,6 @@ const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
         </svg>
       ),
       action: () => onAction('layers')
-    },
-    {
-      id: 'burns',
-      label: 'Active Burns',
-      icon: <FaFire size={24} />,
-      action: () => onAction('burns'),
-      badge: activeBurnsCount > 0 ? activeBurnsCount : null // Real active burns count
     },
     {
       id: 'metrics',
