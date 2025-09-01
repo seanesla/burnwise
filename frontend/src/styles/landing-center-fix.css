@@ -9,7 +9,8 @@ html, body {
   overflow-x: hidden;
 }
 
-#root {
+/* Only apply centering to landing page, not spatial interface */
+#root:has(.landing-container) {
   width: 100%;
   min-height: 100vh;
   display: flex;
