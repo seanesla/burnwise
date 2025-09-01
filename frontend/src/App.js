@@ -35,6 +35,25 @@ function AppContent() {
   // Show sidebar when authenticated and NOT on landing or onboarding pages
   const shouldShowSidebar = isAuthenticated && !isOnboardingPage && !isLandingPage;
   
+  const isSpatialPage = location.pathname === '/spatial' || 
+                        location.pathname === '/dashboard' || 
+                        location.pathname === '/map' || 
+                        location.pathname === '/schedule' || 
+                        location.pathname === '/alerts' || 
+                        location.pathname === '/request' || 
+                        location.pathname === '/agent-chat' || 
+                        location.pathname === '/analytics';
+
+  // Render spatial interface completely separately
+  if (isSpatialPage) {
+    return (
+      <>
+        {shouldShowSidebar && <Sidebar />}
+        <SpatialInterface />
+      </>
+    );
+  }
+
   return (
     <div className={`App ${isOnboardingPage ? 'auth-page' : ''}`}>
       {/* Navigation removed - no longer needed */}
@@ -55,18 +74,6 @@ function AppContent() {
                     
                     {/* Onboarding Route */}
                     <Route path="/onboarding" element={<HybridOnboarding />} />
-                    
-                    {/* Main Spatial Interface */}
-                    <Route path="/spatial" element={<SpatialInterface />} />
-                    
-                    {/* Redirect old routes to spatial interface */}
-                    <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
-                    <Route path="/map" element={<Navigate to="/spatial" replace />} />
-                    <Route path="/schedule" element={<Navigate to="/spatial" replace />} />
-                    <Route path="/alerts" element={<Navigate to="/spatial" replace />} />
-                    <Route path="/request" element={<Navigate to="/spatial" replace />} />
-                    <Route path="/agent-chat" element={<Navigate to="/spatial" replace />} />
-                    <Route path="/analytics" element={<Navigate to="/spatial" replace />} />
                     
                     {/* Settings still accessible */}
                     <Route path="/settings" element={<Settings />} />
