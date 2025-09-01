@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
-  FaCog, FaBell, FaUser, FaLock, FaPalette, 
+  FaCog, FaUser, FaLock, FaPalette, 
   FaDatabase, FaSync, FaSave, FaExclamationTriangle,
   FaTrash, FaRedo, FaClock, FaShieldAlt, FaSignOutAlt, FaKey
 } from 'react-icons/fa';
@@ -14,7 +14,7 @@ import './Settings.css';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated, endDemoSession, resetOnboarding } = useAuth();
+  const { user, logout, endDemoSession, resetOnboarding } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // Check if we're in demo mode
@@ -92,18 +92,6 @@ const Settings = () => {
     }));
   };
 
-  const handleNestedChange = (section, subsection, field, value) => {
-    setSettings(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [subsection]: {
-          ...prev[section][subsection],
-          [field]: value
-        }
-      }
-    }));
-  };
 
   const handleLogout = async () => {
     const logoutMessage = `Are you sure you want to logout?
@@ -333,7 +321,13 @@ To start a new demo, you'll need to click "Use Demo Account" again.`);
                     
                     <button
                       className="btn-secondary account-action-btn"
-                      onClick={() => toast.info('Password change feature coming soon')}
+                      onClick={() => toast('Password changes not available in demo mode', { 
+                        icon: '🚫',
+                        style: {
+                          background: '#f59e0b',
+                          color: '#ffffff',
+                        }
+                      })}
                       disabled={!!sessionStorage.getItem('burnwise_demo_context')}
                     >
                       <FaKey />
@@ -690,7 +684,6 @@ This action cannot be undone.
         throw new Error(error.message || 'Reset failed');
       }
 
-      const data = await response.json();
       
       // Clear local demo context
       sessionStorage.removeItem('burnwise_demo_context');

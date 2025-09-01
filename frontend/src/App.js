@@ -1,6 +1,7 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/Sidebar';
 // LoadingSpinner removed - no page loading animations
 import ErrorBoundary from './components/ErrorBoundary';
@@ -17,32 +18,14 @@ const HybridOnboarding = lazy(() => import('./components/HybridOnboarding'));
 const SpatialInterface = lazy(() => import('./components/SpatialInterface'));
 const Settings = lazy(() => import('./components/Settings'));
 
-// Debug system (disabled for production)
-const DEBUG = false;
-const LOG_PREFIX = '[BURNWISE]:';
-
 function AppContent() {
   const location = useLocation();
-  const { isAuthenticated, loading, needsOnboarding } = useAuth();
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [activePanel, setActivePanel] = useState('spatial');
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
     // Apply saved settings on app load
     settingsManager.applySettings();
-    
-    // Mark as not initial load after animation completes
-    const timer = setTimeout(() => {
-      setIsInitialLoad(false);
-    }, 6000); // After animation completes
-    
-    return () => clearTimeout(timer);
   }, []);
-  
-  const handlePanelChange = (panelId) => {
-    setActivePanel(panelId);
-    // You can add more logic here to show different panels in the spatial interface
-  };
   
   // Check if we're on pages that should NOT show sidebar
   const isOnboardingPage = location.pathname === '/onboarding';
@@ -55,7 +38,7 @@ function AppContent() {
       {/* Navigation removed - no longer needed */}
       
       {/* Sidebar for authenticated users (excluding auth and demo init pages) */}
-      {shouldShowSidebar && <Sidebar onPanelChange={handlePanelChange} />}
+      {shouldShowSidebar && <Sidebar />}
       
       <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''}`}>
         <ErrorBoundary>
@@ -110,6 +93,39 @@ function App() {
           </TutorialProvider>
         </MapProvider>
       </AuthProvider>
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        gutter={8}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1a1a1a',
+            color: '#ffffff',
+            border: '1px solid rgba(255, 107, 53, 0.2)',
+          },
+          success: {
+            style: {
+              background: '#16a34a',
+              color: '#ffffff',
+            },
+            iconTheme: {
+              primary: '#ffffff',
+              secondary: '#16a34a',
+            },
+          },
+          error: {
+            style: {
+              background: '#dc2626',
+              color: '#ffffff',
+            },
+            iconTheme: {
+              primary: '#ffffff',
+              secondary: '#dc2626',
+            },
+          },
+        }}
+      />
     </Router>
   );
 }
