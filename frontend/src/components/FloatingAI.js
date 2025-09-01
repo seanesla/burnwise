@@ -531,6 +531,14 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
           e.stopPropagation();
           dragControls.start(e);
         }}
+        onDragEnd={(e, info) => {
+          // Calculate actual position using element's final position
+          const rect = e.target.getBoundingClientRect();
+          setPosition({ 
+            x: rect.left, 
+            y: rect.top 
+          });
+        }}
       >
         <AnimatedFlameLogo size={24} animated={true} />
         {messages.filter(m => m.type === 'ai').length > 0 && (
@@ -577,8 +585,12 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         cursor: isResizing ? 'nwse-resize' : 'default'
       }}
       onDragEnd={(e, info) => {
-        // Update position when drag ends
-        setPosition({ x: info.x, y: info.y });
+        // Calculate actual position using element's final position
+        const rect = constraintsRef.current.getBoundingClientRect();
+        setPosition({ 
+          x: rect.left, 
+          y: rect.top 
+        });
       }}
     >
       {/* Header with drag handle */}
