@@ -96,7 +96,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       console.error('Failed to save message to TiDB:', error);
       // Don't prevent UI functionality - just log the error
     }
-  }, [conversationId]);
+  }, []);
   
   // Load chat history from TiDB
   const loadChatHistory = useCallback(async () => {
@@ -132,7 +132,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       // Fallback: Start with empty messages
       setMessages([]);
     }
-  }, [conversationId]);
+  }, [saveMessageToTiDB]);
   
   // Update virtual element position when sidebar state changes
   useEffect(() => {
@@ -173,7 +173,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     
     updateVirtualElement();
   }, [isSidebarExpanded, update]);
-
+  
   useEffect(() => {
     // Initialize socket connection
     socket.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5001');
@@ -196,27 +196,27 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       window.removeEventListener('resize', handleResize);
     };
   }, [loadChatHistory, update]);
-
+  
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
+  
   // Save position when dragging ends (will be integrated with drag system)
   const saveCurrentPosition = useCallback((x, y) => {
     localStorage.setItem('burnwise-ai-position', JSON.stringify({ x, y }));
   }, []);
-
+  
   // Save size when it changes
   useEffect(() => {
     if (size.width && size.height) {
       localStorage.setItem('burnwise-ai-size', JSON.stringify(size));
     }
   }, [size]);
-
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
+  
   // Handle resize start
   const handleResizeStart = (e) => {
     e.preventDefault();
@@ -225,7 +225,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     resizeStartPos.current = { x: e.clientX, y: e.clientY };
     resizeStartSize.current = { ...size };
   };
-
+  
   // Handle resize move
   useEffect(() => {
     const handleResizeMove = (e) => {
@@ -269,12 +269,13 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     };
     
     setMessages(prev => [...prev, userMessage]);
-    const messageToSend = inputMessage.trim();
-    setInputMessage('');
     setIsLoading(true);
     
     // Save user message to TiDB
     await saveMessageToTiDB(userMessage);
+    
+    const messageToSend = inputMessage;
+    setInputMessage('');
     
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/agents/chat`, {
@@ -293,12 +294,13 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       let formattedResponse = data.response;
       
       if (data.success) {
-        // Try to parse JSON response for formatted agent responses
+        // Parse the response if it's JSON
         try {
           const parsed = JSON.parse(data.response);
           
           // Format based on agent type
           if (parsed.delegated_to === 'BurnRequestAgent') {
+            // Format burn request response
             const burnDate = parsed.parsed?.requestedBurnDate || 'your requested date';
             const timeWindow = parsed.parsed?.timeWindow 
               ? `${parsed.parsed.timeWindow.start} - ${parsed.parsed.timeWindow.end}` 
@@ -318,7 +320,9 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
             }
             
             formattedResponse = message;
+            
           } else if (parsed.delegated_to === 'WeatherAnalyst') {
+            // Format weather response
             const decision = parsed.decision || parsed.weatherDecision || 'UNKNOWN';
             const temp = parsed.temperature || parsed.temp || 'N/A';
             const wind = parsed.windSpeed || parsed.wind || 'N/A';
@@ -330,6 +334,34 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
             
             if (parsed.reasoning) {
               formattedResponse += `\nReasoning: ${parsed.reasoning}`;
+            }
+            
+          } else if (parsed.conflictsDetected !== undefined) {
+            // Format conflict resolver response
+            formattedResponse = `**Conflict Analysis**\n\n`;
+            formattedResponse += parsed.conflictsDetected 
+              ? `⚠️ Conflicts detected with nearby farms. Adjusting schedule...`
+              : `✅ No conflicts detected. Your burn window is clear.`;
+              
+          } else if (parsed.scheduled) {
+            // Format schedule optimizer response
+            formattedResponse = `**Schedule Confirmed**\n\n`;
+            formattedResponse += `Your burn has been scheduled.\n`;
+            if (parsed.optimizedTime) {
+              formattedResponse += `Optimal time: ${parsed.optimizedTime}`;
+            }
+            
+          } else if (typeof parsed === 'object') {
+            // Fallback: try to format any object nicely
+            if (parsed.message) {
+              formattedResponse = parsed.message;
+            } else if (parsed.error) {
+              formattedResponse = `Error: ${parsed.error}`;
+            } else {
+              // Last resort: show key information
+              formattedResponse = 'I processed your request. ';
+              if (parsed.status) formattedResponse += `Status: ${parsed.status}. `;
+              if (parsed.result) formattedResponse += `Result: ${parsed.result}`;
             }
           }
         } catch (e) {
@@ -523,7 +555,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       </motion.div>
     );
   }
-
+  
   // Render expanded view
   return (
     <motion.div
@@ -544,109 +576,131 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
         width: size.width,
         height: size.height,
         zIndex: 10200, // Above all other UI elements including dock
+        cursor: isResizing ? 'nwse-resize' : 'default'
+      }}
+      onDragEnd={(e, info) => {
+        // Calculate actual position using element's final position
+        const rect = constraintsRef.current.getBoundingClientRect();
+        setPosition({ 
+          x: rect.left, 
+          y: rect.top 
+        });
       }}
     >
-      {/* Header */}
-      <div 
+      {/* Header with drag handle */}
+      <motion.div 
         className="floating-ai-header"
         onPointerDown={(e) => {
-          e.stopPropagation();
+          e.preventDefault();
           dragControls.start(e);
         }}
+        style={{ cursor: 'move' }}
       >
         <div className="header-left">
-          <AnimatedFlameLogo size={16} animated={false} />
+          <AnimatedFlameLogo size={20} animated={false} />
           <span className="header-title">AI Assistant</span>
         </div>
         <div className="header-actions">
           <button 
             className="header-btn"
-            onClick={() => setIsMinimized(true)}
-            title="Minimize"
+            onClick={() => setIsMinimized(!isMinimized)}
           >
-            –
+            {isMinimized ? '□' : '−'}
           </button>
           <button 
             className="header-btn"
             onClick={onClose}
-            title="Close"
           >
             ×
           </button>
         </div>
-      </div>
+      </motion.div>
       
-      {/* Messages Area */}
-      <div className="floating-ai-messages">
-        {messages.map((message) => (
-          <div key={message.id} className={`floating-message ${message.type}`}>
-            <div className="message-bubble">
-              {message.content}
-            </div>
+      {/* Messages and controls */}
+          {/* Messages area */}
+          <div className="floating-ai-messages">
+            {messages.map(message => (
+              <div 
+                key={message.id} 
+                className={`floating-message ${message.type}`}
+              >
+                {message.type === 'ai' && (
+                  <AnimatedFlameLogo size={16} animated={false} />
+                )}
+                <div className="message-bubble">
+                  {message.content}
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="floating-message ai">
+                <AnimatedFlameLogo size={16} animated={true} />
+                <div className="message-bubble typing">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        ))}
-        
-        {/* Typing Indicator */}
-        {isLoading && (
-          <div className="floating-message ai">
-            <div className="message-bubble typing">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+          
+          {/* Quick actions */}
+          <div className="floating-ai-quick">
+            {quickActions.map((action, idx) => (
+              <button
+                key={idx}
+                className="quick-action-btn"
+                onClick={() => handleQuickAction(action.prompt)}
+                disabled={isLoading}
+              >
+                {action.label}
+              </button>
+            ))}
           </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-      
-      {/* Quick Actions */}
-      {messages.length === 0 && !isLoading && (
-        <div className="floating-ai-quick">
-          {quickActions.map((action, index) => (
-            <button
-              key={index}
-              className="quick-action-btn"
-              onClick={() => handleQuickAction(action.prompt)}
+          
+          {/* Input area */}
+          <div className="floating-ai-input">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me anything..."
               disabled={isLoading}
+              className="ai-input-field"
+            />
+            <button 
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              className="ai-send-btn"
             >
-              {action.label}
+              {isLoading ? (
+                <span className="loading-spinner"></span>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              )}
             </button>
-          ))}
-        </div>
-      )}
-      
-      {/* Input Area */}
-      <div className="floating-ai-input">
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type a message..."
-          className="ai-input-field"
-          disabled={isLoading}
-        />
-        <button
-          onClick={sendMessage}
-          disabled={isLoading || !inputMessage.trim()}
-          className="ai-send-btn"
-        >
-          {isLoading ? (
-            <div className="loading-spinner" />
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="m22 2-7 20-4-9-9-4 20-7z"/>
-            </svg>
-          )}
-        </button>
-      </div>
-      
-      {/* Resize Handle */}
-      <div
-        className="floating-ai-resize-handle"
-        onMouseDown={handleResizeStart}
-      />
+          </div>
+          
+          {/* Resize Handle */}
+          <div 
+            className="floating-ai-resize-handle"
+            onMouseDown={handleResizeStart}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              width: '20px',
+              height: '20px',
+              cursor: 'nwse-resize',
+              background: 'linear-gradient(135deg, transparent 50%, rgba(255, 107, 53, 0.3) 50%)',
+              borderBottomRightRadius: '16px'
+            }}
+          />
     </motion.div>
   );
 };
