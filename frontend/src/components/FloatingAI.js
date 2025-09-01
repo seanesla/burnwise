@@ -154,7 +154,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       }
       window.removeEventListener('resize', handleResize);
     };
-  }, [loadChatHistory, update]);
+  }, [loadChatHistory]);
 
   useEffect(() => {
     scrollToBottom();
