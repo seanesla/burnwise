@@ -21,15 +21,8 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     const saved = localStorage.getItem('burnwise-sidebar-expanded');
     return saved !== null ? JSON.parse(saved) : true;
   });
-  const [position, setPosition] = useState(() => {
-    // Load saved position or use default
-    const saved = localStorage.getItem('burnwise-ai-position');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    const sidebarWidth = localStorage.getItem('burnwise-sidebar-expanded') === 'false' ? 70 : 250;
-    return { x: sidebarWidth + 20, y: 80 };
-  });
+  const [position, setPosition] = useState({ x: 0, y: 0 }); // Initialize to safe default
+  const [isPositionInitialized, setIsPositionInitialized] = useState(false);
   const [size, setSize] = useState(() => {
     // Load saved size or use default
     const saved = localStorage.getItem('burnwise-ai-size');
@@ -107,6 +100,70 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     }
   }, [saveMessageToTiDB]);
   
+  // Initialize position after mount with proper constraint enforcement
+  useEffect(() => {
+    if (!isPositionInitialized) {
+      const initializePosition = () => {
+        // Get current window dimensions
+        const currentWindowSize = {
+          width: window.innerWidth,
+          height: window.innerHeight
+        };
+        
+        // Get current sidebar state (real-time, not localStorage)
+        const currentSidebarExpanded = isSidebarExpanded;
+        const sidebarWidth = currentSidebarExpanded ? 250 : 70;
+        
+        // Try to load saved position
+        let initialPosition;
+        const saved = localStorage.getItem('burnwise-ai-position');
+        
+        if (saved) {
+          try {
+            const parsedPosition = JSON.parse(saved);
+            initialPosition = parsedPosition;
+          } catch (e) {
+            console.warn('Invalid saved position, using default');
+            initialPosition = null;
+          }
+        }
+        
+        // If no saved position or invalid, use safe default
+        if (!initialPosition) {
+          initialPosition = {
+            x: sidebarWidth + 20,
+            y: 80
+          };
+        }
+        
+        // Enforce viewport constraints using Floating UI principles
+        const constrainedPosition = {
+          x: Math.max(
+            sidebarWidth + 10, // Minimum distance from sidebar (with padding)
+            Math.min(
+              initialPosition.x,
+              currentWindowSize.width - size.width - 20 // Padding from right edge
+            )
+          ),
+          y: Math.max(
+            10, // Padding from top
+            Math.min(
+              initialPosition.y,
+              currentWindowSize.height - size.height - 20 // Padding from bottom
+            )
+          )
+        };
+        
+        setPosition(constrainedPosition);
+        setIsPositionInitialized(true);
+      };
+      
+      // Small delay to ensure DOM is ready and sidebar state is settled
+      const timer = setTimeout(initializePosition, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isPositionInitialized, isSidebarExpanded, size.width, size.height]);
+  
   useEffect(() => {
     // Initialize socket connection
     socket.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5001');
@@ -116,10 +173,28 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     
     // Handle window resize for responsive dimensions
     const handleResize = () => {
-      setWindowSize({
+      const newWindowSize = {
         width: window.innerWidth,
         height: window.innerHeight
-      });
+      };
+      setWindowSize(newWindowSize);
+      
+      // Re-constrain position on resize
+      if (isPositionInitialized) {
+        setPosition(prev => {
+          const sidebarWidth = isSidebarExpanded ? 250 : 70;
+          return {
+            x: Math.max(
+              sidebarWidth + 10,
+              Math.min(prev.x, newWindowSize.width - size.width - 20)
+            ),
+            y: Math.max(
+              10,
+              Math.min(prev.y, newWindowSize.height - size.height - 20)
+            )
+          };
+        });
+      }
     };
     
     // Listen for sidebar state changes in localStorage
@@ -128,12 +203,14 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
         const newExpanded = JSON.parse(e.newValue);
         setIsSidebarExpanded(newExpanded);
         
-        // Adjust position when sidebar changes
-        const newSidebarWidth = newExpanded ? 250 : 70;
-        setPosition(prev => ({
-          x: Math.max(newSidebarWidth + 20, prev.x),
-          y: prev.y
-        }));
+        // Adjust position when sidebar changes - enforce constraints
+        if (isPositionInitialized) {
+          const newSidebarWidth = newExpanded ? 250 : 70;
+          setPosition(prev => ({
+            x: Math.max(newSidebarWidth + 10, prev.x), // Ensure minimum distance with padding
+            y: prev.y
+          }));
+        }
       }
     };
     
@@ -147,7 +224,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [loadChatHistory]);
+  }, [loadChatHistory, isPositionInitialized, isSidebarExpanded, size.width, size.height]);
   
   useEffect(() => {
     scrollToBottom();
@@ -495,10 +572,10 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
         dragMomentum={false}
         dragElastic={0.2}
         dragConstraints={{
-          top: 0,
-          left: sidebarWidth,
-          right: windowSize.width - 60,
-          bottom: windowSize.height - 60
+          top: 10,
+          left: sidebarWidth + 10, // Padding from sidebar
+          right: windowSize.width - 70, // Padding from edge
+          bottom: windowSize.height - 70 // Padding from bottom
         }}
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -507,7 +584,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
         style={{ 
           x: position.x, 
           y: position.y,
-          zIndex: 300
+          zIndex: 10200 // Higher than expanded view to ensure visibility
         }}
         onClick={() => setIsMinimized(false)}
         onPointerDown={(e) => {
@@ -544,10 +621,10 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       dragMomentum={false}
       dragElastic={0.2}
       dragConstraints={{
-        top: 0,
-        left: sidebarWidth,
-        right: windowSize.width - size.width,
-        bottom: windowSize.height - size.height
+        top: 10,
+        left: sidebarWidth + 10, // Padding from sidebar
+        right: windowSize.width - size.width - 20, // Padding from edge
+        bottom: windowSize.height - size.height - 20 // Padding from bottom
       }}
       dragListener={false} // Disable automatic drag - we'll control it via header
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -564,7 +641,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
         x: position.x, 
         y: position.y,
         position: 'fixed',
-        zIndex: 10100, // Above the dock
+        zIndex: 10200, // Above all other UI elements including dock
         cursor: isResizing ? 'nwse-resize' : 'default'
       }}
       onDragEnd={(e, info) => {
