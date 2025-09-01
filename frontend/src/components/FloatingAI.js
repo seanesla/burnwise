@@ -482,8 +482,10 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
           bottom: window.innerHeight - 80
         }}
         onDragEnd={(event, info) => {
-          const rect = event.currentTarget.getBoundingClientRect();
-          saveCurrentPosition(rect.left, rect.top);
+          // Save position when drag ends using Framer Motion info
+          const newX = position.x + info.offset.x;
+          const newY = position.y + info.offset.y;
+          saveCurrentPosition(newX, newY);
         }}
         onClick={() => setIsMinimized(false)}
       >
@@ -520,9 +522,10 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       }}
       dragElastic={0.1}
       onDragEnd={(event, info) => {
-        // Save position when drag ends
-        const rect = event.currentTarget.getBoundingClientRect();
-        saveCurrentPosition(rect.left, rect.top);
+        // Save position when drag ends using Framer Motion info
+        const newX = position.x + info.offset.x;
+        const newY = position.y + info.offset.y;
+        saveCurrentPosition(newX, newY);
       }}
       style={{ 
         position: 'fixed',
