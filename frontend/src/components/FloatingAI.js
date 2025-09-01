@@ -22,10 +22,23 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [position, setPosition] = useState(() => {
-    // Initial position accounts for sidebar width
-    const sidebarWidth = isSidebarExpanded ? 250 : 70;
+    // Load saved position or use default
+    const saved = localStorage.getItem('burnwise-ai-position');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    const sidebarWidth = localStorage.getItem('burnwise-sidebar-expanded') === 'false' ? 70 : 250;
     return { x: sidebarWidth + 20, y: 80 };
   });
+  const [size, setSize] = useState(() => {
+    // Load saved size or use default
+    const saved = localStorage.getItem('burnwise-ai-size');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return { width: 360, height: 500 };
+  });
+  const [isResizing, setIsResizing] = useState(false);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -35,6 +48,8 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   const constraintsRef = useRef(null);
   const messagesEndRef = useRef(null);
   const socket = useRef(null);
+  const resizeStartPos = useRef(null);
+  const resizeStartSize = useRef(null);
   
   // Save message to TiDB
   const saveMessageToTiDB = useCallback(async (message) => {
@@ -155,9 +170,63 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     scrollToBottom();
   }, [messages]);
   
+  // Save position when it changes
+  useEffect(() => {
+    if (position.x !== undefined && position.y !== undefined) {
+      localStorage.setItem('burnwise-ai-position', JSON.stringify(position));
+    }
+  }, [position]);
+  
+  // Save size when it changes
+  useEffect(() => {
+    if (size.width && size.height) {
+      localStorage.setItem('burnwise-ai-size', JSON.stringify(size));
+    }
+  }, [size]);
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+  
+  // Handle resize start
+  const handleResizeStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    resizeStartPos.current = { x: e.clientX, y: e.clientY };
+    resizeStartSize.current = { ...size };
+  };
+  
+  // Handle resize move
+  useEffect(() => {
+    const handleResizeMove = (e) => {
+      if (!isResizing || !resizeStartPos.current || !resizeStartSize.current) return;
+      
+      const deltaX = e.clientX - resizeStartPos.current.x;
+      const deltaY = e.clientY - resizeStartPos.current.y;
+      
+      const newWidth = Math.min(Math.max(300, resizeStartSize.current.width + deltaX), windowSize.width - position.x - 20);
+      const newHeight = Math.min(Math.max(400, resizeStartSize.current.height + deltaY), windowSize.height - position.y - 100);
+      
+      setSize({ width: newWidth, height: newHeight });
+    };
+    
+    const handleResizeEnd = () => {
+      setIsResizing(false);
+      resizeStartPos.current = null;
+      resizeStartSize.current = null;
+    };
+    
+    if (isResizing) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeEnd);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove);
+        window.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [isResizing, position, windowSize]);
 
   
   const sendMessage = async () => {
@@ -486,16 +555,17 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       dragConstraints={{
         top: 0,
         left: sidebarWidth,
-        right: Math.max(sidebarWidth, windowSize.width - Math.min(360, windowSize.width - 30)),
-        bottom: Math.max(0, windowSize.height - Math.min(500, windowSize.height - 100))
+        right: windowSize.width - size.width,
+        bottom: windowSize.height - size.height
       }}
+      dragListener={false} // Disable automatic drag - we'll control it via header
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ 
         opacity: 1, 
         scale: 1,
         y: 0,
-        width: Math.min(360, windowSize.width - 30),
-        height: Math.min(500, windowSize.height - 100)
+        width: size.width,
+        height: size.height
       }}
       exit={{ opacity: 0, scale: 0.8, y: 20 }}
       transition={{ type: "spring", stiffness: 100, damping: 30, restDelta: 0.001 }}
@@ -503,13 +573,21 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         x: position.x, 
         y: position.y,
         position: 'fixed',
-        zIndex: 300
+        zIndex: 10100, // Above the dock
+        cursor: isResizing ? 'nwse-resize' : 'default'
+      }}
+      onDragEnd={(e, info) => {
+        // Update position when drag ends
+        setPosition({ x: info.x, y: info.y });
       }}
     >
       {/* Header with drag handle */}
       <motion.div 
         className="floating-ai-header"
-        onPointerDown={(e) => dragControls.start(e)}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          dragControls.start(e);
+        }}
         style={{ cursor: 'move' }}
       >
         <div className="header-left">
@@ -601,6 +679,22 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
               )}
             </button>
           </div>
+          
+          {/* Resize Handle */}
+          <div 
+            className="floating-ai-resize-handle"
+            onMouseDown={handleResizeStart}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              width: '20px',
+              height: '20px',
+              cursor: 'nwse-resize',
+              background: 'linear-gradient(135deg, transparent 50%, rgba(255, 107, 53, 0.3) 50%)',
+              borderBottomRightRadius: '16px'
+            }}
+          />
     </motion.div>
   );
 };

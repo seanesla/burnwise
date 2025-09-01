@@ -15,7 +15,7 @@
   justify-content: center;
   cursor: move;
   box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
-  z-index: 1000; /* Increased to ensure it's above map markers */
+  z-index: 10100; /* Same as expanded container, above dock */
   pointer-events: auto;
 }
 
@@ -45,7 +45,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 1001; /* Ensure it's above map elements and bubble */
+  z-index: 10100; /* Above dock navigation which is 10000 */
+  user-select: none; /* Prevent text selection on container */
 }
 
 /* Header */
@@ -56,6 +57,10 @@
   padding: 12px 15px;
   background: linear-gradient(135deg, #FF6B35, #FFA500);
   color: white;
+  user-select: none; /* Prevent text selection in header */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .header-left {
@@ -101,6 +106,10 @@
   flex-direction: column;
   gap: 12px;
   max-height: 350px;
+  user-select: text; /* Enable text selection in messages */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 .floating-message {
@@ -119,6 +128,11 @@
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.4;
+  user-select: text; /* Enable text selection in bubbles */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  cursor: text; /* Show text cursor on hover */
 }
 
 .floating-message.ai .message-bubble {
@@ -341,4 +355,43 @@
   .floating-ai-input {
     padding: 10px;
   }
+}
+
+/* Resize Handle */
+.floating-ai-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  z-index: 10;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.floating-ai-resize-handle:hover {
+  opacity: 1;
+}
+
+.floating-ai-resize-handle::before {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid rgba(255, 107, 53, 0.5);
+  border-bottom: 2px solid rgba(255, 107, 53, 0.5);
+}
+
+.floating-ai-resize-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 8px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid rgba(255, 107, 53, 0.5);
+  border-bottom: 2px solid rgba(255, 107, 53, 0.5);
 }
