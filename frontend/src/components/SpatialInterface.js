@@ -803,7 +803,15 @@ const SpatialInterface = () => {
         setActivePanel(activePanel === 'burns' ? null : 'burns');
         break;
       case 'ai':
-        setActivePanel(activePanel === 'ai' ? null : 'ai');
+        if (activePanel === 'ai') {
+          // Close AI panel
+          setActivePanel(null);
+          setCurrentConversationId(null);
+          setShowChatHistory(false);
+        } else {
+          // Open AI panel - check for existing conversations
+          checkForExistingConversations();
+        }
         break;
       default:
         break;
