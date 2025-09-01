@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
+import { FaFire } from 'react-icons/fa';
 import NotificationButton from './NotificationButton';
 import './DockNavigation.css';
 import { springPresets, animationVariants } from '../styles/animations';
@@ -34,7 +34,7 @@ const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
     {
       id: 'burns',
       label: 'Active Burns',
-      icon: <AnimatedFlameLogo size={24} animated={hoveredIcon === 'burns'} />,
+      icon: <FaFire size={24} />,
       action: () => onAction('burns'),
       badge: activeBurnsCount > 0 ? activeBurnsCount : null // Real active burns count
     },
