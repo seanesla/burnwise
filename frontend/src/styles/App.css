@@ -517,3 +517,11 @@ body {
 .app-content:not(.with-sidebar) {
   padding-top: 70px;
 }
+
+/* When showing spatial interface, remove ALL constraints */
+.app-content:has(.spatial-interface) {
+  margin-left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  padding: 0 !important;
+}
