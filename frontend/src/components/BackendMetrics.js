@@ -38,7 +38,7 @@ const BackendMetrics = ({ isOpen, onClose }) => {
   
   useEffect(() => {
     // Connect to backend Socket.io
-    socketRef.current = io('http://localhost:5001', {
+    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5001', {
       transports: ['websocket', 'polling'], // Use both transports for reliability
       reconnection: true,
       reconnectionAttempts: 5,

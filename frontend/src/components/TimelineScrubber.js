@@ -73,7 +73,7 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
       
       // Load timeline data for date range
       const dateStr = currentTime.toISOString().split('T')[0];
-      const response = await fetch(`http://localhost:5001/api/schedule/timeline/${dateStr}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/schedule/timeline/${dateStr}`);
       const data = await response.json();
       
       if (data.success && data.data.timeline) {

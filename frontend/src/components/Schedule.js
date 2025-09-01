@@ -18,7 +18,7 @@ const Schedule = ({ burnRequests, selectedDate, onRefresh }) => {
       endDate.setDate(endDate.getDate() + 6);
       
       const response = await fetch(
-        `http://localhost:5001/api/schedule/calendar?startDate=${currentDate}&endDate=${endDate.toISOString().split('T')[0]}`
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/schedule/calendar?startDate=${currentDate}&endDate=${endDate.toISOString().split('T')[0]}`
       );
       
       const data = await response.json();
@@ -37,7 +37,7 @@ const Schedule = ({ burnRequests, selectedDate, onRefresh }) => {
       const endDate = new Date(currentDate);
       endDate.setDate(endDate.getDate() + 3);
       
-      const response = await fetch('http://localhost:5001/api/schedule/optimize', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/schedule/optimize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +65,7 @@ const Schedule = ({ burnRequests, selectedDate, onRefresh }) => {
 
   const detectConflicts = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/burn-requests/detect-conflicts', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests/detect-conflicts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: selectedDate })

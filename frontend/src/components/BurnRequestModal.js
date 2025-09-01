@@ -27,7 +27,7 @@ const BurnRequestModal = ({ farms, onClose, onSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5001/api/burn-requests', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -31,7 +31,7 @@ const BurnRequestForm = ({ onSubmitSuccess }) => {
 
   const fetchFarms = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/farms');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/farms`);
       const data = await response.json();
       if (data.success) {
         setFarms(data.data || []);
@@ -68,7 +68,7 @@ const BurnRequestForm = ({ onSubmitSuccess }) => {
 
     try {
       // Call the actual coordinator endpoint
-      const response = await fetch('http://localhost:5001/api/burn-requests', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

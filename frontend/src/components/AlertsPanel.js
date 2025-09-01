@@ -16,7 +16,7 @@ const AlertsPanel = ({ farms = [] }) => {
 
   const fetchFarms = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/farms');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/farms`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -39,7 +39,7 @@ const AlertsPanel = ({ farms = [] }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5001/api/alerts/history/${selectedFarm}?limit=50`
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/alerts/history/${selectedFarm}?limit=50`
       );
       const data = await response.json();
       if (data.success) {
@@ -55,7 +55,7 @@ const AlertsPanel = ({ farms = [] }) => {
 
   const processPendingAlerts = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/alerts/process-pending', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/alerts/process-pending`, {
         method: 'POST'
       });
       const data = await response.json();

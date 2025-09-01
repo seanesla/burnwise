@@ -653,7 +653,7 @@ const ImmersiveBurnRequest = () => {
   const fetchWeatherData = async () => {
     // Fetch real weather data from API
     try {
-      const response = await fetch('http://localhost:5001/api/weather/current', { credentials: 'include' });
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/weather/current`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
