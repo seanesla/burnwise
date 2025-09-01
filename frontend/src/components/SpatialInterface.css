@@ -4,32 +4,27 @@
  */
 
 .spatial-interface {
-  position: fixed !important;
-  inset: 0 !important; /* Fill entire viewport */
-  left: 250px !important; /* Offset for sidebar */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
   background: #000;
-  z-index: 100; /* Below sidebar which is 500 */
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* When sidebar is collapsed */
-.spatial-interface.sidebar-collapsed {
-  left: 70px !important;
+  z-index: 9999; /* Above everything including sidebar */
 }
 
 .spatial-interface .map-container {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw !important;
+  height: 100vh !important;
   overflow: hidden;
-  margin: 0 !important;
-  padding: 0 !important;
 }
 
 /* REMOVED MAPBOX STYLES - Let Mapbox handle sizing naturally */

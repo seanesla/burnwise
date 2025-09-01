@@ -32,39 +32,21 @@ function AppContent() {
   // Check if we're on pages that should NOT show sidebar
   const isOnboardingPage = location.pathname === '/onboarding';
   const isLandingPage = location.pathname === '/' || location.pathname === '/landing';
-  const isSpatialPage = location.pathname === '/spatial' || 
-                        location.pathname === '/dashboard' || 
-                        location.pathname === '/map' || 
-                        location.pathname === '/schedule' || 
-                        location.pathname === '/alerts' || 
-                        location.pathname === '/request' || 
-                        location.pathname === '/agent-chat' || 
-                        location.pathname === '/analytics';
-  
   // Show sidebar when authenticated and NOT on landing or onboarding pages
   const shouldShowSidebar = isAuthenticated && !isOnboardingPage && !isLandingPage;
   
   return (
     <div className={`App ${isOnboardingPage ? 'auth-page' : ''}`}>
-      {/* Always show sidebar when appropriate, regardless of page */}
+      {/* Navigation removed - no longer needed */}
+      
+      {/* Sidebar for authenticated users (excluding auth and demo init pages) */}
       {shouldShowSidebar && <Sidebar />}
       
-      {/* Render SpatialInterface outside of app-content hierarchy for spatial pages */}
-      {isSpatialPage && (
+      <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''} ${shouldShowSidebar && !isExpanded ? 'sidebar-collapsed' : ''}`}>
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-            <SpatialInterface />
-          </Suspense>
-        </ErrorBoundary>
-      )}
-      
-      {/* Only show app-content wrapper for NON-spatial pages */}
-      {!isSpatialPage && (
-        <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''} ${shouldShowSidebar && !isExpanded ? 'sidebar-collapsed' : ''}`}>
-            <ErrorBoundary>
-              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-                <AnimatePresence mode="wait">
-                  <Routes location={location} key={location.pathname}>
+            <AnimatePresence mode="wait">
+              <Routes location={location} key={location.pathname}>
                     {/* Root route ALWAYS shows Landing page - it handles auth state internally */}
                     <Route path="/" element={<Landing />} />
                     
@@ -74,8 +56,10 @@ function AppContent() {
                     {/* Onboarding Route */}
                     <Route path="/onboarding" element={<HybridOnboarding />} />
                     
+                    {/* Main Spatial Interface */}
+                    <Route path="/spatial" element={<SpatialInterface />} />
+                    
                     {/* Redirect old routes to spatial interface */}
-                    <Route path="/spatial" element={<Navigate to="/spatial" replace />} />
                     <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
                     <Route path="/map" element={<Navigate to="/spatial" replace />} />
                     <Route path="/schedule" element={<Navigate to="/spatial" replace />} />
@@ -94,7 +78,6 @@ function AppContent() {
               </Suspense>
             </ErrorBoundary>
           </div>
-      )}
     </div>
   );
 }

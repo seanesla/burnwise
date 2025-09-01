@@ -12,7 +12,6 @@ import mapboxgl from 'mapbox-gl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMap } from '../contexts/MapContext';
 import { AlertsProvider } from '../contexts/AlertsContext';
-import { useSidebar } from '../contexts/SidebarContext';
 import FloatingAI from './FloatingAI';
 import DockNavigation from './DockNavigation';
 import TimelineScrubber from './TimelineScrubber';
@@ -32,7 +31,6 @@ const SpatialInterface = () => {
   const map = useRef(null);
   const location = useLocation();
   const { mapCenter, updateMapCenter, setSelectedFarm: setGlobalSelectedFarm } = useMap();
-  const { isExpanded } = useSidebar();
   
   // Get farm location and boundary from navigation state (from onboarding)
   const navigationState = location.state || {};
@@ -827,7 +825,7 @@ const SpatialInterface = () => {
   
   return (
     <AlertsProvider>
-      <div className={`spatial-interface ${!isExpanded ? 'sidebar-collapsed' : ''}`}>
+      <div className="spatial-interface">
         {/* Ember particle background - only show when not in map view */}
         {!isMapView && <EmberBackground intensity={0.7} blur={false} />}
       
