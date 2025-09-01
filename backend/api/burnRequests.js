@@ -76,6 +76,8 @@ router.get('/', asyncHandler(async (req, res) => {
         br.farm_id,
         f.farm_name,
         f.owner_name,
+        f.longitude,
+        f.latitude,
         br.field_id,
         NULL as field_boundary,
         br.acreage,
