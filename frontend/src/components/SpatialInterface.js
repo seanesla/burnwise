@@ -926,9 +926,9 @@ const SpatialInterface = () => {
           
           {/* Coordinate Display - only show in map view */}
           <div className="coordinates-display">
-            <span>Lng: {lng}</span>
-            <span>Lat: {lat}</span>
-            <span>Zoom: {zoom}</span>
+            <span key="lng">Lng: {lng}</span>
+            <span key="lat">Lat: {lat}</span>
+            <span key="zoom">Zoom: {zoom}</span>
           </div>
         </>
       ) : (
