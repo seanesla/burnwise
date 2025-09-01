@@ -44,7 +44,7 @@ body {
 
 .App {
   width: 100vw;
-  height: 100vh; /* Fixed height to ensure full viewport coverage */
+  min-height: 100vh; /* Changed from height to min-height to allow content expansion */
   display: flex;
   flex-direction: column;
   background: var(--bg-gradient);
@@ -61,7 +61,7 @@ body {
 .app-content {
   padding: 0;
   width: 100%;
-  flex: 1; /* Fill remaining height in flex container */
+  min-height: 100vh; /* Changed from height to min-height */
   overflow-x: hidden; /* Only hide horizontal scroll */
   overflow-y: auto; /* Allow vertical scroll */
   position: relative;

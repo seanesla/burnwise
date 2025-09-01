@@ -32,52 +32,69 @@ function AppContent() {
   // Check if we're on pages that should NOT show sidebar
   const isOnboardingPage = location.pathname === '/onboarding';
   const isLandingPage = location.pathname === '/' || location.pathname === '/landing';
+  const isSpatialPage = location.pathname === '/spatial' || 
+                        location.pathname === '/dashboard' || 
+                        location.pathname === '/map' || 
+                        location.pathname === '/schedule' || 
+                        location.pathname === '/alerts' || 
+                        location.pathname === '/request' || 
+                        location.pathname === '/agent-chat' || 
+                        location.pathname === '/analytics';
+  
   // Show sidebar when authenticated and NOT on landing or onboarding pages
   const shouldShowSidebar = isAuthenticated && !isOnboardingPage && !isLandingPage;
   
   return (
     <div className={`App ${isOnboardingPage ? 'auth-page' : ''}`}>
-      {/* Navigation removed - no longer needed */}
-      
-      {/* Sidebar for authenticated users (excluding auth and demo init pages) */}
+      {/* Always show sidebar when appropriate, regardless of page */}
       {shouldShowSidebar && <Sidebar />}
       
-      <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''} ${shouldShowSidebar && !isExpanded ? 'sidebar-collapsed' : ''}`}>
+      {/* Render SpatialInterface outside of app-content hierarchy for spatial pages */}
+      {isSpatialPage && (
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-            <AnimatePresence mode="wait">
-              <Routes location={location} key={location.pathname}>
-                {/* Root route ALWAYS shows Landing page - it handles auth state internally */}
-                <Route path="/" element={<Landing />} />
-                
-                {/* Landing page (for direct access) */}
-                <Route path="/landing" element={<Landing />} />
-                
-                {/* Onboarding Route */}
-                <Route path="/onboarding" element={<HybridOnboarding />} />
-                
-                {/* Main Spatial Interface */}
-                <Route path="/spatial" element={<SpatialInterface />} />
-                
-                {/* Redirect old routes to spatial interface */}
-                <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
-                <Route path="/map" element={<Navigate to="/spatial" replace />} />
-                <Route path="/schedule" element={<Navigate to="/spatial" replace />} />
-                <Route path="/alerts" element={<Navigate to="/spatial" replace />} />
-                <Route path="/request" element={<Navigate to="/spatial" replace />} />
-                <Route path="/agent-chat" element={<Navigate to="/spatial" replace />} />
-                <Route path="/analytics" element={<Navigate to="/spatial" replace />} />
-                
-                {/* Settings still accessible */}
-                <Route path="/settings" element={<Settings />} />
-                
-                {/* Catch all - redirect to root */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </AnimatePresence>
+            <SpatialInterface />
           </Suspense>
         </ErrorBoundary>
-      </div>
+      )}
+      
+      {/* Only show app-content wrapper for NON-spatial pages */}
+      {!isSpatialPage && (
+        <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''} ${shouldShowSidebar && !isExpanded ? 'sidebar-collapsed' : ''}`}>
+            <ErrorBoundary>
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                <AnimatePresence mode="wait">
+                  <Routes location={location} key={location.pathname}>
+                    {/* Root route ALWAYS shows Landing page - it handles auth state internally */}
+                    <Route path="/" element={<Landing />} />
+                    
+                    {/* Landing page (for direct access) */}
+                    <Route path="/landing" element={<Landing />} />
+                    
+                    {/* Onboarding Route */}
+                    <Route path="/onboarding" element={<HybridOnboarding />} />
+                    
+                    {/* Redirect old routes to spatial interface */}
+                    <Route path="/spatial" element={<Navigate to="/spatial" replace />} />
+                    <Route path="/dashboard" element={<Navigate to="/spatial" replace />} />
+                    <Route path="/map" element={<Navigate to="/spatial" replace />} />
+                    <Route path="/schedule" element={<Navigate to="/spatial" replace />} />
+                    <Route path="/alerts" element={<Navigate to="/spatial" replace />} />
+                    <Route path="/request" element={<Navigate to="/spatial" replace />} />
+                    <Route path="/agent-chat" element={<Navigate to="/spatial" replace />} />
+                    <Route path="/analytics" element={<Navigate to="/spatial" replace />} />
+                    
+                    {/* Settings still accessible */}
+                    <Route path="/settings" element={<Settings />} />
+                    
+                    {/* Catch all - redirect to root */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </AnimatePresence>
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+      )}
     </div>
   );
 }
