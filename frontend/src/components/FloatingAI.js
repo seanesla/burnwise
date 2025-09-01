@@ -8,7 +8,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, useDragControls } from 'framer-motion';
-import { useFloating, autoUpdate, shift, offset, flip } from '@floating-ui/react';
 import io from 'socket.io-client';
 import { useSidebar } from '../contexts/SidebarContext';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
@@ -36,48 +35,26 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
   const resizeStartPos = useRef(null);
   const resizeStartSize = useRef(null);
   
-  // Create a virtual reference element for positioning
-  const virtualElement = useRef({
-    getBoundingClientRect() {
-      const sidebarWidth = isSidebarExpanded ? 250 : 70;
-      const safeMargin = 30; // Increased margin to prevent overlap
-      const x = sidebarWidth + safeMargin; // Always position to the right of sidebar with safe margin
-      const y = 80; // Standard top margin
-      
-      return {
-        width: 0,
-        height: 0,
-        top: y,
-        left: x,
-        bottom: y,
-        right: x,
-        x: x,
-        y: y,
-      };
-    },
+  // Manual positioning state
+  const [position, setPosition] = useState(() => {
+    // Load saved position or calculate default
+    try {
+      const saved = localStorage.getItem('burnwise-ai-position');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn('Invalid saved position, using default');
+    }
+    
+    // Default position calculation
+    const sidebarWidth = isSidebarExpanded ? 250 : 70;
+    const safeMargin = 30;
+    return {
+      x: sidebarWidth + safeMargin,
+      y: 80
+    };
   });
-  
-  // Use Floating UI for positioning
-  const { refs, floatingStyles, update } = useFloating({
-    placement: 'bottom-start',
-    strategy: 'fixed', // Use fixed positioning as per Floating UI best practices
-    middleware: [
-      offset(10),
-      flip({
-        fallbackPlacements: ['bottom-end', 'top-start', 'top-end'],
-      }),
-      shift({
-        padding: 20,
-        boundary: 'viewport',
-      }),
-    ],
-    whileElementsMounted: autoUpdate,
-  });
-  
-  // Set virtual reference element
-  useEffect(() => {
-    refs.setPositionReference(virtualElement.current);
-  }, [refs, isSidebarExpanded]);
   
   // Save message to TiDB
   const saveMessageToTiDB = useCallback(async (message) => {
@@ -135,47 +112,18 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     }
   }, [conversationId]);
   
-  // Update virtual element position when sidebar state changes
+  // Update position when sidebar state changes
   useEffect(() => {
-    const updateVirtualElement = () => {
-      const sidebarWidth = isSidebarExpanded ? 250 : 70;
-      const safeMargin = 30; // Consistent safe margin
-      const minX = sidebarWidth + safeMargin;
-      
-      // Try to load saved position or use default
-      let savedPosition = { x: minX, y: 80 };
-      try {
-        const saved = localStorage.getItem('burnwise-ai-position');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          // Ensure saved position respects current sidebar width with safe margin
-          savedPosition = {
-            x: Math.max(minX, parsed.x),
-            y: Math.max(80, parsed.y) // Ensure minimum top margin
-          };
-        }
-      } catch (e) {
-        console.warn('Invalid saved position, using default');
-      }
-      
-      // Update virtual element position
-      virtualElement.current.getBoundingClientRect = () => ({
-        width: 0,
-        height: 0,
-        top: savedPosition.y,
-        left: savedPosition.x,
-        bottom: savedPosition.y,
-        right: savedPosition.x,
-        x: savedPosition.x,
-        y: savedPosition.y,
-      });
-      
-      // Trigger Floating UI update
-      update();
-    };
+    const sidebarWidth = isSidebarExpanded ? 250 : 70;
+    const safeMargin = 30;
+    const minX = sidebarWidth + safeMargin;
     
-    updateVirtualElement();
-  }, [isSidebarExpanded, update]);
+    // Ensure position doesn't go under sidebar when it expands
+    setPosition(prevPosition => ({
+      x: Math.max(minX, prevPosition.x),
+      y: Math.max(80, prevPosition.y) // Ensure minimum top margin
+    }));
+  }, [isSidebarExpanded]);
 
   useEffect(() => {
     // Initialize socket connection
@@ -184,10 +132,18 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     // Load chat history from TiDB
     loadChatHistory();
     
-    // Handle window resize - Floating UI will automatically reposition
+    // Handle window resize - ensure position stays within bounds
     const handleResize = () => {
-      // Update virtual element position on resize to respect new boundaries
-      update();
+      const sidebarWidth = isSidebarExpanded ? 250 : 70;
+      const safeMargin = 30;
+      const minX = sidebarWidth + safeMargin;
+      const maxX = window.innerWidth - size.width - 20;
+      const maxY = window.innerHeight - size.height - 20;
+      
+      setPosition(prevPosition => ({
+        x: Math.max(minX, Math.min(maxX, prevPosition.x)),
+        y: Math.max(80, Math.min(maxY, prevPosition.y))
+      }));
     };
     
     window.addEventListener('resize', handleResize);
@@ -204,9 +160,11 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
     scrollToBottom();
   }, [messages]);
 
-  // Save position when dragging ends (will be integrated with drag system)
+  // Save position to localStorage and update state
   const saveCurrentPosition = useCallback((x, y) => {
-    localStorage.setItem('burnwise-ai-position', JSON.stringify({ x, y }));
+    const newPosition = { x, y };
+    setPosition(newPosition);
+    localStorage.setItem('burnwise-ai-position', JSON.stringify(newPosition));
   }, []);
 
   // Save size when it changes
@@ -505,15 +463,27 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
   if (isMinimized) {
     return (
       <motion.div
-        ref={refs.setFloating}
         className="floating-ai-bubble"
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
         style={{
-          ...floatingStyles,
+          position: 'fixed',
+          left: position.x,
+          top: position.y,
           zIndex: 10300 // Higher than sidebar and all other UI elements
+        }}
+        drag
+        dragConstraints={{
+          left: isSidebarExpanded ? 280 : 100,
+          right: window.innerWidth - 80,
+          top: 60,
+          bottom: window.innerHeight - 80
+        }}
+        onDragEnd={(event, info) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          saveCurrentPosition(rect.left, rect.top);
         }}
         onClick={() => setIsMinimized(false)}
       >
@@ -530,7 +500,6 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
   // Render expanded view
   return (
     <motion.div
-      ref={refs.setFloating}
       className="floating-ai-container"
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ 
@@ -543,7 +512,6 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       exit={{ opacity: 0, scale: 0.8, y: 20 }}
       transition={{ type: "spring", stiffness: 100, damping: 30, restDelta: 0.001 }}
       drag
-      dragControls={dragControls}
       dragConstraints={{
         left: isSidebarExpanded ? 280 : 100, // Prevent dragging into sidebar area
         right: window.innerWidth - size.width - 20,
@@ -557,7 +525,9 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
         saveCurrentPosition(rect.left, rect.top);
       }}
       style={{ 
-        ...floatingStyles,
+        position: 'fixed',
+        left: position.x,
+        top: position.y,
         width: size.width,
         height: size.height,
         zIndex: 10300, // Above sidebar and all other UI elements including dock
@@ -566,10 +536,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       {/* Header */}
       <div 
         className="floating-ai-header"
-        onPointerDown={(e) => {
-          e.stopPropagation();
-          dragControls.start(e);
-        }}
+        style={{ cursor: 'grab' }}
       >
         <div className="header-left">
           <AnimatedFlameLogo size={16} animated={false} />

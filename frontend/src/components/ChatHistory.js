@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useSidebar } from '../contexts/SidebarContext';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './ChatHistory.css';
 
@@ -13,6 +14,17 @@ const ChatHistory = ({ onSelectConversation, onStartNewChat, onClose }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { isExpanded: isSidebarExpanded } = useSidebar();
+
+  // Calculate position based on sidebar state
+  const getPositionStyles = () => {
+    const sidebarWidth = isSidebarExpanded ? 250 : 70;
+    const safeMargin = 30;
+    return {
+      left: sidebarWidth + safeMargin,
+      top: 80
+    };
+  };
 
   // Load conversation list from TiDB
   const loadConversations = useCallback(async () => {
@@ -91,6 +103,7 @@ const ChatHistory = ({ onSelectConversation, onStartNewChat, onClose }) => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 100, damping: 30 }}
+        style={getPositionStyles()}
       >
         <div className="chat-history-header">
           <div className="header-left">
@@ -118,6 +131,7 @@ const ChatHistory = ({ onSelectConversation, onStartNewChat, onClose }) => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 100, damping: 30 }}
+        style={getPositionStyles()}
       >
         <div className="chat-history-header">
           <div className="header-left">
