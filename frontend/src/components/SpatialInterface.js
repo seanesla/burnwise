@@ -1662,6 +1662,9 @@ const SpatialInterface = () => {
               setActivePanel(null);
               setCurrentConversationId(null);
             }}
+            onOpen={() => {
+              setActivePanel('ai');
+            }}
           />
         )}
       </AnimatePresence>
