@@ -228,15 +228,47 @@ const SpatialInterface = () => {
       const center = map.current.getCenter();
       const zoom = map.current.getZoom();
       
-      // Only trigger weather update when zoomed in enough (~2 mile view)
-      if (zoom >= 14) {
-        window.dispatchEvent(new CustomEvent('mapViewChanged', {
-          detail: { 
-            lat: center.lat, 
-            lng: center.lng, 
-            zoom: zoom 
+      // Calculate distance from last weather location to prevent excessive API calls
+      const currentLat = center.lat;
+      const currentLng = center.lng;
+      
+      // Check if we need to update weather (zoom >= 10 for city-level view ~30 miles)
+      if (zoom >= 10) {
+        // Only update if moved significant distance (5+ miles) or first time
+        if (!window.lastWeatherLocation) {
+          // First weather update
+          window.lastWeatherLocation = { lat: currentLat, lng: currentLng };
+          window.dispatchEvent(new CustomEvent('mapViewChanged', {
+            detail: { 
+              lat: currentLat, 
+              lng: currentLng, 
+              zoom: zoom 
+            }
+          }));
+        } else {
+          // Calculate distance using Haversine formula (approximate)
+          const lastLat = window.lastWeatherLocation.lat;
+          const lastLng = window.lastWeatherLocation.lng;
+          const deltaLat = (currentLat - lastLat) * Math.PI / 180;
+          const deltaLng = (currentLng - lastLng) * Math.PI / 180;
+          const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                    Math.cos(lastLat * Math.PI / 180) * Math.cos(currentLat * Math.PI / 180) *
+                    Math.sin(deltaLng/2) * Math.sin(deltaLng/2);
+          const earthRadius = 3959; // miles
+          const distance = earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          
+          // Update weather if moved > 5 miles
+          if (distance > 5) {
+            window.lastWeatherLocation = { lat: currentLat, lng: currentLng };
+            window.dispatchEvent(new CustomEvent('mapViewChanged', {
+              detail: { 
+                lat: currentLat, 
+                lng: currentLng, 
+                zoom: zoom 
+              }
+            }));
           }
-        }));
+        }
       }
     });
     
@@ -1245,7 +1277,7 @@ const SpatialInterface = () => {
             <h3 style={{ margin: '0 0 15px 0', color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>Weather Conditions</h3>
             {weatherData?.location && (
               <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '10px' }}>
-                Location: {weatherData.location.lat.toFixed(4)}, {weatherData.location.lng.toFixed(4)}
+                Location: {weatherData.weather?.location?.name || `${weatherData.location.lat.toFixed(4)}, ${weatherData.location.lng.toFixed(4)}`}
               </div>
             )}
             <div className="weather-content" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
@@ -1253,7 +1285,7 @@ const SpatialInterface = () => {
                 <>
                   <div style={{ marginBottom: '15px', padding: '10px', background: 'rgba(255, 107, 53, 0.1)', borderRadius: '8px' }}>
                     <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px' }}>
-                      {Math.round(weatherData.temperature || weatherData.weather?.temperature || 75)}°F
+                      {Math.round(weatherData.weather?.temperature || 75)}°F
                     </div>
                     <div style={{ fontSize: '14px', opacity: 0.8 }}>
                       {weatherData.weather?.condition || weatherData.condition || 'Clear'}
@@ -1262,19 +1294,19 @@ const SpatialInterface = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Wind</div>
-                      <div style={{ fontSize: '14px' }}>{weatherData.wind_speed || weatherData.weather?.windSpeed || '5'} mph</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.weather?.windSpeed || '5'} mph</div>
                     </div>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Humidity</div>
-                      <div style={{ fontSize: '14px' }}>{weatherData.humidity || weatherData.weather?.humidity || '45'}%</div>
+                      <div style={{ fontSize: '14px' }}>{weatherData.weather?.humidity || '45'}%</div>
                     </div>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Visibility</div>
-                      <div style={{ fontSize: '14px' }}>{Math.round(weatherData.visibility || weatherData.weather?.visibility || 10)} mi</div>
+                      <div style={{ fontSize: '14px' }}>{Math.round(weatherData.weather?.visibility || 10)} mi</div>
                     </div>
                     <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '6px' }}>
                       <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '2px' }}>Pressure</div>
-                      <div style={{ fontSize: '14px' }}>{Math.round(weatherData.pressure * 100) / 100 || '30.1'} in</div>
+                      <div style={{ fontSize: '14px' }}>{Math.round((weatherData.weather?.pressure || 30.1) * 100) / 100} in</div>
                     </div>
                   </div>
                   {/* Professional NFDRS4 Weather Analysis */}
