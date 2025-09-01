@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MapProvider } from './contexts/MapContext';
 import { TutorialProvider } from './contexts/TutorialContext';
+import { SidebarProvider, useSidebar } from './contexts/SidebarContext';
 import settingsManager from './utils/settingsManager';
 import './styles/App.css';
 
@@ -21,6 +22,7 @@ const Settings = lazy(() => import('./components/Settings'));
 function AppContent() {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const { isExpanded } = useSidebar();
   
   useEffect(() => {
     // Apply saved settings on app load
@@ -40,7 +42,7 @@ function AppContent() {
       {/* Sidebar for authenticated users (excluding auth and demo init pages) */}
       {shouldShowSidebar && <Sidebar />}
       
-      <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''}`}>
+      <div className={`app-content ${shouldShowSidebar ? 'with-sidebar' : ''} ${shouldShowSidebar && !isExpanded ? 'sidebar-collapsed' : ''}`}>
         <ErrorBoundary>
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
             <AnimatePresence mode="wait">
@@ -89,7 +91,9 @@ function App() {
       <AuthProvider>
         <MapProvider>
           <TutorialProvider>
-            <AppContent />
+            <SidebarProvider>
+              <AppContent />
+            </SidebarProvider>
           </TutorialProvider>
         </MapProvider>
       </AuthProvider>

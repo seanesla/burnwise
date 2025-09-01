@@ -141,6 +141,11 @@ const TimelineScrubber = ({ currentTime, onChange }) => {
   };
   
   const formatTime = (date) => {
+    // Validate date object
+    if (!date || isNaN(date.getTime())) {
+      return '--:-- --';
+    }
+    
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';

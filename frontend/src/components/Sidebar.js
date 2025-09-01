@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useMap } from '../contexts/MapContext';
 import { useTutorial } from '../contexts/TutorialContext';
+import { useSidebar } from '../contexts/SidebarContext';
 import axios from 'axios';
 import './Sidebar.css';
 
@@ -22,12 +23,7 @@ const Sidebar = ({ onPanelChange }) => {
   const { user, logout, isDemo } = useAuth();
   const { getCurrentLocation } = useMap();
   const { resetTutorial, isCompleted } = useTutorial();
-  
-  // Sidebar state
-  const [isExpanded, setIsExpanded] = useState(() => {
-    const saved = localStorage.getItem('burnwise-sidebar-expanded');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
+  const { isExpanded, setIsExpanded, toggleSidebar } = useSidebar();
   
   // Track active panel and map view state from SpatialInterface
   const [activePanel, setActivePanel] = useState(null);
@@ -38,11 +34,6 @@ const Sidebar = ({ onPanelChange }) => {
   const [activeBurnsCount, setActiveBurnsCount] = useState(0);
   const [weatherStatus, setWeatherStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Save sidebar state to localStorage
-  useEffect(() => {
-    localStorage.setItem('burnwise-sidebar-expanded', JSON.stringify(isExpanded));
-  }, [isExpanded]);
 
   // Listen for activePanel and isMapView changes from SpatialInterface
   useEffect(() => {
@@ -173,10 +164,6 @@ const Sidebar = ({ onPanelChange }) => {
       clearTimeout(debounceTimer);
     };
   }, []);
-
-  const toggleSidebar = () => {
-    setIsExpanded(!isExpanded);
-  };
 
   const handleLogout = async () => {
     try {

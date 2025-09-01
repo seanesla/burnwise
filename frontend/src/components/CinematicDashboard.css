@@ -497,3 +497,45 @@
     justify-content: center;
   }
 }
+
+/* Additional responsive fixes for sidebar layout */
+@media (max-width: 1200px) {
+  /* Adjust content padding to prevent cut-off on smaller screens */
+  .dashboard-content {
+    padding: 0.75rem;
+    max-width: 1400px;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 992px) {
+  /* Better spacing for collapsed sidebar on medium screens */
+  .dashboard-content {
+    padding: 0.5rem;
+  }
+  
+  .dashboard-header {
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Ensure full width on very small screens */
+  .dashboard-content {
+    padding: 0.25rem;
+  }
+  
+  .dashboard-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
