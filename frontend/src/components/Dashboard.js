@@ -19,7 +19,7 @@ const Dashboard = ({ burnRequests = [], selectedDate = new Date().toISOString().
   const fetchBurnRequests = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/burn-requests?date=${selectedDate}`
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests?date=${selectedDate}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -37,7 +37,7 @@ const Dashboard = ({ burnRequests = [], selectedDate = new Date().toISOString().
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5001/api/analytics/dashboard?startDate=${selectedDate}&endDate=${selectedDate}`
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/analytics/dashboard?startDate=${selectedDate}&endDate=${selectedDate}`
       );
       if (response.ok) {
         const data = await response.json();

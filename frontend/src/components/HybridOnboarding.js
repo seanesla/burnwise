@@ -208,7 +208,7 @@ const HybridOnboarding = () => {
     try {
       // Initialize demo session (always demo mode)
       {
-        const demoResponse = await axios.post('http://localhost:5001/api/demo/initialize', {
+        const demoResponse = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/demo/initialize`, {
           mode: 'blank',
           sessionId: sessionId
         }, {
@@ -228,7 +228,7 @@ const HybridOnboarding = () => {
           
           // Update farm with user data
           if (formData.farmName) {
-            await axios.post('http://localhost:5001/api/demo/update-farm', {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/demo/update-farm`, {
               sessionId: sessionId,
               farmData: formData
             }, {
