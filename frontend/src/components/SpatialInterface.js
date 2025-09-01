@@ -285,46 +285,19 @@ const SpatialInterface = () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/burn-requests`);
       const data = await response.json();
-      if (data.success) {
-        // Add test data if empty for demonstration
-        if (!data.data || data.data.length === 0) {
-          const testBurns = [
-            {
-              id: 1,
-              status: 'active',
-              farm_name: 'Golden Fields Farm',
-              acres: 150,
-              longitude: -121.75,
-              latitude: 38.55
-            },
-            {
-              id: 2,
-              status: 'scheduled',
-              farm_name: 'Sunrise Valley Farm',
-              acres: 200,
-              longitude: -121.73,
-              latitude: 38.54
-            },
-            {
-              id: 3,
-              status: 'active',
-              farm_name: 'River Ranch',
-              acres: 100,
-              longitude: -121.74,
-              latitude: 38.56
-            }
-          ];
-          setBurns(testBurns);
-          addBurnLayers(testBurns);
-        } else {
-          setBurns(data.data);
-          addBurnLayers(data.data);
-        }
+      if (data.success && data.data) {
+        // Use real API data - no test data fallback
+        setBurns(data.data);
+        addBurnLayers(data.data);
+      } else {
+        // Show empty state when no data available
+        setBurns([]);
+        addBurnLayers([]);
       }
     } catch (error) {
       console.error('Failed to load burns:', error);
       setBurns([]);
-      // No fallback data - show proper error state instead
+      addBurnLayers([]);
     }
   };
   
