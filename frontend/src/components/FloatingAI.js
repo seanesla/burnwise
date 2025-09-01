@@ -17,7 +17,15 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [position, setPosition] = useState({ x: 20, y: 80 });
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
+    const saved = localStorage.getItem('burnwise-sidebar-expanded');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [position, setPosition] = useState(() => {
+    // Initial position accounts for sidebar width
+    const sidebarWidth = isSidebarExpanded ? 250 : 70;
+    return { x: sidebarWidth + 20, y: 80 };
+  });
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -32,13 +40,8 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     // Initialize socket connection
     socket.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5001');
     
-    // Add welcome message
-    setMessages([{
-      id: 1,
-      type: 'ai',
-      content: 'Hello! I can help you schedule burns, check weather, and manage your operations. Just ask!',
-      timestamp: new Date()
-    }]);
+    // Load chat history from TiDB
+    loadChatHistory();
     
     // Handle window resize for responsive dimensions
     const handleResize = () => {
@@ -48,13 +51,30 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       });
     };
     
+    // Listen for sidebar state changes in localStorage
+    const handleStorageChange = (e) => {
+      if (e.key === 'burnwise-sidebar-expanded') {
+        const newExpanded = JSON.parse(e.newValue);
+        setIsSidebarExpanded(newExpanded);
+        
+        // Adjust position when sidebar changes
+        const newSidebarWidth = newExpanded ? 250 : 70;
+        setPosition(prev => ({
+          x: Math.max(newSidebarWidth + 20, prev.x),
+          y: prev.y
+        }));
+      }
+    };
+    
     window.addEventListener('resize', handleResize);
+    window.addEventListener('storage', handleStorageChange);
     
     return () => {
       if (socket.current) {
         socket.current.disconnect();
       }
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
   
@@ -64,6 +84,79 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Load chat history from TiDB
+  const loadChatHistory = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/chat/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: 'floating-ai',
+          userId: 'spatial-ui'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.messages && data.messages.length > 0) {
+        // Convert TiDB messages to component format
+        const formattedMessages = data.messages.map(msg => ({
+          id: msg.id,
+          type: msg.message_type,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+        
+        setMessages(formattedMessages);
+      } else {
+        // Add welcome message if no history exists
+        const welcomeMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: 'Hello! I can help you schedule burns, check weather, and manage your operations. Just ask!',
+          timestamp: new Date()
+        };
+        
+        setMessages([welcomeMessage]);
+        
+        // Save welcome message to TiDB
+        await saveMessageToTiDB(welcomeMessage);
+      }
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
+      
+      // Fallback: Add welcome message
+      const welcomeMessage = {
+        id: Date.now(),
+        type: 'ai',
+        content: 'Hello! I can help you schedule burns, check weather, and manage your operations. Just ask!',
+        timestamp: new Date()
+      };
+      
+      setMessages([welcomeMessage]);
+    }
+  };
+
+  // Save message to TiDB
+  const saveMessageToTiDB = async (message) => {
+    try {
+      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/chat/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: 'floating-ai',
+          userId: 'spatial-ui',
+          messageType: message.type,
+          content: message.content,
+          timestamp: message.timestamp.toISOString()
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save message to TiDB:', error);
+      // Don't prevent UI functionality - just log the error
+    }
   };
   
   const sendMessage = async () => {
@@ -78,6 +171,9 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    
+    // Save user message to TiDB
+    await saveMessageToTiDB(userMessage);
     
     const messageToSend = inputMessage;
     setInputMessage('');
@@ -177,22 +273,33 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       }
       
       // Always add the response message (success or failure)
-      setMessages(prev => [...prev, {
+      const aiMessage = {
         id: Date.now() + 1,
         type: 'ai',
         content: formattedResponse || 'I apologize, but I am currently unable to process your request. Please try again later.',
         timestamp: new Date()
-      }]);
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Save AI response to TiDB
+      await saveMessageToTiDB(aiMessage);
       
     } catch (error) {
       console.error('Failed to send message:', error);
+      
       // Add error message to chat
-      setMessages(prev => [...prev, {
+      const errorMessage = {
         id: Date.now() + 1,
         type: 'ai',
         content: 'I apologize, but I encountered an error connecting to the server. Please check your connection and try again.',
         timestamp: new Date()
-      }]);
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
+      // Save error message to TiDB
+      await saveMessageToTiDB(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -226,6 +333,9 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     setInputMessage(''); // Clear input
+    
+    // Save user message to TiDB
+    await saveMessageToTiDB(userMessage);
     
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/agents/chat`, {
@@ -285,21 +395,32 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
           // Not JSON, use as-is
         }
         
-        setMessages(prev => [...prev, {
+        const aiResponse = {
           id: Date.now() + 1,
           type: 'ai',
           content: formattedResponse,
           timestamp: new Date()
-        }]);
+        };
+        
+        setMessages(prev => [...prev, aiResponse]);
+        
+        // Save AI response to TiDB
+        await saveMessageToTiDB(aiResponse);
       }
     } catch (error) {
       console.error('Failed to send quick action:', error);
-      setMessages(prev => [...prev, {
+      
+      const errorMessage = {
         id: Date.now() + 1,
         type: 'ai',
         content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date()
-      }]);
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
+      // Save error message to TiDB
+      await saveMessageToTiDB(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -312,6 +433,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   
   // Render minimized bubble
   if (isMinimized) {
+    const sidebarWidth = isSidebarExpanded ? 250 : 70;
     return (
       <motion.div
         className="floating-ai-bubble"
@@ -321,7 +443,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         dragElastic={0.2}
         dragConstraints={{
           top: 0,
-          left: 0,
+          left: sidebarWidth,
           right: windowSize.width - 60,
           bottom: windowSize.height - 60
         }}
@@ -351,6 +473,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   }
   
   // Render expanded view
+  const sidebarWidth = isSidebarExpanded ? 250 : 70;
   return (
     <motion.div
       ref={constraintsRef}
@@ -361,8 +484,8 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       dragElastic={0.2}
       dragConstraints={{
         top: 0,
-        left: 0,
-        right: Math.max(0, windowSize.width - Math.min(360, windowSize.width - 30)),
+        left: sidebarWidth,
+        right: Math.max(sidebarWidth, windowSize.width - Math.min(360, windowSize.width - 30)),
         bottom: Math.max(0, windowSize.height - Math.min(500, windowSize.height - 100))
       }}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}

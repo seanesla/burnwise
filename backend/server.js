@@ -51,6 +51,8 @@ const onboardingRoutes = require('./api/onboarding');
 console.log('Onboarding routes loaded');
 const geocodingRoutes = require('./api/geocoding');
 console.log('Geocoding routes loaded');
+const chatRoutes = require('./api/chat');
+console.log('Chat routes loaded');
 
 // OpenAI Agents SDK agents are loaded on-demand via API routes
 console.log('OpenAI Agents SDK agents will be loaded on-demand');
@@ -229,6 +231,7 @@ app.use('/api/predictor', optionalAuth, require('./api/predictor')); // Gaussian
 app.use('/api/demo', demoRoutes); // Demo mode with real TiDB integration
 app.use('/api/onboarding', onboardingRoutes); // Conversational onboarding with OpenAI Agents SDK
 app.use('/api/geocoding', geocodingRoutes); // Geocoding proxy for Mapbox API
+app.use('/api/chat', optionalAuth, chatRoutes); // Chat message persistence with TiDB
 
 // Socket.io setup for real-time updates
 console.log('Setting up Socket.io...');
