@@ -20,7 +20,6 @@ import DemoSessionBanner from './DemoSessionBanner';
 import DashboardView from './DashboardView';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import EmberBackground from './backgrounds/EmberBackground';
-import TutorialOverlay from './TutorialOverlay';
 import WeatherAnalysisCard from './WeatherAnalysisCard';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './SpatialInterface.css';
@@ -37,7 +36,6 @@ const SpatialInterface = () => {
   const navigationState = location.state || {};
   const farmLocationFromOnboarding = navigationState.farmLocation;
   const farmBoundaryFromOnboarding = navigationState.farmBoundary;
-  const isTransitioningFromOnboarding = navigationState.transitionFromOnboarding;
   
   // Initialize map state - prefer onboarding location over context default
   const initialLocation = farmLocationFromOnboarding || mapCenter;
@@ -103,6 +101,7 @@ const SpatialInterface = () => {
   }, [activePanel, isMapView]);
   
   // Initialize map
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Only initialize map when in map view
     if (!isMapView) return;
@@ -296,6 +295,7 @@ const SpatialInterface = () => {
         map.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMapView]); // Re-initialize when isMapView changes
   
   // Load farms data

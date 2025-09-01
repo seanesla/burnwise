@@ -675,6 +675,7 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
         COALESCE(DATE_FORMAT(br.requested_start_time, '%H:%i'), 'morning') as time_slot,
         br.requested_date as scheduled_start,
         br.requested_date as scheduled_end,
+        br.requested_start_time,
         br.request_id as burn_request_id,
         COALESCE(bf.field_name, 'Field') as field_name,
         COALESCE(br.acreage, 0) as acres,
@@ -712,12 +713,23 @@ router.get('/timeline/:date', asyncHandler(async (req, res) => {
         timeSlots.push(item.time_slot);
       }
       
+      // Convert PT8H format to HH:MM format for scheduled_start
+      let scheduled_start = '08:00'; // Default fallback
+      if (item.requested_start_time) {
+        const timeStr = item.requested_start_time.toString();
+        if (timeStr.startsWith('PT') && timeStr.endsWith('H')) {
+          const hours = parseInt(timeStr.substring(2, timeStr.length - 1));
+          scheduled_start = String(hours).padStart(2, '0') + ':00';
+        }
+      }
+
       timeline[item.time_slot].burns.push({
         burn_request_id: item.burn_request_id,
         field_name: item.field_name,
         acres: item.acres,
         crop_type: item.crop_type,
         priority_score: item.priority_score,
+        scheduled_start: scheduled_start,
         farm: {
           name: item.farm_name,
           owner: item.owner_name,

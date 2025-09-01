@@ -20,15 +20,18 @@ router.post('/history', asyncHandler(async (req, res) => {
   }
   
   try {
+    // Ensure limit is a valid positive integer for TiDB LIMIT clause
+    const limitValue = Math.max(1, Math.min(1000, parseInt(limit) || 50));
+    
     const chatQuery = `
       SELECT id, conversation_id, user_id, message_type, content, timestamp, metadata
       FROM chat_messages
       WHERE conversation_id = ? AND user_id = ?
       ORDER BY timestamp ASC, id ASC
-      LIMIT ?
+      LIMIT ${limitValue}
     `;
     
-    const messages = await query(chatQuery, [conversationId, userId, parseInt(limit)]);
+    const messages = await query(chatQuery, [conversationId, userId]);
     
     logger.info(`Retrieved ${messages.length} chat messages for conversation: ${conversationId}`);
     

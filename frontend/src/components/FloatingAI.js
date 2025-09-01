@@ -6,7 +6,7 @@
  * NO MOCKS - Real AI integration
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, useDragControls } from 'framer-motion';
 import io from 'socket.io-client';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
@@ -36,58 +36,28 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
   const messagesEndRef = useRef(null);
   const socket = useRef(null);
   
-  useEffect(() => {
-    // Initialize socket connection
-    socket.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5001');
-    
-    // Load chat history from TiDB
-    loadChatHistory();
-    
-    // Handle window resize for responsive dimensions
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
+  // Save message to TiDB
+  const saveMessageToTiDB = useCallback(async (message) => {
+    try {
+      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/chat/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: 'floating-ai',
+          userId: 'spatial-ui',
+          messageType: message.type,
+          content: message.content,
+          timestamp: message.timestamp.toISOString()
+        })
       });
-    };
-    
-    // Listen for sidebar state changes in localStorage
-    const handleStorageChange = (e) => {
-      if (e.key === 'burnwise-sidebar-expanded') {
-        const newExpanded = JSON.parse(e.newValue);
-        setIsSidebarExpanded(newExpanded);
-        
-        // Adjust position when sidebar changes
-        const newSidebarWidth = newExpanded ? 250 : 70;
-        setPosition(prev => ({
-          x: Math.max(newSidebarWidth + 20, prev.x),
-          y: prev.y
-        }));
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      if (socket.current) {
-        socket.current.disconnect();
-      }
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    } catch (error) {
+      console.error('Failed to save message to TiDB:', error);
+      // Don't prevent UI functionality - just log the error
+    }
   }, []);
   
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-  
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   // Load chat history from TiDB
-  const loadChatHistory = async () => {
+  const loadChatHistory = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/chat/history`, {
         method: 'POST',
@@ -137,27 +107,58 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
       
       setMessages([welcomeMessage]);
     }
+  }, [saveMessageToTiDB]);
+  
+  useEffect(() => {
+    // Initialize socket connection
+    socket.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5001');
+    
+    // Load chat history from TiDB
+    loadChatHistory();
+    
+    // Handle window resize for responsive dimensions
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
+    // Listen for sidebar state changes in localStorage
+    const handleStorageChange = (e) => {
+      if (e.key === 'burnwise-sidebar-expanded') {
+        const newExpanded = JSON.parse(e.newValue);
+        setIsSidebarExpanded(newExpanded);
+        
+        // Adjust position when sidebar changes
+        const newSidebarWidth = newExpanded ? 250 : 70;
+        setPosition(prev => ({
+          x: Math.max(newSidebarWidth + 20, prev.x),
+          y: prev.y
+        }));
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [loadChatHistory]);
+  
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Save message to TiDB
-  const saveMessageToTiDB = async (message) => {
-    try {
-      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/chat/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId: 'floating-ai',
-          userId: 'spatial-ui',
-          messageType: message.type,
-          content: message.content,
-          timestamp: message.timestamp.toISOString()
-        })
-      });
-    } catch (error) {
-      console.error('Failed to save message to TiDB:', error);
-      // Don't prevent UI functionality - just log the error
-    }
-  };
   
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
