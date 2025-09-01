@@ -1700,9 +1700,6 @@ const SpatialInterface = () => {
         </button>
       </div>
       
-      {/* Dock Navigation */}
-      <DockNavigation onAction={handleAction} />
-      
       {/* Backend Metrics Panel */}
       <BackendMetrics isOpen={metricsVisible} onClose={() => setMetricsVisible(false)} />
       
