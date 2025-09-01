@@ -60,7 +60,7 @@ body {
 
 .app-content {
   padding: 0;
-  width: 100vw;
+  width: 100%;
   min-height: 100vh; /* Changed from height to min-height */
   overflow-x: hidden; /* Only hide horizontal scroll */
   overflow-y: auto; /* Allow vertical scroll */
@@ -489,23 +489,27 @@ body {
 
 .app-content.with-sidebar {
   margin-left: 250px; /* Default expanded sidebar width */
+  width: calc(100% - 250px);
 }
 
 /* Responsive sidebar adjustments */
 @media (max-width: 768px) {
   .app-content.with-sidebar {
     margin-left: 0; /* No margin on mobile - sidebar will be overlay */
+    width: 100%; /* Full width on mobile */
   }
 }
 
 /* Adjust for collapsed sidebar - we'll use JavaScript to toggle this class */
 .app-content.with-sidebar.sidebar-collapsed {
   margin-left: 70px;
+  width: calc(100% - 70px);
 }
 
 @media (max-width: 768px) {
   .app-content.with-sidebar.sidebar-collapsed {
     margin-left: 0;
+    width: 100%; /* Full width on mobile */
   }
 }
 
