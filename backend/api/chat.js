@@ -123,6 +123,60 @@ router.post('/save', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * POST /api/chat/conversations
+ * Get list of conversations for a user with preview data
+ */
+router.post('/conversations', asyncHandler(async (req, res) => {
+  const { userId, limit = 50 } = req.body;
+  
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      error: 'userId is required'
+    });
+  }
+  
+  try {
+    // Ensure limit is a valid positive integer for TiDB LIMIT clause
+    const limitValue = Math.max(1, Math.min(1000, parseInt(limit) || 50));
+    
+    const conversationsQuery = `
+      SELECT 
+        conversation_id,
+        COUNT(*) as message_count,
+        MAX(timestamp) as last_timestamp,
+        (SELECT content FROM chat_messages c2 
+         WHERE c2.conversation_id = c1.conversation_id 
+         AND c2.user_id = c1.user_id 
+         ORDER BY c2.timestamp DESC 
+         LIMIT 1) as last_message
+      FROM chat_messages c1
+      WHERE user_id = ?
+      GROUP BY conversation_id
+      ORDER BY last_timestamp DESC
+      LIMIT ${limitValue}
+    `;
+    
+    const conversations = await query(conversationsQuery, [userId]);
+    
+    logger.info(`Retrieved ${conversations.length} conversations for user: ${userId}`);
+    
+    res.json({
+      success: true,
+      conversations: conversations || [],
+      count: conversations.length
+    });
+    
+  } catch (error) {
+    logger.error('Failed to retrieve conversations:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve conversations'
+    });
+  }
+}));
+
+/**
  * POST /api/chat/clear
  * Clear chat history for a conversation (optional endpoint for cleanup)
  */

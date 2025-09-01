@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMap } from '../contexts/MapContext';
 import { AlertsProvider } from '../contexts/AlertsContext';
 import FloatingAI from './FloatingAI';
+import ChatHistory from './ChatHistory';
 import DockNavigation from './DockNavigation';
 import TimelineScrubber from './TimelineScrubber';
 import BackendMetrics from './BackendMetrics';
@@ -54,6 +55,10 @@ const SpatialInterface = () => {
   const [isDemo, setIsDemo] = useState(false);
   const [isMapView, setIsMapView] = useState(true); // Toggle between map and dashboard
   const [metricsVisible, setMetricsVisible] = useState(false); // Backend metrics panel visibility
+  
+  // Chat history state
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
   
   // Data state
   const [farms, setFarms] = useState([]);
@@ -805,12 +810,75 @@ const SpatialInterface = () => {
     }
   };
   
+  // Check for existing conversations when AI is clicked
+  const checkForExistingConversations = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/chat/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'spatial-ui'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.conversations && data.conversations.length > 0) {
+        // Show chat history if conversations exist
+        setShowChatHistory(true);
+        setActivePanel('ai');
+      } else {
+        // Start new conversation directly if no history
+        const newConversationId = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        setCurrentConversationId(newConversationId);
+        setActivePanel('ai');
+        setShowChatHistory(false);
+      }
+    } catch (error) {
+      console.error('Failed to check conversations:', error);
+      // Fallback to new conversation
+      const newConversationId = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setCurrentConversationId(newConversationId);
+      setActivePanel('ai');
+      setShowChatHistory(false);
+    }
+  };
+  
+  // Handle conversation selection from chat history
+  const handleSelectConversation = (conversationId) => {
+    setCurrentConversationId(conversationId);
+    setShowChatHistory(false);
+    // Keep activePanel as 'ai' to show FloatingAI
+  };
+  
+  // Handle starting a new chat from chat history
+  const handleStartNewChat = (newConversationId) => {
+    setCurrentConversationId(newConversationId);
+    setShowChatHistory(false);
+    // Keep activePanel as 'ai' to show FloatingAI
+  };
+  
+  // Handle closing chat history
+  const handleCloseChatHistory = () => {
+    setShowChatHistory(false);
+    setActivePanel(null);
+    setCurrentConversationId(null);
+  };
+
   // Handle dock navigation actions
   const handleAction = (action) => {
     if (action === 'metrics') {
       setMetricsVisible(!metricsVisible);
     } else if (action === 'ai') {
-      setActivePanel(activePanel === 'ai' ? null : 'ai');
+      if (activePanel === 'ai') {
+        // Close if already open
+        setActivePanel(null);
+        setShowChatHistory(false);
+        setCurrentConversationId(null);
+      } else {
+        // Check if there are existing conversations
+        checkForExistingConversations();
+      }
     } else if (action === 'user') {
       setActivePanel(activePanel === 'settings' ? null : 'settings');
     }
@@ -1568,15 +1636,31 @@ const SpatialInterface = () => {
         )}
       </AnimatePresence>
       
-      {/* Floating AI Assistant */}
-      <FloatingAI 
-        isOpen={activePanel === 'ai'} 
-        onClose={() => setActivePanel(null)}
-      />
+      {/* Chat History or Floating AI Assistant */}
+      <AnimatePresence>
+        {activePanel === 'ai' && showChatHistory && (
+          <ChatHistory 
+            onSelectConversation={handleSelectConversation}
+            onStartNewChat={handleStartNewChat}
+            onClose={handleCloseChatHistory}
+          />
+        )}
+        {activePanel === 'ai' && !showChatHistory && currentConversationId && (
+          <FloatingAI 
+            isOpen={true}
+            conversationId={currentConversationId}
+            isNewConversation={!currentConversationId.includes('floating-ai')}
+            onClose={() => {
+              setActivePanel(null);
+              setCurrentConversationId(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Bottom Dock Navigation */}
       <DockNavigation 
-        onAction={handleDockAction}
+        onAction={handleAction}
         activePanel={activePanel}
         activeBurnsCount={burns.filter(b => b.status === 'active' || b.status === 'in_progress').length}
       />
@@ -1604,9 +1688,6 @@ const SpatialInterface = () => {
           Smoke
         </button>
       </div>
-      
-      {/* Floating AI Assistant */}
-      <FloatingAI />
       
       {/* Dock Navigation */}
       <DockNavigation onAction={handleAction} />

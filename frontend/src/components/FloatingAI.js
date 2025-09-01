@@ -12,7 +12,7 @@ import io from 'socket.io-client';
 import AnimatedFlameLogo from './animations/logos/AnimatedFlameLogo';
 import './FloatingAI.css';
 
-const FloatingAI = ({ isOpen, onClose, onOpen }) => {
+const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', isNewConversation = false }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -58,7 +58,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversationId: 'floating-ai',
+          conversationId: conversationId,
           userId: 'spatial-ui',
           messageType: message.type,
           content: message.content,
@@ -78,7 +78,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversationId: 'floating-ai',
+          conversationId: conversationId,
           userId: 'spatial-ui'
         })
       });
@@ -96,31 +96,14 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         
         setMessages(formattedMessages);
       } else {
-        // Add welcome message if no history exists
-        const welcomeMessage = {
-          id: Date.now(),
-          type: 'ai',
-          content: 'Hello! I can help you schedule burns, check weather, and manage your operations. Just ask!',
-          timestamp: new Date()
-        };
-        
-        setMessages([welcomeMessage]);
-        
-        // Save welcome message to TiDB
-        await saveMessageToTiDB(welcomeMessage);
+        // Start with empty messages for new conversations
+        setMessages([]);
       }
     } catch (error) {
       console.error('Failed to load chat history:', error);
       
-      // Fallback: Add welcome message
-      const welcomeMessage = {
-        id: Date.now(),
-        type: 'ai',
-        content: 'Hello! I can help you schedule burns, check weather, and manage your operations. Just ask!',
-        timestamp: new Date()
-      };
-      
-      setMessages([welcomeMessage]);
+      // Fallback: Start with empty messages
+      setMessages([]);
     }
   }, [saveMessageToTiDB]);
   
@@ -255,7 +238,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         body: JSON.stringify({
           message: messageToSend,
           userId: 'spatial-ui',
-          conversationId: 'floating-ai'
+          conversationId: conversationId
         })
       });
       
@@ -414,7 +397,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen }) => {
         body: JSON.stringify({
           message: prompt,
           userId: 'spatial-ui',
-          conversationId: 'floating-ai'
+          conversationId: conversationId
         })
       });
       
