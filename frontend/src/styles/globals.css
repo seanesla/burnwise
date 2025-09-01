@@ -23,12 +23,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: #000;
   color: #fff;
-  min-height: 100vh;
+  height: 100vh; /* MUST be height, not min-height */
   overflow-x: hidden;
 }
 
 #root {
-  min-height: 100vh;
+  height: 100vh; /* MUST be height, not min-height */
   background: linear-gradient(180deg, 
     #000000 0%, 
     rgba(10, 10, 10, 0.95) 100%
@@ -473,7 +473,7 @@ nav {
 .schedule-container,
 .alerts-container,
 .analytics-container {
-  min-height: 100vh;
+  height: 100vh; /* MUST be height for proper viewport constraint */
   background: linear-gradient(180deg, 
     rgba(0, 0, 0, 0.95) 0%, 
     rgba(10, 10, 10, 0.9) 50%,
