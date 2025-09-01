@@ -18,16 +18,20 @@ export const useSidebar = () => {
 export const SidebarProvider = ({ children }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   
-  // Persist sidebar state to localStorage
+  // Persist sidebar state to localStorage using unified key
   useEffect(() => {
-    const saved = localStorage.getItem('sidebarExpanded');
+    const saved = localStorage.getItem('burnwise-sidebar-expanded');
     if (saved !== null) {
       setIsExpanded(JSON.parse(saved));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('sidebarExpanded', JSON.stringify(isExpanded));
+    localStorage.setItem('burnwise-sidebar-expanded', JSON.stringify(isExpanded));
+    // Dispatch custom event for components that need real-time updates
+    window.dispatchEvent(new CustomEvent('sidebar-state-changed', { 
+      detail: { isExpanded } 
+    }));
   }, [isExpanded]);
 
   const toggleSidebar = () => {

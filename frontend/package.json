@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@floating-ui/react": "^0.27.16",
     "@mapbox/mapbox-gl-draw": "^1.5.0",
     "@openai/agents": "^0.0.17",
     "@react-three/drei": "^9.88.0",
