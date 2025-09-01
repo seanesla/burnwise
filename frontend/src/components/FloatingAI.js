@@ -40,7 +40,8 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
   const virtualElement = useRef({
     getBoundingClientRect() {
       const sidebarWidth = isSidebarExpanded ? 250 : 70;
-      const x = sidebarWidth + 20; // Always position to the right of sidebar with padding
+      const safeMargin = 30; // Increased margin to prevent overlap
+      const x = sidebarWidth + safeMargin; // Always position to the right of sidebar with safe margin
       const y = 80; // Standard top margin
       
       return {
@@ -138,17 +139,19 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
   useEffect(() => {
     const updateVirtualElement = () => {
       const sidebarWidth = isSidebarExpanded ? 250 : 70;
+      const safeMargin = 30; // Consistent safe margin
+      const minX = sidebarWidth + safeMargin;
       
       // Try to load saved position or use default
-      let savedPosition = { x: sidebarWidth + 20, y: 80 };
+      let savedPosition = { x: minX, y: 80 };
       try {
         const saved = localStorage.getItem('burnwise-ai-position');
         if (saved) {
           const parsed = JSON.parse(saved);
-          // Ensure saved position respects current sidebar width
+          // Ensure saved position respects current sidebar width with safe margin
           savedPosition = {
-            x: Math.max(sidebarWidth + 20, parsed.x),
-            y: parsed.y
+            x: Math.max(minX, parsed.x),
+            y: Math.max(80, parsed.y) // Ensure minimum top margin
           };
         }
       } catch (e) {
@@ -510,7 +513,7 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
         style={{
           ...floatingStyles,
-          zIndex: 10200 // Higher than expanded view to ensure visibility
+          zIndex: 10300 // Higher than sidebar and all other UI elements
         }}
         onClick={() => setIsMinimized(false)}
       >
@@ -539,11 +542,25 @@ const FloatingAI = ({ isOpen, onClose, onOpen, conversationId = 'floating-ai', i
       }}
       exit={{ opacity: 0, scale: 0.8, y: 20 }}
       transition={{ type: "spring", stiffness: 100, damping: 30, restDelta: 0.001 }}
+      drag
+      dragControls={dragControls}
+      dragConstraints={{
+        left: isSidebarExpanded ? 280 : 100, // Prevent dragging into sidebar area
+        right: window.innerWidth - size.width - 20,
+        top: 60, // Minimum top margin
+        bottom: window.innerHeight - size.height - 20
+      }}
+      dragElastic={0.1}
+      onDragEnd={(event, info) => {
+        // Save position when drag ends
+        const rect = event.currentTarget.getBoundingClientRect();
+        saveCurrentPosition(rect.left, rect.top);
+      }}
       style={{ 
         ...floatingStyles,
         width: size.width,
         height: size.height,
-        zIndex: 10200, // Above all other UI elements including dock
+        zIndex: 10300, // Above sidebar and all other UI elements including dock
       }}
     >
       {/* Header */}

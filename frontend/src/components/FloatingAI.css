@@ -15,7 +15,7 @@
   justify-content: center;
   cursor: move;
   box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
-  z-index: 10200; /* Above all UI elements including dock */
+  z-index: 10300; /* Above sidebar and all UI elements including dock */
   pointer-events: auto;
 }
 
@@ -45,7 +45,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 10200; /* Above all UI elements including dock */
+  z-index: 10300; /* Above sidebar and all UI elements including dock */
   user-select: none; /* Prevent text selection on container */
 }
 
