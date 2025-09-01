@@ -303,7 +303,13 @@ const ImprovedBurnRequestForm = () => {
           conditions.humidity <= formData.preferred_conditions.max_humidity) {
         toast.success('Weather conditions are suitable for burning');
       } else {
-        toast.warning('Weather conditions may not be optimal');
+        toast('Weather conditions may not be optimal', {
+          icon: '⚠️',
+          style: {
+            background: '#f59e0b',
+            color: '#ffffff',
+          }
+        });
       }
     } catch (error) {
       console.error('Failed to check weather:', error);

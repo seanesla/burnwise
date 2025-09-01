@@ -4,6 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 
 const MapContext = createContext();
@@ -98,6 +99,7 @@ export const MapProvider = ({ children }) => {
                   setFarmBoundary(boundary);
                 } catch (e) {
                   console.error('Failed to parse farm boundary:', e);
+                  toast.error('Failed to load farm boundary data');
                 }
               }
             } else if (data.farm.location) {
@@ -112,6 +114,7 @@ export const MapProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Failed to load farm location:', error);
+        toast.error('Failed to load farm location - using default area');
         // Keep default Sacramento location as fallback
       }
     };
