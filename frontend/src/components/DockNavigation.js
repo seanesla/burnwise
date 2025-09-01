@@ -39,18 +39,6 @@ const DockNavigation = ({ onAction, activePanel, activeBurnsCount = 0 }) => {
       badge: activeBurnsCount > 0 ? activeBurnsCount : null // Real active burns count
     },
     {
-      id: 'ai',
-      label: 'AI Assistant',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
-          <circle cx="12" cy="12" r="2"></circle>
-          <path d="M12 14v7"></path>
-        </svg>
-      ),
-      action: () => onAction('ai')
-    },
-    {
       id: 'metrics',
       label: 'Backend Metrics',
       icon: (

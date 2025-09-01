@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   FaMap, FaFire, FaCloudSun, FaCog, 
   FaUser, FaSignOutAlt, FaBars, FaTimes,
-  FaExclamationTriangle, FaCheck, FaQuestionCircle
+  FaExclamationTriangle, FaCheck, FaQuestionCircle, FaRobot
 } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { useMap } from '../contexts/MapContext';
@@ -234,6 +234,13 @@ const Sidebar = ({ onPanelChange }) => {
       action: () => handlePanelChange('burns'),
       badge: activeBurnsCount,
       description: 'Manage burn requests'
+    },
+    {
+      id: 'ai',
+      label: 'AI Assistant',
+      icon: FaRobot,
+      action: () => handlePanelChange('ai'),
+      description: 'Chat with AI assistant'
     },
     {
       id: 'weather',

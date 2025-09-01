@@ -82,6 +82,17 @@ const SpatialInterface = () => {
       if (panelId === 'spatial') {
         setIsMapView(prev => !prev);
         setActivePanel(null); // Close any open panels when toggling view
+      } else if (panelId === 'ai') {
+        // Handle AI panel - check for existing conversations or start new chat
+        if (activePanel === 'ai') {
+          // Close if already open
+          setActivePanel(null);
+          setShowChatHistory(false);
+          setCurrentConversationId(null);
+        } else {
+          // Open AI panel - check for existing conversations
+          checkForExistingConversations();
+        }
       } else if (activePanel === panelId) {
         // Toggle the panel - if it's already active, close it
         setActivePanel(null);
@@ -877,16 +888,6 @@ const SpatialInterface = () => {
   const handleAction = (action) => {
     if (action === 'metrics') {
       setMetricsVisible(!metricsVisible);
-    } else if (action === 'ai') {
-      if (activePanel === 'ai') {
-        // Close if already open
-        setActivePanel(null);
-        setShowChatHistory(false);
-        setCurrentConversationId(null);
-      } else {
-        // Check if there are existing conversations
-        checkForExistingConversations();
-      }
     } else if (action === 'user') {
       setActivePanel(activePanel === 'settings' ? null : 'settings');
     }
