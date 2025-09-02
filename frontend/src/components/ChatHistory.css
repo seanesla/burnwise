@@ -5,6 +5,8 @@
 
 .chat-history-container {
   position: fixed;
+  left: 280px; /* Position to the right of expanded sidebar (250px + 30px margin) */
+  top: 80px; /* Standard top margin */
   background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 16px;
@@ -13,7 +15,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 10100; /* Same as FloatingAI */
+  z-index: 10300; /* Above sidebar and all other UI elements */
   width: 400px;
   max-height: 600px;
 }
